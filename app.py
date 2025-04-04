@@ -36,7 +36,6 @@ if uploaded_file is not None and "df" not in st.session_state:
         st.error(f"Error loading file: {e}")
 
 if "df" in st.session_state:
-    df = st.session_state.df
 
     
         st.subheader("Preview of the Data")
