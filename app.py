@@ -49,7 +49,7 @@ if uploaded_file is not None:
             missing_rows = df[df.isna().any(axis=1)]
             st.dataframe(missing_rows)
 
-            # Handle Missing Data – Show Only When Missing Exists
+            # Handle Missing Data – Show Only When Needed
             st.subheader("Handle Missing Data")
             missing_cols = df.columns[df.isna().any()].tolist()
 
@@ -87,11 +87,34 @@ if uploaded_file is not None:
                         st.warning(f"Could not compute value for '{selected_col}'")
 
             # 2. Global fill for all missing values
-            with st.expander("Fill all missing values with a default", expanded=False):
-                global_default = st.text_input("Enter a global default value:", key="global_default")
-                if global_default:
-                    df.fillna(global_default, inplace=True)
-                    st.success(f"All missing values filled with '{global_default}'")
+            with st.expander("Fill all missing values (entire dataset)", expanded=False):
+                fill_option = st.radio("Choose fill method", ["Custom value", "Mean", "Median", "Mode"], horizontal=True, key="fill_all_choice")
+
+                if fill_option == "Custom value":
+                    global_default = st.text_input("Enter a global default value:", key="global_custom")
+                    if global_default and st.button("Apply Global Fill", key="fill_global_custom"):
+                        df.fillna(global_default, inplace=True)
+                        st.success(f"All missing values filled with '{global_default}'")
+
+                elif fill_option in ["Mean", "Median", "Mode"]:
+                    if st.button("Apply Global Fill", key="fill_global_stat"):
+                        filled_df = df.copy()
+                        for col in df.columns:
+                            if df[col].isna().any():
+                                try:
+                                    if fill_option == "Mean":
+                                        value = df[col].mean()
+                                    elif fill_option == "Median":
+                                        value = df[col].median()
+                                    elif fill_option == "Mode":
+                                        mode_vals = df[col].mode()
+                                        value = mode_vals[0] if not mode_vals.empty else None
+                                    if value is not None:
+                                        filled_df[col] = df[col].fillna(value)
+                                except:
+                                    continue  # Skip columns where operation is invalid
+                        df = filled_df
+                        st.success(f"Filled all missing values using column-wise {fill_option.lower()}")
 
             # 3. Drop rows with missing values
             with st.expander("Drop all rows with missing values", expanded=False):
