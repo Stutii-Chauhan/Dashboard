@@ -90,7 +90,7 @@ if "df" in st.session_state:
                     st.success(f"Filled missing values in '{selected_col}' using {method.lower()}: {fill_value}")
                     st.rerun()
 
-        # 2. Global fill for all missing values
+        # 2. Global fill
         with st.expander("Fill all missing values (entire dataset)", expanded=False):
             fill_option = st.radio("Choose fill method", ["Custom value", "Mean", "Median", "Mode"], horizontal=True, key="fill_all_choice")
 
@@ -122,7 +122,7 @@ if "df" in st.session_state:
                     st.success(f"Filled all missing values using column-wise {fill_option.lower()}")
                     st.rerun()
 
-        # 3. Drop rows with missing values
+        # 3. Drop missing rows
         with st.expander("Drop all rows with missing values", expanded=False):
             if st.button("Drop rows"):
                 df.dropna(inplace=True)
@@ -135,7 +135,7 @@ if "df" in st.session_state:
         st.subheader("Descriptive Statistics")
         st.dataframe(df[numeric_cols].describe())
 
-    # Categorical Distributions
+    # Categorical Bar Charts
     if categorical_cols:
         st.subheader("Categorical Column Distributions")
         for col in categorical_cols:
@@ -147,9 +147,71 @@ if "df" in st.session_state:
                          title=f"{col} Distribution")
             st.plotly_chart(fig, use_container_width=True)
 
-    # Numeric Distributions
+    # Numeric Histograms
     if numeric_cols:
         st.subheader("Histograms of Numeric Columns")
         for col in numeric_cols:
             fig = px.histogram(df, x=col, title=f"Distribution of {col}")
+            st.plotly_chart(fig, use_container_width=True)
+
+    # -----------------------------------------
+    # ADVANCED VISUALIZATIONS (Optional Toggle)
+    # -----------------------------------------
+    if st.checkbox("Show Advanced Visualizations"):
+        st.subheader("Advanced Visualizations")
+
+        # Pie Charts
+        if categorical_cols:
+            st.markdown("### Pie Charts (Top 5 Categories)")
+            for col in categorical_cols:
+                vc = df[col].value_counts().head(5)
+                if len(vc) > 1:
+                    fig = px.pie(values=vc.values, names=vc.index,
+                                 title=f"{col} (Top 5 Categories)")
+                    st.plotly_chart(fig, use_container_width=True)
+
+        # Box Plots
+        if numeric_cols:
+            st.markdown("### Box Plots (Outlier Detection)")
+            for col in numeric_cols:
+                fig = px.box(df, y=col, title=f"Box Plot of {col}")
+                st.plotly_chart(fig, use_container_width=True)
+
+        # Correlation Heatmap
+        if len(numeric_cols) > 1:
+            st.markdown("### Correlation Heatmap")
+            corr = df[numeric_cols].corr()
+            fig = px.imshow(corr,
+                            text_auto=".2f",
+                            title="Correlation Matrix",
+                            aspect="auto",
+                            color_continuous_scale="RdBu_r")
+            st.plotly_chart(fig, use_container_width=True)
+
+        # Scatter Plot
+        st.markdown("### Scatter Plot (Select Variables)")
+        if len(numeric_cols) >= 2:
+            col1 = st.selectbox("X-axis", numeric_cols, key="scatter_x")
+            col2 = st.selectbox("Y-axis", [col for col in numeric_cols if col != col1], key="scatter_y")
+            fig = px.scatter(df, x=col1, y=col2, title=f"{col1} vs {col2}")
+            st.plotly_chart(fig, use_container_width=True)
+
+        # Line Plot for Time Series
+        datetime_cols = df.select_dtypes(include=["datetime", "datetime64"]).columns
+        if len(datetime_cols) == 0:
+            for col in df.columns:
+                try:
+                    converted = pd.to_datetime(df[col])
+                    if converted.notna().sum() > 0:
+                        df[col] = converted
+                        datetime_cols = datetime_cols.append(pd.Index([col]))
+                except:
+                    continue
+
+        if len(datetime_cols) > 0 and numeric_cols:
+            st.markdown("### Time Series (Line Plot)")
+            time_col = st.selectbox("Select datetime column", datetime_cols, key="line_dt")
+            metric_col = st.selectbox("Select numeric column to plot", numeric_cols, key="line_val")
+            fig = px.line(df.sort_values(by=time_col), x=time_col, y=metric_col,
+                          title=f"{metric_col} over time ({time_col})")
             st.plotly_chart(fig, use_container_width=True)
