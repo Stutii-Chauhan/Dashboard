@@ -39,7 +39,7 @@ if uploaded_file is not None and "df" not in st.session_state:
             st.session_state.df = df_try.reset_index(drop=True)
         else:
             st.session_state.df = pd.read_excel(uploaded_file)
-        st.success(f"Successfully loaded `{uploaded_file.name}`")
+        st.success(f"Successfully loaded {uploaded_file.name}")
     except Exception as e:
         st.error(f"Error loading file: {e}")
 
@@ -179,39 +179,40 @@ if "df" in st.session_state:
     if (categorical_cols or numeric_cols) and st.checkbox("Show Basic Visualizations"):
         st.subheader("Basic Visualizations")
 
-        st.markdown("### Custom Chart Builder")
-        chart_type = st.selectbox("Select chart type", ["Bar", "Histogram", "Pie"])
-        x_axis = st.selectbox("Select X-axis", df.columns, key="basic_x")
-        y_axis = None
-        if chart_type in ["Bar"]:
-            y_axis = st.selectbox("Select Y-axis", [col for col in df.columns if col != x_axis and df[col].dtype != 'object'], key="basic_y")
+        if categorical_cols:
+            st.markdown("### Categorical Column Distributions")
+            for col in categorical_cols:
+                st.markdown(f"**{col}**")
+                vc = df[col].value_counts().head(20)
+                st.dataframe(vc)
+                fig = px.bar(x=vc.index, y=vc.values,
+                             labels={'x': col, 'y': 'Count'},
+                             title=f"{col} Distribution")
+                st.plotly_chart(fig, use_container_width=True)
 
-        if st.button("Generate Basic Chart"):
-            if chart_type == "Bar" and y_axis:
-                fig = px.bar(df, x=x_axis, y=y_axis, title=f"{y_axis} by {x_axis}")
-            elif chart_type == "Histogram":
-                fig = px.histogram(df, x=x_axis, title=f"Histogram of {x_axis}")
-            elif chart_type == "Pie":
-                vc = df[x_axis].value_counts().reset_index()
-                vc.columns = [x_axis, "Count"]
-                fig = px.pie(vc, names=x_axis, values="Count", title=f"Pie Chart of {x_axis}")
-            st.plotly_chart(fig, use_container_width=True)
+        if numeric_cols:
+            st.markdown("### Histograms of Numeric Columns")
+            for col in numeric_cols:
+                fig = px.histogram(df, x=col, title=f"Distribution of {col}")
+                st.plotly_chart(fig, use_container_width=True)
 
     if st.checkbox("Show Advanced Visualizations"):
         st.subheader("Advanced Visualizations")
 
-        if len(numeric_cols) >= 2:
-            st.markdown("### Scatter Plot")
-            col1 = st.selectbox("X-axis", numeric_cols, key="scatter_x")
-            col2 = st.selectbox("Y-axis", [col for col in numeric_cols if col != col1], key="scatter_y")
-            fig = px.scatter(df, x=col1, y=col2, title=f"{col1} vs {col2}")
-            st.plotly_chart(fig, use_container_width=True)
+        if categorical_cols:
+            st.markdown("### Pie Charts (Top 5 Categories)")
+            for col in categorical_cols:
+                vc = df[col].value_counts().head(5)
+                if len(vc) > 1:
+                    fig = px.pie(values=vc.values, names=vc.index,
+                                 title=f"{col} (Top 5 Categories)")
+                    st.plotly_chart(fig, use_container_width=True)
 
         if numeric_cols:
-            st.markdown("### Box Plot")
-            ybox = st.selectbox("Select column for Box Plot", numeric_cols, key="box_y")
-            fig = px.box(df, y=ybox, title=f"Box Plot of {ybox}")
-            st.plotly_chart(fig, use_container_width=True)
+            st.markdown("### Box Plots (Outlier Detection)")
+            for col in numeric_cols:
+                fig = px.box(df, y=col, title=f"Box Plot of {col}")
+                st.plotly_chart(fig, use_container_width=True)
 
         if len(numeric_cols) > 1:
             st.markdown("### Correlation Heatmap")
@@ -221,6 +222,13 @@ if "df" in st.session_state:
                             title="Correlation Matrix",
                             aspect="auto",
                             color_continuous_scale="RdBu_r")
+            st.plotly_chart(fig, use_container_width=True)
+
+        st.markdown("### Scatter Plot (Select Variables)")
+        if len(numeric_cols) >= 2:
+            col1 = st.selectbox("X-axis", numeric_cols, key="scatter_x")
+            col2 = st.selectbox("Y-axis", [col for col in numeric_cols if col != col1], key="scatter_y")
+            fig = px.scatter(df, x=col1, y=col2, title=f"{col1} vs {col2}")
             st.plotly_chart(fig, use_container_width=True)
 
         datetime_cols = detect_datetime_columns(df)
