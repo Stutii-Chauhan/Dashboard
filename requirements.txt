@@ -1,5 +1,5 @@
 streamlit
 pandas
 openpyxl
-pandas-profiling==3.6.6
+sweetviz
 plotly
