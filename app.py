@@ -51,33 +51,31 @@ if "df" in st.session_state:
     st.dataframe(df.head(50))
     st.write(f"Shape: {df.shape[0]} rows × {df.shape[1]} columns")
 
-    # Custom Graph Builder
+    # Custom Axis Selection
     st.markdown("---")
-    st.subheader("Build Your Own Graph")
-    plot_type = st.selectbox("Select plot type", ["Bar", "Line", "Scatter", "Box", "Histogram", "Pie"])
+    st.subheader("Visualizations")
+    numeric_cols = list(df.select_dtypes(include='number').columns)
+    categorical_cols = [col for col in df.columns if col not in numeric_cols]
 
-    x_axis = st.selectbox("Select X-axis", df.columns)
-    y_axis = None
-    if plot_type not in ["Pie", "Histogram"]:
-        y_axis = st.selectbox("Select Y-axis", [col for col in df.columns if col != x_axis])
+    if categorical_cols:
+        st.markdown("### Categorical Column Distributions")
+        for col in categorical_cols:
+            st.markdown(f"**{col}**")
+            vc = df[col].value_counts().head(20)
+            st.dataframe(vc)
+            selected_x = st.selectbox(f"Select X-axis for {col} Bar Chart", options=[col], key=f"x_{col}")
+            selected_y = st.selectbox(f"Select Y-axis for {col} Bar Chart", options=numeric_cols, key=f"y_{col}") if numeric_cols else None
+            if selected_y:
+                fig = px.bar(df, x=selected_x, y=selected_y, title=f"{selected_y} by {selected_x}")
+                st.plotly_chart(fig, use_container_width=True)
+            else:
+                vc = df[col].value_counts().head(20)
+                fig = px.bar(x=vc.index, y=vc.values, labels={'x': col, 'y': 'Count'}, title=f"{col} Distribution")
+                st.plotly_chart(fig, use_container_width=True)
 
-    if st.button("Generate Plot"):
-        try:
-            if plot_type == "Bar":
-                fig = px.bar(df, x=x_axis, y=y_axis)
-            elif plot_type == "Line":
-                fig = px.line(df, x=x_axis, y=y_axis)
-            elif plot_type == "Scatter":
-                fig = px.scatter(df, x=x_axis, y=y_axis)
-            elif plot_type == "Box":
-                fig = px.box(df, x=x_axis, y=y_axis)
-            elif plot_type == "Histogram":
-                fig = px.histogram(df, x=x_axis)
-            elif plot_type == "Pie":
-                vc = df[x_axis].value_counts().reset_index()
-                vc.columns = [x_axis, "Count"]
-                fig = px.pie(vc, names=x_axis, values="Count")
-
+    if numeric_cols:
+        st.markdown("### Histograms of Numeric Columns")
+        for col in numeric_cols:
+            selected_col = st.selectbox(f"Select numeric column for histogram", options=numeric_cols, index=numeric_cols.index(col), key=f"hist_{col}")
+            fig = px.histogram(df, x=selected_col, title=f"Distribution of {selected_col}")
             st.plotly_chart(fig, use_container_width=True)
-        except Exception as e:
-            st.error(f"Error generating plot: {e}")
