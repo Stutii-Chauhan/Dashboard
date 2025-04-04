@@ -47,9 +47,15 @@ if uploaded_file is not None:
         missing = missing[missing > 0]
 
         if not missing.empty:
-            st.subheader("Missing Values")
+            st.subheader("🧼 Missing Values")
             st.write(f"Total missing values: **{int(missing.sum())}**")
             st.dataframe(missing)
+
+            # Show rows with missing data
+            st.subheader("🔎 Rows with Missing Data")
+            missing_rows = df[df.isna().any(axis=1)]
+            st.write(f"Showing {len(missing_rows)} rows with missing data:")
+            st.dataframe(missing_rows)
 
         # Descriptive Stats
         if numeric_cols:
