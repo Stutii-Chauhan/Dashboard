@@ -49,61 +49,55 @@ if uploaded_file is not None:
             missing_rows = df[df.isna().any(axis=1)]
             st.dataframe(missing_rows)
 
+            # Handle Missing Data – Show Only When Missing Exists
             st.subheader("Handle Missing Data")
             missing_cols = df.columns[df.isna().any()].tolist()
 
-            # Fill specific column
-            with st.expander("Fill a specific column with a custom value", expanded=False):
+            # 1. Fill a specific column
+            with st.expander("Fill a specific column", expanded=False):
                 col1, col2 = st.columns([1, 2])
                 with col1:
-                    selected_col = st.selectbox("Column", missing_cols, key="col_fill")
-                with col2:
-                    fill_value = st.text_input("Value to fill", key="val_fill")
+                    selected_col = st.selectbox("Select column", missing_cols, key="col_fill")
 
-                if fill_value:
-                    try:
-                        dtype = df[selected_col].dropna().dtype
-                        casted_value = dtype.type(fill_value)
-                    except:
-                        casted_value = fill_value
-                    df[selected_col].fillna(casted_value, inplace=True)
-                    st.success(f"Filled missing values in '{selected_col}' with '{casted_value}'")
+                method = st.radio("How do you want to fill?", ["Custom value", "Mean", "Median", "Mode"], horizontal=True)
 
-            # Fill all with default
+                fill_value = None
+
+                if method == "Custom value":
+                    fill_input = st.text_input("Enter the value to fill:", key="custom_val")
+                    if fill_input:
+                        try:
+                            dtype = df[selected_col].dropna().dtype
+                            fill_value = dtype.type(fill_input)
+                        except:
+                            fill_value = fill_input
+                elif method == "Mean":
+                    fill_value = df[selected_col].mean()
+                elif method == "Median":
+                    fill_value = df[selected_col].median()
+                elif method == "Mode":
+                    mode_vals = df[selected_col].mode()
+                    fill_value = mode_vals[0] if not mode_vals.empty else None
+
+                if st.button("Apply", key="apply_single_col"):
+                    if fill_value is not None:
+                        df[selected_col].fillna(fill_value, inplace=True)
+                        st.success(f"Filled missing values in '{selected_col}' using {method.lower()}: {fill_value}")
+                    else:
+                        st.warning(f"Could not compute value for '{selected_col}'")
+
+            # 2. Global fill for all missing values
             with st.expander("Fill all missing values with a default", expanded=False):
-                default_fill = st.text_input("Default value", key="fill_all")
-                if default_fill:
-                    df.fillna(default_fill, inplace=True)
-                    st.success(f"All missing values filled with '{default_fill}'")
+                global_default = st.text_input("Enter a global default value:", key="global_default")
+                if global_default:
+                    df.fillna(global_default, inplace=True)
+                    st.success(f"All missing values filled with '{global_default}'")
 
-            # Drop rows with missing
+            # 3. Drop rows with missing values
             with st.expander("Drop all rows with missing values", expanded=False):
                 if st.button("Drop rows"):
                     df.dropna(inplace=True)
                     st.success("Dropped all rows containing missing values.")
-
-            # Fill using mean/median/mode
-            with st.expander("Fill missing values using mean, median, or mode", expanded=False):
-                stat_col = st.selectbox("Select column", missing_cols, key="stat_col")
-                method = st.radio("Select method", ["Mean", "Median", "Mode"], horizontal=True)
-
-                if st.button("Apply", key="apply_stat_fill"):
-                    try:
-                        if method == "Mean":
-                            value = df[stat_col].mean()
-                        elif method == "Median":
-                            value = df[stat_col].median()
-                        elif method == "Mode":
-                            mode_vals = df[stat_col].mode()
-                            value = mode_vals[0] if not mode_vals.empty else None
-
-                        if value is not None:
-                            df[stat_col].fillna(value, inplace=True)
-                            st.success(f"Filled missing values in '{stat_col}' with {method.lower()}: {value}")
-                        else:
-                            st.warning(f"Could not compute {method.lower()} for '{stat_col}'")
-                    except:
-                        st.error(f"'{method}' method is not applicable to column '{stat_col}'")
 
         # Descriptive Statistics
         if numeric_cols:
