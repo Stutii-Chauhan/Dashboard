@@ -2,6 +2,7 @@ import plotly.express as px
 from ydata_profiling import ProfileReport
 from streamlit.components.v1 import html
 import tempfile
+from pandas_profiling import ProfileReport
 
 # Upload + Load Data (already done above)
 uploaded_file = st.file_uploader("Upload a file", type=["csv", "xlsx"])
