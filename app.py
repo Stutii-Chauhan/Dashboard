@@ -29,9 +29,14 @@ if uploaded_file is not None and "df" not in st.session_state:
     try:
         if uploaded_file.name.endswith('.csv'):
             try:
-                st.session_state.df = pd.read_csv(uploaded_file, encoding='utf-8')
+                df_try = pd.read_csv(uploaded_file, encoding='utf-8')
             except UnicodeDecodeError:
-                st.session_state.df = pd.read_csv(uploaded_file, encoding='latin1')
+                df_try = pd.read_csv(uploaded_file, encoding='latin1')
+
+            if df_try.columns[0] == df_try.iloc[0][0]:  # likely header got shifted
+                df_try.columns = df_try.iloc[0]  # use first row as header
+                df_try = df_try[1:]  # drop the first row
+            st.session_state.df = df_try.reset_index(drop=True)
         else:
             st.session_state.df = pd.read_excel(uploaded_file)
         st.success(f"Successfully loaded `{uploaded_file.name}`")
