@@ -93,23 +93,6 @@ if "df" in st.session_state:
             unsafe_allow_html=True
         )
 
-
-    # NEW: Ask Questions About Your Data
-    st.markdown("---")
-    st.subheader("Ask a Question About Your Data")
-    user_query = st.text_input("What do you want to know?", placeholder="e.g., What is the average sales per category?")
-    if user_query:
-        context = f"Dataset has {df.shape[0]} rows and {df.shape[1]} columns. Columns: {', '.join(df.columns)}."
-        sample = df.head(3).to_string()
-        prompt = f"Answer the following based on the dataset:\n\n{context}\n\nSample Data:\n{sample}\n\nQuestion: {user_query}"
-
-        hf_token = st.secrets["hf_token"]
-        with st.spinner("Thinking..."):
-            ai_response = query_huggingface(prompt, hf_token)
-
-        st.markdown("### 📌 AI Response")
-        st.markdown(f"<div style='background-color:#f0f4ff; padding: 15px; border-radius: 8px;'>{ai_response}</div>", unsafe_allow_html=True)
-
     # Column Classification
     numeric_cols = list(df.select_dtypes(include='number').columns)
     categorical_cols = [col for col in df.columns if col not in numeric_cols]
