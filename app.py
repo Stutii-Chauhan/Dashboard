@@ -87,14 +87,14 @@ if "df" in st.session_state:
         with st.spinner("Generating AI business summary..."):
             response = query_openrouter(prompt, api_token)
 
-        st.subheader("💡 AI-Generated Business Summary")
+        st.subheader("AI-Generated Business Summary")
         st.markdown(
             f"<div style='background-color:#f0f8f5; padding: 15px; border-radius: 8px; font-size: 15px; white-space: pre-wrap'>{response}</div>",
             unsafe_allow_html=True
         )
 
     # Ask a Question Section
-    st.subheader("🧠 Ask a Question About Your Data")
+    st.subheader("Ask a Question About Your Data")
     user_question = st.text_input("What do you want to know?")
     if user_question:
         question_prompt = (
