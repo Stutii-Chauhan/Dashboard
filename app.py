@@ -89,10 +89,29 @@ if "df" in st.session_state:
 
         st.subheader("💡 AI-Generated Business Summary")
         st.markdown(
-            f"<div style='background-color:#f0f8f5; padding: 15px; border-radius: 8px; font-size: 15px;'>{response}</div>",
+            f"<div style='background-color:#f0f8f5; padding: 15px; border-radius: 8px; font-size: 15px; white-space: pre-wrap'>{response}</div>",
             unsafe_allow_html=True
         )
 
+    # Ask a Question Section
+    st.subheader("🧠 Ask a Question About Your Data")
+    user_question = st.text_input("What do you want to know?")
+    if user_question:
+        question_prompt = (
+            f"Answer the following based on the dataset:\n"
+            f"Dataset has {df.shape[0]} rows and {df.shape[1]} columns. Columns: {', '.join(df.columns)}\n"
+            f"Sample Data: {df.head(3).to_string(index=False)}\n\n"
+            f"Question: {user_question}"
+        )
+        api_token = st.secrets.get("openrouter_token", "")
+        with st.spinner("Getting answer from AI..."):
+            ai_response = query_openrouter(question_prompt, api_token)
+
+        st.markdown(
+            f"<div style='background-color:#f0f8f5; padding: 12px; border-radius: 6px; font-size: 15px; white-space: pre-wrap'>{ai_response}</div>",
+            unsafe_allow_html=True
+        )
+        
     # Column Classification
     numeric_cols = list(df.select_dtypes(include='number').columns)
     categorical_cols = [col for col in df.columns if col not in numeric_cols]
