@@ -39,7 +39,7 @@ if uploaded_file is not None and "df" not in st.session_state:
             st.session_state.df = df_try.reset_index(drop=True)
         else:
             st.session_state.df = pd.read_excel(uploaded_file)
-        st.success(f"Successfully loaded {uploaded_file.name}")
+        st.success(f"Successfully loaded `{uploaded_file.name}`")
     except Exception as e:
         st.error(f"Error loading file: {e}")
 
