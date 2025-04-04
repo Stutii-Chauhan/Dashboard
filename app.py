@@ -96,4 +96,20 @@ if uploaded_file is not None:
         if categorical_cols:
             st.subheader("Categorical Column Distributions")
             for col in categorical_cols:
-                st.markdown(f"
+                st.markdown(f"**{col}**")
+                vc = df[col].value_counts().head(20)
+                st.dataframe(vc)
+                fig = px.bar(x=vc.index, y=vc.values,
+                             labels={'x': col, 'y': 'Count'},
+                             title=f"{col} Distribution")
+                st.plotly_chart(fig, use_container_width=True)
+
+        # Numeric Distributions
+        if numeric_cols:
+            st.subheader("Histograms of Numeric Columns")
+            for col in numeric_cols:
+                fig = px.histogram(df, x=col, title=f"Distribution of {col}")
+                st.plotly_chart(fig, use_container_width=True)
+
+    except Exception as e:
+        st.error(f"Error reading file: {e}")
