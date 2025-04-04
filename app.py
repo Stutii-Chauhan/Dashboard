@@ -11,15 +11,16 @@ uploaded_file = st.file_uploader("Upload a file", type=["csv", "xlsx"])
 
 if uploaded_file is not None:
     try:
+        # Read the uploaded file
         if uploaded_file.name.endswith('.csv'):
             df = pd.read_csv(uploaded_file)
         else:
             df = pd.read_excel(uploaded_file)
 
         st.success(f"Successfully loaded `{uploaded_file.name}`")
-        
-        # 🧾 Data Preview
-        st.subheader("📄 Preview of the Data")
+
+        # Data Preview
+        st.subheader("Preview of the Data")
         st.dataframe(df.head(50))
         st.write(f"Shape: {df.shape[0]} rows × {df.shape[1]} columns")
 
@@ -30,15 +31,15 @@ if uploaded_file is not None:
         if numeric_cols or categorical_cols:
             st.subheader("Dataset Overview")
 
-            if numeric_cols:
-                st.markdown("**Numeric columns:**")
-                for col in numeric_cols:
-                    st.write(f"- {col}")
+        if numeric_cols:
+            st.markdown("**Numeric columns:**")
+            for col in numeric_cols:
+                st.write(f"- {col}")
 
-            if categorical_cols:
-                st.markdown("**Categorical columns:**")
-                for col in categorical_cols:
-                    st.write(f"- {col}")
+        if categorical_cols:
+            st.markdown("**Categorical columns:**")
+            for col in categorical_cols:
+                st.write(f"- {col}")
 
         # Missing Values
         missing = df.isna().sum()
@@ -46,7 +47,7 @@ if uploaded_file is not None:
 
         if not missing.empty:
             st.subheader("Missing Values")
-            st.write(f"Total missing values: **{int(missing.sum())}**")
+            st.write(f"Total missing values: {int(missing.sum())}")
             st.dataframe(missing)
 
             st.subheader("Rows with Missing Data")
@@ -54,22 +55,24 @@ if uploaded_file is not None:
             st.write(f"Showing {len(missing_rows)} rows with missing data:")
             st.dataframe(missing_rows)
 
-        # Descriptive Stats
+        # Descriptive Statistics
         if numeric_cols:
             st.subheader("Descriptive Statistics")
             st.dataframe(df[numeric_cols].describe())
 
-        # Bar Charts for Categorical Columns
+        # Categorical Distributions
         if categorical_cols:
             st.subheader("Categorical Column Distributions")
             for col in categorical_cols:
                 st.markdown(f"**{col}**")
                 vc = df[col].value_counts().head(20)
                 st.dataframe(vc)
-                fig = px.bar(x=vc.index, y=vc.values, labels={'x': col, 'y': 'Count'}, title=f"{col} Distribution")
+                fig = px.bar(x=vc.index, y=vc.values,
+                             labels={'x': col, 'y': 'Count'},
+                             title=f"{col} Distribution")
                 st.plotly_chart(fig, use_container_width=True)
 
-        # 📉 Histograms for Numeric Columns
+        # Numeric Distributions
         if numeric_cols:
             st.subheader("Histograms of Numeric Columns")
             for col in numeric_cols:
