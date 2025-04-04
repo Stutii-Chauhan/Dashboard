@@ -82,6 +82,29 @@ if uploaded_file is not None:
                     df.dropna(inplace=True)
                     st.success("Dropped all rows containing missing values.")
 
+            # Fill using mean/median/mode
+            with st.expander("Fill missing values using mean, median, or mode", expanded=False):
+                stat_col = st.selectbox("Select column", missing_cols, key="stat_col")
+                method = st.radio("Select method", ["Mean", "Median", "Mode"], horizontal=True)
+
+                if st.button("Apply", key="apply_stat_fill"):
+                    try:
+                        if method == "Mean":
+                            value = df[stat_col].mean()
+                        elif method == "Median":
+                            value = df[stat_col].median()
+                        elif method == "Mode":
+                            mode_vals = df[stat_col].mode()
+                            value = mode_vals[0] if not mode_vals.empty else None
+
+                        if value is not None:
+                            df[stat_col].fillna(value, inplace=True)
+                            st.success(f"Filled missing values in '{stat_col}' with {method.lower()}: {value}")
+                        else:
+                            st.warning(f"Could not compute {method.lower()} for '{stat_col}'")
+                    except:
+                        st.error(f"'{method}' method is not applicable to column '{stat_col}'")
+
         # Descriptive Statistics
         if numeric_cols:
             st.subheader("Descriptive Statistics")
