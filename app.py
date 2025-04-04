@@ -78,11 +78,16 @@ if st.button("Generate Business Summary using AI"):
                 f"{col}: Mean={mean:.2f}, Std={std:.2f}, Range=[{min_val:.2f}, {max_val:.2f}]"
             )
 
-    prompt = (
-        "Summarize the following dataset for a business audience. Focus on trends, key metrics, and possible actions:\n\n"
-        + "\n".join(summary_prompt)
-    )
+metrics_summary = "\n\n".join(
+    [f"**{col}**  \nMean: {desc.loc[col, 'mean']:.2f}  \nStd: {desc.loc[col, 'std']:.2f}  \nRange: [{desc.loc[col, 'min']:.2f}, {desc.loc[col, 'max']:.2f}]\n"
+     for col in desc.index]
+)
 
+prompt = (
+    f"Summarize the following dataset for a business audience. Focus on trends, key metrics, and possible actions:\n\n"
+    f"The dataset contains {df.shape[0]} rows and {df.shape[1]} columns.\n\n"
+    f"{metrics_summary}\n"
+)
     hf_token = st.secrets["hf_token"]
 
     with st.spinner("Generating business insight using Falcon-7B..."):
