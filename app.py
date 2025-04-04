@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-st.set_page_config(page_title="Smart Data Analyzer", layout="wide")
+st.set_page_config(page_title="Data Analyzer", layout="wide")
 
 st.title("Analysis Dashboard")
 st.markdown("Upload your Excel or CSV file to analyze and explore your dataset instantly.")
@@ -47,21 +47,20 @@ if "df" in st.session_state:
     numeric_cols = list(df.select_dtypes(include='number').columns)
     categorical_cols = [col for col in df.columns if col not in numeric_cols]
 
-    if numeric_cols or categorical_cols:
+    if (numeric_cols or categorical_cols) and st.checkbox("Show Dataset Overview"):
         st.subheader("Dataset Overview")
 
-    if numeric_cols:
-        st.markdown("**Numeric columns:**")
-        for col in numeric_cols:
-            st.write(f"- {col}")
+        if numeric_cols:
+            st.markdown("**Numeric columns:**")
+            for col in numeric_cols:
+                st.write(f"- {col}")
 
-    if categorical_cols:
-        st.markdown("**Categorical columns:**")
-        for col in categorical_cols:
-            st.write(f"- {col}")
+        if categorical_cols:
+            st.markdown("**Categorical columns:**")
+            for col in categorical_cols:
+                st.write(f"- {col}")
 
-    # Missing Values
-    if has_missing_data(df):
+    if has_missing_data(df) and st.checkbox("Show Missing Value Handler"):
         st.subheader("Missing Values")
         st.write(f"Total missing values: {int(df.isna().sum().sum())}")
         st.dataframe(df[df.isna().any(axis=1)])
@@ -142,14 +141,10 @@ if "df" in st.session_state:
                 st.success("Dropped all rows containing missing values.")
                 st.rerun()
 
-    # Descriptive Statistics
-    if numeric_cols:
+    if numeric_cols and st.checkbox("Show Descriptive Statistics"):
         st.subheader("Descriptive Statistics")
         st.dataframe(df[numeric_cols].describe())
 
-    # -----------------------------------------
-    # ADVANCED VISUALIZATIONS (Toggle First)
-    # -----------------------------------------
     st.markdown("---")
     if st.checkbox("Show Advanced Visualizations"):
         st.subheader("Advanced Visualizations")
@@ -207,7 +202,7 @@ if "df" in st.session_state:
                 st.info("Selected time or metric column doesn't have valid data to plot.")
 
     # Categorical Bar Charts
-    if categorical_cols:
+    if categorical_cols and st.checkbox("Show Categorical Column Distributions"):
         st.subheader("Categorical Column Distributions")
         for col in categorical_cols:
             st.markdown(f"**{col}**")
@@ -219,7 +214,7 @@ if "df" in st.session_state:
             st.plotly_chart(fig, use_container_width=True)
 
     # Numeric Histograms
-    if numeric_cols:
+    if numeric_cols and st.checkbox("Show Histograms of Numeric Columns"):
         st.subheader("Histograms of Numeric Columns")
         for col in numeric_cols:
             fig = px.histogram(df, x=col, title=f"Distribution of {col}")
