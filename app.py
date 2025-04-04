@@ -25,25 +25,23 @@ def detect_datetime_columns(df):
                 continue
     return datetime_cols
 
-def query_openrouter(prompt, api_token, model="mistralai/mistral-7b-instruct"):
-    url = "https://openrouter.ai/api/v1/chat/completions"
-    headers = {
-        "Authorization": f"Bearer {api_token}",
-        "Content-Type": "application/json"
-    }
+def query_falcon(prompt, api_token, model="tiiuae/falcon-7b-instruct"):
+    url = f"https://api-inference.huggingface.co/models/{model}"
+    headers = {"Authorization": f"Bearer {api_token}"}
     payload = {
-        "model": model,
-        "messages": [
-            {"role": "system", "content": "You are a data analyst helping businesses interpret structured datasets."},
-            {"role": "user", "content": prompt}
-        ],
-        "temperature": 0.7
+        "inputs": prompt,
+        "parameters": {
+            "max_new_tokens": 300,
+            "temperature": 0.7,
+            "top_p": 0.9,
+            "repetition_penalty": 1.1
+        }
     }
     try:
         response = requests.post(url, headers=headers, json=payload)
-        return response.json()['choices'][0]['message']['content']
+        return response.json()[0]["generated_text"]
     except Exception as e:
-        return f"Error from OpenRouter: {e} | Response: {response.text}"
+        return f"Error from Hugging Face: {e} | Response: {response.text}"
 
 # Load into session state once
 if uploaded_file is not None and "df" not in st.session_state:
@@ -83,9 +81,9 @@ if "df" in st.session_state:
             f"Question: What trends and insights can you derive from this data?"
         )
 
-        api_token = st.secrets.get("openrouter_token", "")
+        hf_token = st.secrets.get("hf_token", "")
         with st.spinner("Generating AI business summary..."):
-            response = query_openrouter(prompt, api_token)
+            response = query_falcon(prompt, hf_token)
 
         st.subheader("AI-Generated Business Summary")
         st.markdown(
@@ -103,9 +101,9 @@ if "df" in st.session_state:
             f"Sample Data: {df.head(3).to_string(index=False)}\n\n"
             f"Question: {user_question}"
         )
-        api_token = st.secrets.get("openrouter_token", "")
+        hf_token = st.secrets.get("hf_token", "")
         with st.spinner("Getting answer from AI..."):
-            ai_response = query_openrouter(question_prompt, api_token)
+            ai_response = query_falcon(question_prompt, hf_token)
 
         st.markdown(
             f"<div style='background-color:#f0f8f5; padding: 12px; border-radius: 6px; font-size: 15px; white-space: pre-wrap'>{ai_response}</div>",
