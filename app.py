@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import plotly.express as px
 
 st.set_page_config(page_title="Smart Data Analyzer", layout="wide")
 
@@ -15,12 +16,51 @@ if uploaded_file is not None:
         else:
             df = pd.read_excel(uploaded_file)
 
-        st.success(f"Successfully loaded `{uploaded_file.name}`")
+        st.success(f"✅ Successfully loaded `{uploaded_file.name}`")
         
-        st.subheader("Preview of the Data")
+        st.subheader("📄 Preview of the Data")
         st.dataframe(df.head(50))
+        st.write(f"🔢 Shape: {df.shape[0]} rows × {df.shape[1]} columns")
 
-        st.write(f"Shape: {df.shape[0]} rows × {df.shape[1]} columns")
+        # ----------- PHASE 2: BASIC EDA STARTS HERE -----------
+
+        st.subheader("📊 Dataset Overview")
+
+        # Detect column types
+        numeric_cols = list(df.select_dtypes(include='number').columns)
+        categorical_cols = [col for col in df.columns if col not in numeric_cols]
+
+        st.write(f"**Numeric columns:** {numeric_cols}")
+        st.write(f"**Categorical columns:** {categorical_cols}")
+
+        # Missing Values
+        st.subheader("🧼 Missing Values")
+        missing = df.isna().sum()
+        st.dataframe(missing[missing > 0])
+
+        # Descriptive Stats
+        if numeric_cols:
+            st.subheader("📈 Descriptive Statistics")
+            st.dataframe(df[numeric_cols].describe())
+
+        # Bar Charts for Categorical
+        if categorical_cols:
+            st.subheader("📋 Categorical Column Distributions")
+            for col in categorical_cols:
+                st.markdown(f"**{col}**")
+                vc = df[col].value_counts().head(20)
+                st.dataframe(vc)
+                fig = px.bar(x=vc.index, y=vc.values, labels={'x': col, 'y': 'Count'}, title=f"{col} Distribution")
+                st.plotly_chart(fig, use_container_width=True)
+
+        # Histograms for Numeric
+        if numeric_cols:
+            st.subheader("📉 Histograms of Numeric Columns")
+            for col in numeric_cols:
+                fig = px.histogram(df, x=col, title=f"Distribution of {col}")
+                st.plotly_chart(fig, use_container_width=True)
+
+        # ----------- PHASE 2 ENDS HERE -----------
 
     except Exception as e:
-        st.error(f"Error reading file: {e}")
+        st.error(f"❌ Error reading file: {e}")
