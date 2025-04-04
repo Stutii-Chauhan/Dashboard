@@ -27,7 +27,7 @@ if uploaded_file is not None:
         st.success(f"Successfully loaded `{uploaded_file.name}`")
 
         st.subheader("Preview of the Data")
-        st.dataframe(df.head(50))
+        st.dataframe(df.head(200))
 
         st.write(f"Shape: {df.shape[0]} rows × {df.shape[1]} columns")
 
