@@ -43,6 +43,29 @@ if "df" in st.session_state:
     st.dataframe(df.head(50))
     st.write(f"Shape: {df.shape[0]} rows × {df.shape[1]} columns")
 
+    # LLM Summary Generator Button
+    if st.button("Generate Dataset Summary (LLM Ready Text)"):
+        summary = []
+        summary.append(f"The dataset contains {df.shape[0]} rows and {df.shape[1]} columns.\n")
+        summary.append("Column-wise summary:")
+        for col in df.columns:
+            dtype = df[col].dtype
+            missing = df[col].isna().sum()
+            summary.append(f"- **{col}**: Type = {dtype}, Missing = {missing}")
+
+        numeric_cols = df.select_dtypes(include='number').columns
+        if not numeric_cols.empty:
+            desc = df[numeric_cols].describe().T
+            summary.append("\nKey statistics:")
+            for col in desc.index:
+                mean = desc.loc[col, 'mean']
+                std = desc.loc[col, 'std']
+                min_val = desc.loc[col, 'min']
+                max_val = desc.loc[col, 'max']
+                summary.append(f"- {col}: Mean = {mean:.2f}, Std = {std:.2f}, Range = [{min_val:.2f}, {max_val:.2f}]")
+
+        st.markdown("\n".join(summary))
+
     # Column Classification
     numeric_cols = list(df.select_dtypes(include='number').columns)
     categorical_cols = [col for col in df.columns if col not in numeric_cols]
@@ -68,7 +91,6 @@ if "df" in st.session_state:
         st.subheader("Handle Missing Data")
         missing_cols = df.columns[df.isna().any()].tolist()
 
-        # 1. Fill a specific column
         with st.expander("Fill a specific column", expanded=False):
             col1, col2 = st.columns([1, 2])
             with col1:
@@ -101,7 +123,6 @@ if "df" in st.session_state:
                     st.success(f"Filled missing values in '{selected_col}' using {method.lower()}: {fill_value}")
                     st.rerun()
 
-        # 2. Global fill
         with st.expander("Fill all missing values (entire dataset)", expanded=False):
             fill_option = st.radio("Choose fill method", ["Custom value", "Mean", "Median", "Mode"], horizontal=True, key="fill_all_choice")
 
@@ -133,7 +154,6 @@ if "df" in st.session_state:
                     st.success(f"Filled all missing values using column-wise {fill_option.lower()}")
                     st.rerun()
 
-        # 3. Drop missing rows
         with st.expander("Drop all rows with missing values", expanded=False):
             if st.button("Drop rows"):
                 df.dropna(inplace=True)
@@ -144,37 +164,6 @@ if "df" in st.session_state:
     if numeric_cols and st.checkbox("Show Descriptive Statistics"):
         st.subheader("Descriptive Statistics")
         st.dataframe(df[numeric_cols].describe())
-
-    # -------------------------------
-    # PHASE 3 - STEP 1: Generate Summary Text
-    # -------------------------------
-    if st.button("Generate Summary Text"):
-        summary_parts = []
-
-        summary_parts.append(f"The dataset contains {df.shape[0]} rows and {df.shape[1]} columns.")
-
-        total_missing = df.isna().sum().sum()
-        if total_missing > 0:
-            summary_parts.append(f"There are a total of {total_missing} missing values across the dataset.")
-            missing_by_col = df.isna().sum()
-            top_missing = missing_by_col[missing_by_col > 0].sort_values(ascending=False).head(3)
-            for col, count in top_missing.items():
-                summary_parts.append(f"- Column '{col}' has {count} missing values.")
-
-        if numeric_cols:
-            desc = df[numeric_cols].describe()
-            for col in numeric_cols[:3]:
-                summary_parts.append(f"For column '{col}', the mean is {desc.at['mean', col]:.2f}, min is {desc.at['min', col]:.2f}, and max is {desc.at['max', col]:.2f}.")
-
-        if categorical_cols:
-            for col in categorical_cols[:2]:
-                top_val = df[col].value_counts().idxmax()
-                count = df[col].value_counts().max()
-                summary_parts.append(f"The most frequent value in '{col}' is '{top_val}' ({count} times).")
-
-        generated_summary = "\n".join(summary_parts)
-        st.subheader("Generated Summary (Input for LLM)")
-        st.text_area("Summary Text", generated_summary, height=200)
 
     st.markdown("---")
 
