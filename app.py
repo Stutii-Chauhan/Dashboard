@@ -62,11 +62,12 @@ if "df" in st.session_state:
     st.dataframe(df.head(50))
     st.write(f"Shape: {df.shape[0]} rows × {df.shape[1]} columns")
     
-    # LLM-Enhanced Insight Button
+# LLM-Enhanced Insight Button
+
 if st.button("Generate Business Summary using AI"):
     numeric_cols = df.select_dtypes(include='number').columns
     summary_prompt = [f"The dataset contains {df.shape[0]} rows and {df.shape[1]} columns."]
-    
+
     if not numeric_cols.empty:
         desc = df[numeric_cols].describe().T
         for col in desc.index:
@@ -78,16 +79,18 @@ if st.button("Generate Business Summary using AI"):
                 f"{col}: Mean={mean:.2f}, Std={std:.2f}, Range=[{min_val:.2f}, {max_val:.2f}]"
             )
 
-metrics_summary = "\n\n".join(
-    [f"**{col}**  \nMean: {desc.loc[col, 'mean']:.2f}  \nStd: {desc.loc[col, 'std']:.2f}  \nRange: [{desc.loc[col, 'min']:.2f}, {desc.loc[col, 'max']:.2f}]\n"
-     for col in desc.index]
-)
+    metrics_summary = "\n\n".join(
+        [f"**{col}**  \nMean: {desc.loc[col, 'mean']:.2f}  \nStd: {desc.loc[col, 'std']:.2f}  \nRange: [{desc.loc[col, 'min']:.2f}, {desc.loc[col, 'max']:.2f}]\n"
+         for col in desc.index]
+    )
 
-prompt = (
-    f"Summarize the following dataset for a business audience. Focus on trends, key metrics, and possible actions:\n\n"
-    f"The dataset contains {df.shape[0]} rows and {df.shape[1]} columns.\n\n"
-    f"{metrics_summary}\n"
-)
+    prompt = (
+        f"Summarize the following dataset for a business audience. Focus on trends, key metrics, and possible actions:\n\n"
+        f"The dataset contains {df.shape[0]} rows and {df.shape[1]} columns.\n\n"
+        f"{metrics_summary}\n"
+    )
+
+    # Use your HuggingFace API token from secrets
     hf_token = st.secrets["hf_token"]
 
     with st.spinner("Generating business insight using Falcon-7B..."):
@@ -98,6 +101,7 @@ prompt = (
         f"<div style='background-color:#e8f5e9; padding: 15px; border-radius: 8px; font-size: 16px;'>{response}</div>",
         unsafe_allow_html=True
     )
+
 
     # Column Classification
     numeric_cols = list(df.select_dtypes(include='number').columns)
