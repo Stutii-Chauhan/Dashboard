@@ -1,42 +1,45 @@
+import streamlit as st
+import pandas as pd
 import plotly.express as px
-#from ydata_profiling import ProfileReport
+import sweetviz as sv
 from streamlit.components.v1 import html
 import tempfile
-from pandas_profiling import ProfileReport
 
-# Upload + Load Data (already done above)
-uploaded_file = st.file_uploader("Upload a file", type=["csv", "xlsx"])
+st.set_page_config(page_title="Intelligent Data Dashboard", layout="wide")
+
+st.title("Intelligent Data Dashboard")
+st.markdown("Upload an Excel or CSV file to get automated EDA insights and visualizations.")
+
+# File Upload
+uploaded_file = st.file_uploader("Upload your file", type=["csv", "xlsx"])
 
 if uploaded_file is not None:
     try:
+        # Load CSV or Excel
         if uploaded_file.name.endswith('.csv'):
             df = pd.read_csv(uploaded_file)
         else:
             df = pd.read_excel(uploaded_file)
 
-        st.success(f"Successfully loaded `{uploaded_file.name}`")
+        st.success(f"File `{uploaded_file.name}` loaded successfully!")
 
-        st.subheader("Data Preview")
+        # Data Preview
+        st.subheader("📄 Data Preview")
         st.dataframe(df.head(50))
         st.write(f"Shape: {df.shape[0]} rows × {df.shape[1]} columns")
 
-        # ------------------------------------
-        # Generate EDA Report using Profiling
-        # ------------------------------------
-        st.subheader("Automated EDA Report")
-        with st.spinner("Generating EDA..."):
-            profile = ProfileReport(df, minimal=True)
-            with tempfile.NamedTemporaryFile(suffix=".html") as f:
-                profile.to_file(f.name)
-                html(open(f.name, "r", encoding="utf-8").read(), height=600, scrolling=True)
+        # Sweetviz EDA Report
+        st.subheader("📊 Automated EDA Report (Sweetviz)")
+        with st.spinner("Generating EDA report..."):
+            report = sv.analyze(df)
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".html") as tmpfile:
+                report.show_html(filepath=tmpfile.name, open_browser=False)
+                st.success("EDA Report Ready!")
+                html(open(tmpfile.name, "r", encoding="utf-8").read(), height=600, scrolling=True)
 
-        # ------------------------------------
-        # Show Example Chart
-        # ------------------------------------
-        st.subheader("📈 Example Visualization: Top Categories")
-
-        # Auto-detect a categorical column (for demo)
-        cat_cols = df.select_dtypes(include=['object', 'category']).columns
+        # Example Chart - Top Category
+        st.subheader("Example Chart: Top Categorical Column")
+        cat_cols = df.select_dtypes(include=["object", "category"]).columns
         if len(cat_cols) > 0:
             top_col = cat_cols[0]
             chart_data = df[top_col].value_counts().reset_index()
@@ -44,7 +47,7 @@ if uploaded_file is not None:
             fig = px.bar(chart_data, x=top_col, y="Count", title=f"Top Values in '{top_col}'")
             st.plotly_chart(fig)
         else:
-            st.info("No categorical columns found for bar chart.")
+            st.info("No categorical columns found for charting.")
 
     except Exception as e:
-        st.error(f"Error reading file: {e}")
+        st.error(f"Error: {e}")
