@@ -41,17 +41,15 @@ if uploaded_file is not None:
             for col in categorical_cols:
                 st.write(f"- {col}")
 
-        # Missing Values
-        missing = df.isna().sum()
-        missing = missing[missing > 0]
-
-        if not missing.empty:
+        # Missing Values (cleaned)
+        total_missing = df.isna().sum().sum()
+        if total_missing > 0:
             st.subheader("Missing Values")
-            st.write(f"Total missing values: {int(missing.sum())}")
-            st.dataframe(missing)
+            st.write(f"Total missing values: {int(total_missing)}")
 
-            st.subheader("Rows with Missing Data")
+            # Show only the rows with missing values
             missing_rows = df[df.isna().any(axis=1)]
+            st.subheader("Rows with Missing Data")
             st.write(f"Showing {len(missing_rows)} rows with missing data:")
             st.dataframe(missing_rows)
 
