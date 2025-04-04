@@ -1,5 +1,5 @@
 import plotly.express as px
-from ydata_profiling import ProfileReport
+#from ydata_profiling import ProfileReport
 from streamlit.components.v1 import html
 import tempfile
 from pandas_profiling import ProfileReport
