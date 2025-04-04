@@ -25,26 +25,23 @@ def detect_datetime_columns(df):
                 continue
     return datetime_cols
 
-def query_openrouter(prompt, api_key):
-    url = "https://openrouter.ai/api/v1/chat/completions"
-    headers = {
-        "Authorization": f"Bearer {api_key}",
-        "Content-Type": "application/json"
-    }
+def query_huggingface(prompt, api_token, model="tiiuae/falcon-7b-instruct"):
+    API_URL = f"https://api-inference.huggingface.co/models/{model}"
+    headers = {"Authorization": f"Bearer {api_token}"}
     payload = {
-        "model": "mistralai/mistral-7b-instruct",
-        "messages": [
-            {"role": "system", "content": "You are a helpful business analyst. Keep responses short and insightful."},
-            {"role": "user", "content": prompt}
-        ],
-        "temperature": 0.7
+        "inputs": prompt,
+        "parameters": {
+            "max_new_tokens": 150,
+            "temperature": 0.7,
+            "top_p": 0.9,
+            "repetition_penalty": 1.1,
+        }
     }
-
-    response = requests.post(url, headers=headers, json=payload)
+    response = requests.post(API_URL, headers=headers, json=payload)
     try:
-        return response.json()['choices'][0]['message']['content']
-    except Exception as e:
-        return f"Error from OpenRouter: {e} | Response: {response.text}"
+        return response.json()[0]["generated_text"]
+    except:
+        return "LLM failed to generate a response. Please try again."
 
 # Load into session state once
 if uploaded_file is not None and "df" not in st.session_state:
@@ -65,6 +62,7 @@ if "df" in st.session_state:
     st.dataframe(df.head(50))
     st.write(f"Shape: {df.shape[0]} rows × {df.shape[1]} columns")
 
+    # LLM-Enhanced Insight Button
     if st.button("Generate Business Summary using AI"):
         numeric_cols = df.select_dtypes(include='number').columns
         summary_prompt = [f"The dataset contains {df.shape[0]} rows and {df.shape[1]} columns."]
@@ -91,16 +89,17 @@ if "df" in st.session_state:
             f"{metrics_summary}\n"
         )
 
-        api_key = st.secrets["openrouter_key"]
+        hf_token = st.secrets["hf_token"]
 
-        with st.spinner("Generating business insight using Mistral via OpenRouter..."):
-            response = query_openrouter(prompt, api_key)
+        with st.spinner("Generating business insight using Falcon-7B..."):
+            response = query_huggingface(prompt, hf_token)
 
-        st.subheader("AI-Generated Business Summary")
+        st.subheader("\U0001F4A1 AI-Generated Business Summary")
         st.markdown(
             f"<div style='background-color:#e8f5e9; padding: 15px; border-radius: 8px; font-size: 16px;'>{response}</div>",
             unsafe_allow_html=True
         )
+
 
     # Column Classification
     numeric_cols = list(df.select_dtypes(include='number').columns)
