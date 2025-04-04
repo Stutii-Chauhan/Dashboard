@@ -109,8 +109,8 @@ if "df" in st.session_state:
             st.plotly_chart(fig, use_container_width=True)
 
         # Scatter Plot
-        st.markdown("### Scatter Plot (Select Variables)")
         if len(numeric_cols) >= 2:
+            st.markdown("### Scatter Plot (Select Variables)")
             col1 = st.selectbox("X-axis", numeric_cols, key="scatter_x")
             col2 = st.selectbox("Y-axis", [col for col in numeric_cols if col != col1], key="scatter_y")
             fig = px.scatter(df, x=col1, y=col2, title=f"{col1} vs {col2}")
