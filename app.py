@@ -32,8 +32,8 @@ def query_huggingface(prompt, api_token, model="tiiuae/falcon-7b-instruct"):
         "inputs": prompt,
         "parameters": {
             "max_new_tokens": 150,
-            "temperature": 0.7,
-            "top_p": 0.9,
+            "temperature": 0.3,
+            "top_p": 0.8,
             "repetition_penalty": 1.1,
         }
     }
@@ -75,10 +75,9 @@ if "df" in st.session_state:
         )
 
         prompt = (
-            f"Answer the following based on the dataset:\n"
-            f"Dataset has {df.shape[0]} rows and {df.shape[1]} columns. Columns: {', '.join(df.columns)}\n\n"
-            f"Summary statistics:\n{metrics_summary}\n\n"
-            f"Question: What trends and insights can you derive from this data?"
+            f"You are a business analyst. Here is a dataset with {df.shape[0]} rows and {df.shape[1]} columns: {', '.join(df.columns)}.\n"
+            f"Here are summary statistics:\n{metrics_summary}\n"
+            f"Please provide only the most useful trend or insight in one line based strictly on this data."
         )
 
         hf_token = st.secrets["hf_token"]
@@ -97,10 +96,9 @@ if "df" in st.session_state:
     user_question = st.text_input("What do you want to know?")
     if user_question:
         question_prompt = (
-            f"Answer the following based on the dataset:\n"
-            f"Dataset has {df.shape[0]} rows and {df.shape[1]} columns. Columns: {', '.join(df.columns)}\n"
-            f"Sample Data: {df.head(3).to_string(index=False)}\n\n"
-            f"Question: {user_question}"
+            f"You are a data analyst. Based only on this dataset with columns {', '.join(df.columns)},\n"
+            f"and this sample:\n{df.head(3).to_string(index=False)}\n"
+            f"Answer concisely: {user_question}"
         )
         hf_token = st.secrets["hf_token"]
         with st.spinner("Getting answer from AI..."):
@@ -111,6 +109,7 @@ if "df" in st.session_state:
             f"<div style='background-color:#f0f8f5; padding: 12px; border-radius: 6px; font-size: 15px; white-space: pre-wrap'>{last_line}</div>",
             unsafe_allow_html=True
         )
+
 
         
     # Column Classification
