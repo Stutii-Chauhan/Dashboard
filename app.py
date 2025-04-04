@@ -61,6 +61,29 @@ if "df" in st.session_state:
     st.subheader("Preview of the Data")
     st.dataframe(df.head(50))
     st.write(f"Shape: {df.shape[0]} rows × {df.shape[1]} columns")
+    
+    # LLM-Enhanced Insight Button
+if st.button("Generate Business Summary using AI"):
+    summary_prompt = []
+    summary_prompt.append(f"The dataset contains {df.shape[0]} rows and {df.shape[1]} columns.")
+
+    numeric_cols = df.select_dtypes(include='number').columns
+    if not numeric_cols.empty:
+        desc = df[numeric_cols].describe().T
+        for col in desc.index:
+            mean = desc.loc[col, 'mean']
+            std = desc.loc[col, 'std']
+            min_val = desc.loc[col, 'min']
+            max_val = desc.loc[col, 'max']
+            summary_prompt.append(f"{col}: Mean={mean:.2f}, Std={std:.2f}, Range=[{min_val:.2f}, {max_val:.2f}]")
+
+    prompt = "Summarize the following dataset for a business audience:\n" + "\n".join(summary_prompt)
+    hf_token = st.secrets["hf_token"]  # Make sure your token is in Streamlit secrets
+    with st.spinner("Generating insight using Falcon-7B..."):
+        output = query_huggingface(prompt, hf_token)
+        st.subheader("AI-Generated Summary")
+        st.success(output)
+
 
     # Column Classification
     numeric_cols = list(df.select_dtypes(include='number').columns)
