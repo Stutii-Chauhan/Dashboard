@@ -28,7 +28,10 @@ def detect_datetime_columns(df):
 if uploaded_file is not None and "df" not in st.session_state:
     try:
         if uploaded_file.name.endswith('.csv'):
-            st.session_state.df = pd.read_csv(uploaded_file)
+            try:
+                st.session_state.df = pd.read_csv(uploaded_file, encoding='utf-8')
+            except UnicodeDecodeError:
+                st.session_state.df = pd.read_csv(uploaded_file, encoding='latin1')
         else:
             st.session_state.df = pd.read_excel(uploaded_file)
         st.success(f"Successfully loaded `{uploaded_file.name}`")
@@ -44,6 +47,7 @@ if "df" in st.session_state:
     st.write(f"Shape: {df.shape[0]} rows × {df.shape[1]} columns")
 
     # LLM Summary Generator Button
+
     if st.button("Generate Dataset Summary (LLM Ready Text)"):
         summary = []
         summary.append(f"The dataset contains {df.shape[0]} rows and {df.shape[1]} columns.\n")
