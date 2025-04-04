@@ -30,13 +30,22 @@ if uploaded_file is not None:
         numeric_cols = list(df.select_dtypes(include='number').columns)
         categorical_cols = [col for col in df.columns if col not in numeric_cols]
 
-        st.write(f"**Numeric columns:** {numeric_cols}")
-        st.write(f"**Categorical columns:** {categorical_cols}")
+        st.markdown("**Numeric columns:**")
+        for col in numeric_cols:
+            st.write(f"- {col}")
 
-        # Missing Values
-        st.subheader("Missing Values")
-        missing = df.isna().sum()
-        st.dataframe(missing[missing > 0])
+        st.markdown("**Categorical columns:**")
+        if categorical_cols:
+            for col in categorical_cols:
+                st.write(f"- {col}")
+        else:
+            st.write("None")
+        
+
+        # # Missing Values
+        # st.subheader("Missing Values")
+        # missing = df.isna().sum()
+        # st.dataframe(missing[missing > 0])
 
         # Descriptive Stats
         if numeric_cols:
