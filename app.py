@@ -25,23 +25,23 @@ def detect_datetime_columns(df):
                 continue
     return datetime_cols
 
-def query_falcon(prompt, api_token, model="tiiuae/falcon-7b-instruct"):
-    url = f"https://api-inference.huggingface.co/models/{model}"
+def query_huggingface(prompt, api_token, model="tiiuae/falcon-7b-instruct"):
+    API_URL = f"https://api-inference.huggingface.co/models/{model}"
     headers = {"Authorization": f"Bearer {api_token}"}
     payload = {
         "inputs": prompt,
         "parameters": {
-            "max_new_tokens": 300,
+            "max_new_tokens": 150,
             "temperature": 0.7,
             "top_p": 0.9,
-            "repetition_penalty": 1.1
+            "repetition_penalty": 1.1,
         }
     }
+    response = requests.post(API_URL, headers=headers, json=payload)
     try:
-        response = requests.post(url, headers=headers, json=payload)
         return response.json()[0]["generated_text"]
-    except Exception as e:
-        return f"Error from Hugging Face: {e} | Response: {response.text}"
+    except:
+        return "LLM failed to generate a response. Please try again."
 
 # Load into session state once
 if uploaded_file is not None and "df" not in st.session_state:
@@ -81,13 +81,14 @@ if "df" in st.session_state:
             f"Question: What trends and insights can you derive from this data?"
         )
 
-        hf_token = st.secrets.get("hf_token", "")
+        hf_token = st.secrets["hf_token"]
         with st.spinner("Generating AI business summary..."):
-            response = query_falcon(prompt, hf_token)
+            response = query_huggingface(prompt, hf_token)
 
+        last_line = response.strip().split("\n")[-1]
         st.subheader("AI-Generated Business Summary")
         st.markdown(
-            f"<div style='background-color:#f0f8f5; padding: 15px; border-radius: 8px; font-size: 15px; white-space: pre-wrap'>{response}</div>",
+            f"<div style='background-color:#f0f8f5; padding: 15px; border-radius: 8px; font-size: 15px; white-space: pre-wrap'>{last_line}</div>",
             unsafe_allow_html=True
         )
 
@@ -101,14 +102,16 @@ if "df" in st.session_state:
             f"Sample Data: {df.head(3).to_string(index=False)}\n\n"
             f"Question: {user_question}"
         )
-        hf_token = st.secrets.get("hf_token", "")
+        hf_token = st.secrets["hf_token"]
         with st.spinner("Getting answer from AI..."):
-            ai_response = query_falcon(question_prompt, hf_token)
+            ai_response = query_huggingface(question_prompt, hf_token)
 
+        last_line = ai_response.strip().split("\n")[-1]
         st.markdown(
-            f"<div style='background-color:#f0f8f5; padding: 12px; border-radius: 6px; font-size: 15px; white-space: pre-wrap'>{ai_response}</div>",
+            f"<div style='background-color:#f0f8f5; padding: 12px; border-radius: 6px; font-size: 15px; white-space: pre-wrap'>{last_line}</div>",
             unsafe_allow_html=True
         )
+
         
     # Column Classification
     numeric_cols = list(df.select_dtypes(include='number').columns)
