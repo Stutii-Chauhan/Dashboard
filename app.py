@@ -25,23 +25,25 @@ def detect_datetime_columns(df):
                 continue
     return datetime_cols
 
-def query_huggingface(prompt, api_token, model="tiiuae/falcon-7b-instruct"):
-    API_URL = f"https://api-inference.huggingface.co/models/{model}"
-    headers = {"Authorization": f"Bearer {api_token}"}
-    payload = {
-        "inputs": prompt,
-        "parameters": {
-            "max_new_tokens": 300,
-            "temperature": 0.7,
-            "top_p": 0.9,
-            "repetition_penalty": 1.1,
-        }
+def query_openrouter(prompt, api_token, model="mistralai/mistral-7b-instruct"):
+    url = "https://openrouter.ai/api/v1/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {api_token}",
+        "Content-Type": "application/json"
     }
-    response = requests.post(API_URL, headers=headers, json=payload)
+    payload = {
+        "model": model,
+        "messages": [
+            {"role": "system", "content": "You are a data analyst helping businesses interpret structured datasets."},
+            {"role": "user", "content": prompt}
+        ],
+        "temperature": 0.7
+    }
     try:
-        return response.json()[0]["generated_text"]
-    except:
-        return "LLM failed to generate a response. Please try again."
+        response = requests.post(url, headers=headers, json=payload)
+        return response.json()['choices'][0]['message']['content']
+    except Exception as e:
+        return f"Error from OpenRouter: {e} | Response: {response.text}"
 
 # Load into session state once
 if uploaded_file is not None and "df" not in st.session_state:
@@ -69,27 +71,28 @@ if "df" in st.session_state:
 
         metrics_summary = "\n\n".join(
             [
-                f"**{col}**  \nMean: {desc.loc[col, 'mean']:.2f}  \nStd: {desc.loc[col, 'std']:.2f}  \nRange: [{desc.loc[col, 'min']:.2f}, {desc.loc[col, 'max']:.2f}]"
+                f"Column: {col}\nMean: {desc.loc[col, 'mean']:.2f}\nStd: {desc.loc[col, 'std']:.2f}\nMin: {desc.loc[col, 'min']:.2f}\nMax: {desc.loc[col, 'max']:.2f}"
                 for col in desc.index
             ]
         )
 
         prompt = (
-            f"Summarize the following dataset for a business audience. Focus on trends, key metrics, and possible actions:\n\n"
-            f"The dataset contains {df.shape[0]} rows and {df.shape[1]} columns.\n\n"
-            f"{metrics_summary}\n"
+            f"Answer the following based on the dataset:\n"
+            f"Dataset has {df.shape[0]} rows and {df.shape[1]} columns. Columns: {', '.join(df.columns)}\n\n"
+            f"Summary statistics:\n{metrics_summary}\n\n"
+            f"Question: What trends and insights can you derive from this data?"
         )
 
-        hf_token = st.secrets["hf_token"]
+        api_token = st.secrets.get("openrouter_token", "")
+        with st.spinner("Generating AI business summary..."):
+            response = query_openrouter(prompt, api_token)
 
-        with st.spinner("Generating business insight using Falcon-7B..."):
-            response = query_huggingface(prompt, hf_token)
-
-        st.subheader("\U0001F4A1 AI-Generated Business Summary")
+        st.subheader("💡 AI-Generated Business Summary")
         st.markdown(
-            f"<div style='background-color:#e8f5e9; padding: 15px; border-radius: 8px; font-size: 16px;'>{response}</div>",
+            f"<div style='background-color:#f0f8f5; padding: 15px; border-radius: 8px; font-size: 15px;'>{response}</div>",
             unsafe_allow_html=True
         )
+
 
     # NEW: Ask Questions About Your Data
     st.markdown("---")
