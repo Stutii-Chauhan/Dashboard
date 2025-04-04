@@ -135,28 +135,10 @@ if "df" in st.session_state:
         st.subheader("Descriptive Statistics")
         st.dataframe(df[numeric_cols].describe())
 
-    # Categorical Bar Charts
-    if categorical_cols:
-        st.subheader("Categorical Column Distributions")
-        for col in categorical_cols:
-            st.markdown(f"**{col}**")
-            vc = df[col].value_counts().head(20)
-            st.dataframe(vc)
-            fig = px.bar(x=vc.index, y=vc.values,
-                         labels={'x': col, 'y': 'Count'},
-                         title=f"{col} Distribution")
-            st.plotly_chart(fig, use_container_width=True)
-
-    # Numeric Histograms
-    if numeric_cols:
-        st.subheader("Histograms of Numeric Columns")
-        for col in numeric_cols:
-            fig = px.histogram(df, x=col, title=f"Distribution of {col}")
-            st.plotly_chart(fig, use_container_width=True)
-
     # -----------------------------------------
-    # ADVANCED VISUALIZATIONS (Optional Toggle)
+    # ADVANCED VISUALIZATIONS (Toggle First)
     # -----------------------------------------
+    st.markdown("---")
     if st.checkbox("Show Advanced Visualizations"):
         st.subheader("Advanced Visualizations")
 
@@ -214,4 +196,23 @@ if "df" in st.session_state:
             metric_col = st.selectbox("Select numeric column to plot", numeric_cols, key="line_val")
             fig = px.line(df.sort_values(by=time_col), x=time_col, y=metric_col,
                           title=f"{metric_col} over time ({time_col})")
+            st.plotly_chart(fig, use_container_width=True)
+
+    # Categorical Bar Charts
+    if categorical_cols:
+        st.subheader("Categorical Column Distributions")
+        for col in categorical_cols:
+            st.markdown(f"**{col}**")
+            vc = df[col].value_counts().head(20)
+            st.dataframe(vc)
+            fig = px.bar(x=vc.index, y=vc.values,
+                         labels={'x': col, 'y': 'Count'},
+                         title=f"{col} Distribution")
+            st.plotly_chart(fig, use_container_width=True)
+
+    # Numeric Histograms
+    if numeric_cols:
+        st.subheader("Histograms of Numeric Columns")
+        for col in numeric_cols:
+            fig = px.histogram(df, x=col, title=f"Distribution of {col}")
             st.plotly_chart(fig, use_container_width=True)
