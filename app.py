@@ -9,6 +9,9 @@ st.markdown("Upload your Excel or CSV file to analyze and explore your dataset i
 
 uploaded_file = st.file_uploader("Upload a file", type=["csv", "xlsx"])
 
+def has_missing_data(dataframe):
+    return dataframe.isna().sum().sum() > 0
+
 def detect_datetime_columns(df):
     datetime_cols = []
     for col in df.columns:
@@ -40,40 +43,127 @@ if "df" in st.session_state:
     st.dataframe(df.head(50))
     st.write(f"Shape: {df.shape[0]} rows × {df.shape[1]} columns")
 
-    if st.button("Generate Business-Oriented Summary (LLM-Ready Text)"):
-        summary_prompt = []
-        summary_prompt.append(f"The dataset has {df.shape[0]} rows and {df.shape[1]} columns. Below is a business-relevant overview:")
+    # LLM Summary Generator Button
+    if st.button("Generate Dataset Summary (LLM Ready Text)"):
+        summary = []
+        summary.append(f"The dataset contains {df.shape[0]} rows and {df.shape[1]} columns.\n")
+        summary.append("Column-wise summary:")
+        for col in df.columns:
+            dtype = df[col].dtype
+            missing = df[col].isna().sum()
+            summary.append(f"- **{col}**: Type = {dtype}, Missing = {missing}")
 
-        if 'Revenue ($M)' in df.columns:
-            revenue_mean = df['Revenue ($M)'].mean()
-            summary_prompt.append(f"\n💰 **Revenue Insight**: The average revenue is {revenue_mean:.2f}M. Check for regional or seasonal variations.")
+        numeric_cols = df.select_dtypes(include='number').columns
+        if not numeric_cols.empty:
+            desc = df[numeric_cols].describe().T
+            summary.append("\nKey statistics:")
+            for col in desc.index:
+                mean = desc.loc[col, 'mean']
+                std = desc.loc[col, 'std']
+                min_val = desc.loc[col, 'min']
+                max_val = desc.loc[col, 'max']
+                summary.append(f"- {col}: Mean = {mean:.2f}, Std = {std:.2f}, Range = [{min_val:.2f}, {max_val:.2f}]")
 
-        if 'Profit Margin (%)' in df.columns:
-            margin_avg = df['Profit Margin (%)'].mean()
-            margin_min = df['Profit Margin (%)'].min()
-            margin_max = df['Profit Margin (%)'].max()
-            summary_prompt.append(f"\n📈 **Profit Margins**: Average = {margin_avg:.2f}%, Range = {margin_min:.2f}% to {margin_max:.2f}%.")
+        st.markdown("\n".join(summary))
 
-        if 'Operating Expenses ($M)' in df.columns:
-            op_avg = df['Operating Expenses ($M)'].mean()
-            summary_prompt.append(f"\n💸 **Operating Expenses**: The average expense is {op_avg:.2f}M. Compare with revenue trends to assess efficiency.")
-
-        if 'Marketing Spend ($M)' in df.columns:
-            mkt_spend = df['Marketing Spend ($M)'].mean()
-            summary_prompt.append(f"\n📢 **Marketing Spend**: On average, {mkt_spend:.2f}M is allocated. Correlate with sales trends for ROI analysis.")
-
-        if 'Employee Count (K)' in df.columns:
-            emp_count = df['Employee Count (K)'].mean()
-            summary_prompt.append(f"\n👥 **Employee Count**: Average team size is {emp_count:.2f}K. Analyze productivity metrics if available.")
-
-        if 'R&D Investment ($M)' in df.columns:
-            rnd = df['R&D Investment ($M)'].mean()
-            summary_prompt.append(f"\n🔬 **R&D Spend**: Avg. R&D investment is {rnd:.2f}M. Evaluate impact on innovation/sales.")
-
-        st.markdown("\n".join(summary_prompt))
-
+    # Column Classification
     numeric_cols = list(df.select_dtypes(include='number').columns)
     categorical_cols = [col for col in df.columns if col not in numeric_cols]
+
+    if (numeric_cols or categorical_cols) and st.checkbox("Show Dataset Overview"):
+        st.subheader("Dataset Overview")
+
+        if numeric_cols:
+            st.markdown("**Numeric columns:**")
+            for col in numeric_cols:
+                st.write(f"- {col}")
+
+        if categorical_cols:
+            st.markdown("**Categorical columns:**")
+            for col in categorical_cols:
+                st.write(f"- {col}")
+
+    if has_missing_data(df) and st.checkbox("Show Missing Value Handler"):
+        st.subheader("Missing Values")
+        st.write(f"Total missing values: {int(df.isna().sum().sum())}")
+        st.dataframe(df[df.isna().any(axis=1)])
+
+        st.subheader("Handle Missing Data")
+        missing_cols = df.columns[df.isna().any()].tolist()
+
+        with st.expander("Fill a specific column", expanded=False):
+            col1, col2 = st.columns([1, 2])
+            with col1:
+                selected_col = st.selectbox("Select column", missing_cols, key="col_fill")
+
+            method = st.radio("How do you want to fill?", ["Custom value", "Mean", "Median", "Mode"], horizontal=True)
+
+            fill_value = None
+
+            if method == "Custom value":
+                fill_input = st.text_input("Enter the value to fill:", key="custom_val")
+                if fill_input:
+                    try:
+                        dtype = df[selected_col].dropna().dtype
+                        fill_value = dtype.type(fill_input)
+                    except:
+                        fill_value = fill_input
+            elif method == "Mean":
+                fill_value = df[selected_col].mean()
+            elif method == "Median":
+                fill_value = df[selected_col].median()
+            elif method == "Mode":
+                mode_vals = df[selected_col].mode()
+                fill_value = mode_vals[0] if not mode_vals.empty else None
+
+            if st.button("Apply", key="apply_single_col"):
+                if fill_value is not None:
+                    df[selected_col].fillna(fill_value, inplace=True)
+                    st.session_state.df = df
+                    st.success(f"Filled missing values in '{selected_col}' using {method.lower()}: {fill_value}")
+                    st.rerun()
+
+        with st.expander("Fill all missing values (entire dataset)", expanded=False):
+            fill_option = st.radio("Choose fill method", ["Custom value", "Mean", "Median", "Mode"], horizontal=True, key="fill_all_choice")
+
+            if fill_option == "Custom value":
+                global_default = st.text_input("Enter a global default value:", key="global_custom")
+                if global_default and st.button("Apply Global Fill", key="fill_global_custom"):
+                    df.fillna(global_default, inplace=True)
+                    st.session_state.df = df
+                    st.success(f"All missing values filled with '{global_default}'")
+                    st.rerun()
+
+            elif fill_option in ["Mean", "Median", "Mode"]:
+                if st.button("Apply Global Fill", key="fill_global_stat"):
+                    for col in df.columns:
+                        if df[col].isna().any():
+                            try:
+                                if fill_option == "Mean":
+                                    value = df[col].mean()
+                                elif fill_option == "Median":
+                                    value = df[col].median()
+                                elif fill_option == "Mode":
+                                    mode_vals = df[col].mode()
+                                    value = mode_vals[0] if not mode_vals.empty else None
+                                if value is not None:
+                                    df[col].fillna(value, inplace=True)
+                            except:
+                                continue
+                    st.session_state.df = df
+                    st.success(f"Filled all missing values using column-wise {fill_option.lower()}")
+                    st.rerun()
+
+        with st.expander("Drop all rows with missing values", expanded=False):
+            if st.button("Drop rows"):
+                df.dropna(inplace=True)
+                st.session_state.df = df
+                st.success("Dropped all rows containing missing values.")
+                st.rerun()
+
+    if numeric_cols and st.checkbox("Show Descriptive Statistics"):
+        st.subheader("Descriptive Statistics")
+        st.dataframe(df[numeric_cols].describe())
 
     st.markdown("---")
 
