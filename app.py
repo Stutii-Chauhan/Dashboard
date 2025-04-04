@@ -31,7 +31,7 @@ def query_huggingface(prompt, api_token, model="tiiuae/falcon-7b-instruct"):
     payload = {
         "inputs": prompt,
         "parameters": {
-            "max_new_tokens": 150,
+            "max_new_tokens": 300,
             "temperature": 0.7,
             "top_p": 0.9,
             "repetition_penalty": 1.1,
@@ -65,22 +65,13 @@ if "df" in st.session_state:
     # LLM-Enhanced Insight Button
     if st.button("Generate Business Summary using AI"):
         numeric_cols = df.select_dtypes(include='number').columns
-        summary_prompt = [f"The dataset contains {df.shape[0]} rows and {df.shape[1]} columns."]
-
-        if not numeric_cols.empty:
-            desc = df[numeric_cols].describe().T
-            for col in desc.index:
-                mean = desc.loc[col, 'mean']
-                std = desc.loc[col, 'std']
-                min_val = desc.loc[col, 'min']
-                max_val = desc.loc[col, 'max']
-                summary_prompt.append(
-                    f"{col}: Mean={mean:.2f}, Std={std:.2f}, Range=[{min_val:.2f}, {max_val:.2f}]"
-                )
+        desc = df[numeric_cols].describe().T
 
         metrics_summary = "\n\n".join(
-            [f"**{col}**  \nMean: {desc.loc[col, 'mean']:.2f}  \nStd: {desc.loc[col, 'std']:.2f}  \nRange: [{desc.loc[col, 'min']:.2f}, {desc.loc[col, 'max']:.2f}]\n"
-             for col in desc.index]
+            [
+                f"**{col}**  \nMean: {desc.loc[col, 'mean']:.2f}  \nStd: {desc.loc[col, 'std']:.2f}  \nRange: [{desc.loc[col, 'min']:.2f}, {desc.loc[col, 'max']:.2f}]"
+                for col in desc.index
+            ]
         )
 
         prompt = (
@@ -100,6 +91,21 @@ if "df" in st.session_state:
             unsafe_allow_html=True
         )
 
+    # NEW: Ask Questions About Your Data
+    st.markdown("---")
+    st.subheader("Ask a Question About Your Data")
+    user_query = st.text_input("What do you want to know?", placeholder="e.g., What is the average sales per category?")
+    if user_query:
+        context = f"Dataset has {df.shape[0]} rows and {df.shape[1]} columns. Columns: {', '.join(df.columns)}."
+        sample = df.head(3).to_string()
+        prompt = f"Answer the following based on the dataset:\n\n{context}\n\nSample Data:\n{sample}\n\nQuestion: {user_query}"
+
+        hf_token = st.secrets["hf_token"]
+        with st.spinner("Thinking..."):
+            ai_response = query_huggingface(prompt, hf_token)
+
+        st.markdown("### 📌 AI Response")
+        st.markdown(f"<div style='background-color:#f0f4ff; padding: 15px; border-radius: 8px;'>{ai_response}</div>", unsafe_allow_html=True)
 
     # Column Classification
     numeric_cols = list(df.select_dtypes(include='number').columns)
