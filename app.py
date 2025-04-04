@@ -12,6 +12,18 @@ uploaded_file = st.file_uploader("Upload a file", type=["csv", "xlsx"])
 def has_missing_data(dataframe):
     return dataframe.isna().sum().sum() > 0
 
+def detect_datetime_columns(df):
+    datetime_cols = []
+    for col in df.columns:
+        if df[col].dtype == object:
+            try:
+                converted = pd.to_datetime(df[col], errors='coerce', dayfirst=True)
+                if converted.notna().sum() > 0:
+                    datetime_cols.append(col)
+            except:
+                continue
+    return datetime_cols
+
 # Load into session state once
 if uploaded_file is not None and "df" not in st.session_state:
     try:
@@ -179,21 +191,13 @@ if "df" in st.session_state:
             st.plotly_chart(fig, use_container_width=True)
 
         # Line Plot for Time Series
-        datetime_cols = df.select_dtypes(include=["datetime", "datetime64"]).columns
-        if len(datetime_cols) == 0:
-            for col in df.columns:
-                try:
-                    converted = pd.to_datetime(df[col])
-                    if converted.notna().sum() > 0:
-                        df[col] = converted
-                        datetime_cols = datetime_cols.append(pd.Index([col]))
-                except:
-                    continue
+        datetime_cols = detect_datetime_columns(df)
 
-        if len(datetime_cols) > 0 and numeric_cols:
+        if datetime_cols and numeric_cols:
             st.markdown("### Time Series (Line Plot)")
             time_col = st.selectbox("Select datetime column", datetime_cols, key="line_dt")
             metric_col = st.selectbox("Select numeric column to plot", numeric_cols, key="line_val")
+            df[time_col] = pd.to_datetime(df[time_col], errors='coerce')
             valid_rows = df[[time_col, metric_col]].dropna()
             if not valid_rows.empty and pd.api.types.is_datetime64_any_dtype(df[time_col]):
                 fig = px.line(valid_rows.sort_values(by=time_col), x=time_col, y=metric_col,
