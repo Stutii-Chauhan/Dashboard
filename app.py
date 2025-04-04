@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import requests
 
 st.set_page_config(page_title="Data Analyzer", layout="wide")
 
@@ -24,6 +25,24 @@ def detect_datetime_columns(df):
                 continue
     return datetime_cols
 
+def query_huggingface(prompt, api_token, model="tiiuae/falcon-7b-instruct"):
+    API_URL = f"https://api-inference.huggingface.co/models/{model}"
+    headers = {"Authorization": f"Bearer {api_token}"}
+    payload = {
+        "inputs": prompt,
+        "parameters": {
+            "max_new_tokens": 150,
+            "temperature": 0.7,
+            "top_p": 0.9,
+            "repetition_penalty": 1.1,
+        }
+    }
+    response = requests.post(API_URL, headers=headers, json=payload)
+    try:
+        return response.json()[0]["generated_text"]
+    except:
+        return "LLM failed to generate a response. Please try again."
+
 # Load into session state once
 if uploaded_file is not None and "df" not in st.session_state:
     try:
@@ -42,29 +61,6 @@ if "df" in st.session_state:
     st.subheader("Preview of the Data")
     st.dataframe(df.head(50))
     st.write(f"Shape: {df.shape[0]} rows × {df.shape[1]} columns")
-
-    # LLM Summary Generator Button
-    if st.button("Generate Dataset Summary (LLM Ready Text)"):
-        summary = []
-        summary.append(f"The dataset contains {df.shape[0]} rows and {df.shape[1]} columns.\n")
-        summary.append("Column-wise summary:")
-        for col in df.columns:
-            dtype = df[col].dtype
-            missing = df[col].isna().sum()
-            summary.append(f"- **{col}**: Type = {dtype}, Missing = {missing}")
-
-        numeric_cols = df.select_dtypes(include='number').columns
-        if not numeric_cols.empty:
-            desc = df[numeric_cols].describe().T
-            summary.append("\nKey statistics:")
-            for col in desc.index:
-                mean = desc.loc[col, 'mean']
-                std = desc.loc[col, 'std']
-                min_val = desc.loc[col, 'min']
-                max_val = desc.loc[col, 'max']
-                summary.append(f"- {col}: Mean = {mean:.2f}, Std = {std:.2f}, Range = [{min_val:.2f}, {max_val:.2f}]")
-
-        st.markdown("\n".join(summary))
 
     # Column Classification
     numeric_cols = list(df.select_dtypes(include='number').columns)
@@ -87,7 +83,6 @@ if "df" in st.session_state:
         st.subheader("Missing Values")
         st.write(f"Total missing values: {int(df.isna().sum().sum())}")
         st.dataframe(df[df.isna().any(axis=1)])
-
         st.subheader("Handle Missing Data")
         missing_cols = df.columns[df.isna().any()].tolist()
 
@@ -160,7 +155,6 @@ if "df" in st.session_state:
                 st.session_state.df = df
                 st.success("Dropped all rows containing missing values.")
                 st.rerun()
-
     if numeric_cols and st.checkbox("Show Descriptive Statistics"):
         st.subheader("Descriptive Statistics")
         st.dataframe(df[numeric_cols].describe())
