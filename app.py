@@ -194,9 +194,13 @@ if "df" in st.session_state:
             st.markdown("### Time Series (Line Plot)")
             time_col = st.selectbox("Select datetime column", datetime_cols, key="line_dt")
             metric_col = st.selectbox("Select numeric column to plot", numeric_cols, key="line_val")
-            fig = px.line(df.sort_values(by=time_col), x=time_col, y=metric_col,
-                          title=f"{metric_col} over time ({time_col})")
-            st.plotly_chart(fig, use_container_width=True)
+            valid_rows = df[[time_col, metric_col]].dropna()
+            if not valid_rows.empty and pd.api.types.is_datetime64_any_dtype(df[time_col]):
+                fig = px.line(valid_rows.sort_values(by=time_col), x=time_col, y=metric_col,
+                              title=f"{metric_col} over time ({time_col})")
+                st.plotly_chart(fig, use_container_width=True)
+            else:
+                st.info("Selected time or metric column doesn't have valid data to plot.")
 
     # Categorical Bar Charts
     if categorical_cols:
