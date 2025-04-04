@@ -25,26 +25,26 @@ def detect_datetime_columns(df):
                 continue
     return datetime_cols
 
-def query_openrouter(prompt, api_token, model="mistralai/mistral-7b-instruct"):
+def query_openrouter(prompt, api_key):
     url = "https://openrouter.ai/api/v1/chat/completions"
     headers = {
-        "Authorization": f"Bearer {api_token}",
+        "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json"
     }
     payload = {
-        "model": model,
+        "model": "mistralai/mistral-7b-instruct",
         "messages": [
-            {"role": "system", "content": "You are a business analyst. Provide concise, professional, business-friendly insights."},
+            {"role": "system", "content": "You are a helpful business analyst. Keep responses short and insightful."},
             {"role": "user", "content": prompt}
         ],
-        "temperature": 0.7,
-        "max_tokens": 500
+        "temperature": 0.7
     }
+
     response = requests.post(url, headers=headers, json=payload)
     try:
         return response.json()['choices'][0]['message']['content']
     except Exception as e:
-        return f"Error from OpenRouter: {e}"
+        return f"Error from OpenRouter: {e} | Response: {response.text}"
 
 # Load into session state once
 if uploaded_file is not None and "df" not in st.session_state:
