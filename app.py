@@ -88,7 +88,7 @@ if "df" in st.session_state:
                     df[selected_col].fillna(fill_value, inplace=True)
                     st.session_state.df = df
                     st.success(f"Filled missing values in '{selected_col}' using {method.lower()}: {fill_value}")
-                    st.experimental_rerun()
+                    st.rerun()
 
         # 2. Global fill for all missing values
         with st.expander("Fill all missing values (entire dataset)", expanded=False):
@@ -100,7 +100,7 @@ if "df" in st.session_state:
                     df.fillna(global_default, inplace=True)
                     st.session_state.df = df
                     st.success(f"All missing values filled with '{global_default}'")
-                    st.experimental_rerun()
+                    st.rerun()
 
             elif fill_option in ["Mean", "Median", "Mode"]:
                 if st.button("Apply Global Fill", key="fill_global_stat"):
@@ -120,7 +120,7 @@ if "df" in st.session_state:
                                 continue
                     st.session_state.df = df
                     st.success(f"Filled all missing values using column-wise {fill_option.lower()}")
-                    st.experimental_rerun()
+                    st.rerun()
 
         # 3. Drop rows with missing values
         with st.expander("Drop all rows with missing values", expanded=False):
@@ -128,7 +128,7 @@ if "df" in st.session_state:
                 df.dropna(inplace=True)
                 st.session_state.df = df
                 st.success("Dropped all rows containing missing values.")
-                st.experimental_rerun()
+                st.rerun()
 
     # Descriptive Statistics
     if numeric_cols:
