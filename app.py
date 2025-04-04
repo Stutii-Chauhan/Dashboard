@@ -145,11 +145,14 @@ if "df" in st.session_state:
         st.subheader("Descriptive Statistics")
         st.dataframe(df[numeric_cols].describe())
 
+    st.markdown("---")
+
     if (categorical_cols or numeric_cols) and st.checkbox("Show Basic Visualizations"):
+        st.subheader("Basic Visualizations")
 
         # Categorical Bar Charts
         if categorical_cols:
-            st.subheader("Categorical Column Distributions")
+            st.markdown("### Categorical Column Distributions")
             for col in categorical_cols:
                 st.markdown(f"**{col}**")
                 vc = df[col].value_counts().head(20)
@@ -161,12 +164,11 @@ if "df" in st.session_state:
 
         # Numeric Histograms
         if numeric_cols:
-            st.subheader("Histograms of Numeric Columns")
+            st.markdown("### Histograms of Numeric Columns")
             for col in numeric_cols:
                 fig = px.histogram(df, x=col, title=f"Distribution of {col}")
                 st.plotly_chart(fig, use_container_width=True)
 
-    st.markdown("---")
     if st.checkbox("Show Advanced Visualizations"):
         st.subheader("Advanced Visualizations")
 
