@@ -22,13 +22,21 @@ def detect_datetime_columns(df):
 
 st.set_page_config(page_title="Data Analyzer", layout="wide")
 
-#Theme Toggle
+# 🌗 Theme Toggle
 theme_mode = st.sidebar.radio("Choose Theme", ["Light", "Dark"], index=0)
 
-#Inject custom CSS for themes
+# 🖌️ Inject custom CSS for themes with auto-contrast fonts
 light_theme = """
 <style>
 body {
+    background-color: #ffffff;
+    color: #000000;
+}
+[data-testid="stAppViewContainer"] {
+    background-color: #ffffff;
+    color: #000000;
+}
+[data-testid="stHeader"] {
     background-color: #ffffff;
     color: #000000;
 }
@@ -43,9 +51,11 @@ body {
 }
 [data-testid="stAppViewContainer"] {
     background-color: #0e1117;
+    color: #fafafa;
 }
 [data-testid="stHeader"] {
     background-color: #0e1117;
+    color: #fafafa;
 }
 </style>
 """
