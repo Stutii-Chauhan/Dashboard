@@ -32,9 +32,9 @@ def query_huggingface(prompt, api_token, model="tiiuae/falcon-7b-instruct"):
         "inputs": prompt,
         "parameters": {
             "max_new_tokens": 150,
-            "temperature": 0.5,
-            "top_p": 0.85,
-            "repetition_penalty": 1.2,
+            "temperature": 0.7,
+            "top_p": 0.9,
+            "repetition_penalty": 1.1,
         }
     }
     response = requests.post(API_URL, headers=headers, json=payload)
@@ -67,57 +67,58 @@ if "df" in st.session_state:
         numeric_cols = df.select_dtypes(include='number').columns
         desc = df[numeric_cols].describe().T
 
-        metrics_summary = "\n".join(
-            [
-                f"{col}: Mean={desc.loc[col, 'mean']:.2f}, Std={desc.loc[col, 'std']:.2f}, Min={desc.loc[col, 'min']:.2f}, Max={desc.loc[col, 'max']:.2f}"
-                for col in desc.index
-            ]
-        )
+        # Calculate accurate metrics summary
+        metrics_summary = []
+        for col in desc.index:
+            mean = desc.loc[col, 'mean']
+            std = desc.loc[col, 'std']
+            min_val = desc.loc[col, 'min']
+            max_val = desc.loc[col, 'max']
+            metrics_summary.append(
+                f"{col}: Mean = {mean:.2f}, Std = {std:.2f}, Min = {min_val:.2f}, Max = {max_val:.2f}"
+            )
 
         prompt = (
-            f"You are a helpful business analyst. Based on the dataset summary below, give 2–3 key insights ONLY in bullet points. "
-            f"Avoid assumptions and keep it strictly data-driven.\n\n"
-            f"Dataset Shape: {df.shape[0]} rows, {df.shape[1]} columns.\n"
-            f"Columns: {', '.join(df.columns)}\n\n"
-            f"Numeric Summary:\n{metrics_summary}\n\n"
-            f"Provide the response strictly as: \n- Insight 1\n- Insight 2"
+            "You are a helpful data analyst. Summarize key insights based on the following column-level metrics from a dataset.\n"
+            f"Dataset has {df.shape[0]} rows and {df.shape[1]} columns.\n"
+            f"Metrics Summary:\n{chr(10).join(metrics_summary)}\n"
+            "Provide only the most important trends or business insights as bullet points (max 3), and avoid repeating values from the prompt."
         )
 
         hf_token = st.secrets["hf_token"]
         with st.spinner("Generating AI business summary..."):
             response = query_huggingface(prompt, hf_token)
 
-        lines = response.strip().split("\n")
-        bullet_lines = [line for line in lines if line.strip().startswith("-")]
-        if bullet_lines:
-            st.subheader("AI-Generated Business Summary")
-            st.markdown(
-                f"<div style='background-color:#f0f8f5; padding: 15px; border-radius: 8px; font-size: 15px; white-space: pre-wrap'>{'\n'.join(bullet_lines)}</div>",
-                unsafe_allow_html=True
-            )
-        else:
-            st.warning("No clear insights were returned by the AI. Try again with a different dataset.")
+        summary_lines = [line for line in response.strip().split("\n") if line.strip() and not line.strip().lower().startswith("answer")]
+        final_response = "\n".join(summary_lines[-3:])  # Last 3 relevant lines
+
+        st.subheader("AI-Generated Business Summary")
+        st.markdown(
+            f"<div style='background-color:#f0f8f5; padding: 15px; border-radius: 8px; font-size: 15px; white-space: pre-wrap'>{final_response}</div>",
+            unsafe_allow_html=True
+        )
 
     # Ask a Question Section
-    st.subheader("Ask a Question About Your Data")
+    st.subheader(" Ask a Question About Your Data")
     user_question = st.text_input("What do you want to know?")
     if user_question:
         question_prompt = (
-            f"You are a helpful analyst. Based on the dataset below, answer the user's question clearly and briefly.\n"
+            "You are a helpful assistant answering data-related questions.\n"
             f"Dataset has {df.shape[0]} rows and {df.shape[1]} columns.\n"
             f"Columns: {', '.join(df.columns)}\n"
-            f"Sample Data:\n{df.head(3).to_string(index=False)}\n\n"
+            f"Sample Data:\n{df.head(3).to_string(index=False)}\n"
             f"Question: {user_question}"
         )
         hf_token = st.secrets["hf_token"]
         with st.spinner("Getting answer from AI..."):
             ai_response = query_huggingface(question_prompt, hf_token)
 
-        last_line = ai_response.strip().split("\n")[-1]
+        short_response = ai_response.strip().split("\n")[-1]
         st.markdown(
-            f"<div style='background-color:#f0f8f5; padding: 12px; border-radius: 6px; font-size: 15px; white-space: pre-wrap'>{last_line}</div>",
+            f"<div style='background-color:#f0f8f5; padding: 12px; border-radius: 6px; font-size: 15px; white-space: pre-wrap'>{short_response}</div>",
             unsafe_allow_html=True
         )
+
         
     # Column Classification
     numeric_cols = list(df.select_dtypes(include='number').columns)
