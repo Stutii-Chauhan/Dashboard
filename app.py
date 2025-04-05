@@ -108,8 +108,8 @@ if "df" in st.session_state:
             'std': 'std', 'stdev': 'std', 'standard deviation': 'std'
         }
 
-        pattern = r".*(mean|average|avg|avrg|av|meanvalue|median|med|max|maximum|highest|min|minimum|lowest|std|stdev|standard deviation).*?(?:of|for)?\s*([a-zA-Z0-9 _%()\-]+).*"
-        match = re.match(pattern, user_question, re.IGNORECASE)
+        pattern =r".*(mean|average|avg|avrg|av|meanvalue|median|med|max|maximum|highest|min|minimum|lowest|std|stdev|standard deviation).*?(?:of|for)?\s*([a-zA-Z0-9 _%()\-]+).*"
+
         
         if match:
             stat, col_candidate = match.groups()
