@@ -14,32 +14,34 @@ st.title("Analysis Dashboard")
 st.markdown("Upload your Excel or CSV file to analyze and explore your dataset instantly.")
 
 uploaded_file = st.file_uploader("Upload a file", type=["csv", "xlsx"])
+st.caption("Tip: If you're uploading a CSV exported from Excel, please save it as **CSV UTF-8 (Comma delimited)** to ensure best compatibility.")
+
 if uploaded_file is not None and "df" not in st.session_state:
     try:
         if uploaded_file.name.endswith(".csv"):
             try:
-                df = pd.read_csv(uploaded_file, encoding='utf-8')
+                df = pd.read_csv(uploaded_file, encoding='utf-8', sep=',', skip_blank_lines=True)
             except UnicodeDecodeError:
                 try:
-                    df = pd.read_csv(uploaded_file, encoding='utf-8-sig')
+                    df = pd.read_csv(uploaded_file, encoding='utf-8-sig', sep=',', skip_blank_lines=True)
                 except:
-                    df = pd.read_csv(uploaded_file, encoding='ISO-8859-1')
+                    df = pd.read_csv(uploaded_file, encoding='ISO-8859-1', sep=',', skip_blank_lines=True)
         else:
             df = pd.read_excel(uploaded_file)
 
         st.success(f"Successfully loaded `{uploaded_file.name}`")
 
-        # ✅ Show preview for user to verify headers
+        # Show preview for user to verify headers
         st.markdown("### Preview of the Data")
         st.dataframe(df.head(10))
 
-        # ✅ Allow adjusting header row interactively
+        # Allow adjusting header row interactively
         if st.checkbox("Use first row as header (if not already)", value=False):
             new_header = df.iloc[0]
             df = df[1:]
             df.columns = new_header
 
-        # ✅ Save cleaned-up df after optional adjustments
+        # Save cleaned df into session
         st.session_state.df = df
 
     except Exception as e:
