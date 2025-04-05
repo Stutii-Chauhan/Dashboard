@@ -109,9 +109,9 @@ if "df" in st.session_state:
                 unsafe_allow_html=True
             )
 
-        # Check for exact stat questions
         else:
-            match = re.match(r".*(mean|average|median|max|min|std).*?(?:of|for)?\\s*([a-zA-Z0-9 _%()\-]+).*","+" user_question, re.IGNORECASE)
+            match = re.match(r".*(mean|average|median|max|min|std).*?(?:of|for)?\\s*([a-zA-Z0-9 _%()\-]+).*"," +\n
+    " user_question, re.IGNORECASE)
             if match:
                 stat, col_candidate = match.groups()
                 stat = stat.lower().strip()
