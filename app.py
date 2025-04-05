@@ -15,7 +15,7 @@ st.markdown("Upload your Excel or CSV file to analyze and explore your dataset i
 
 uploaded_file = st.file_uploader("Upload a file", type=["csv", "xlsx"])
 
-if uploaded_file is not None and "df" not in st.session_state:
+if uploaded_file is not None:
     try:
         if uploaded_file.name.endswith(".csv"):
             try:
@@ -36,20 +36,20 @@ if uploaded_file is not None and "df" not in st.session_state:
         </span>
         """, unsafe_allow_html=True)
 
-        # Show preview before header adjustment
-        st.markdown("### Preview of the Data")
+        # Interactive checkbox for header row
         header_check = st.checkbox("Use first row as header (if not already)", value=False)
-        preview_df = df.copy()
 
+        # Preview with toggle logic
         if header_check:
-            new_header = preview_df.iloc[0]
-            preview_df = preview_df[1:]
-            preview_df.columns = new_header
+            new_header = df.iloc[0]
+            df = df[1:].copy()
+            df.columns = new_header
 
-        st.dataframe(preview_df.head(10))
+        st.session_state.df = df  # Save for downstream use
 
-        # Save adjusted df
-        st.session_state.df = preview_df
+        st.markdown("### Preview of the Data")
+        st.dataframe(df.head(10))
+        st.write(f"Shape: {df.shape[0]} rows × {df.shape[1]} columns")
 
     except Exception as e:
         st.error(f"Error loading file: {e}")
