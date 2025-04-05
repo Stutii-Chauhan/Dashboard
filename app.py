@@ -87,9 +87,9 @@ if "df" in st.session_state:
             response = query_huggingface(prompt, hf_token)
 
         cleaned_response = response.strip()
-        # Try to extract clean final paragraph instead of raw last line
         lines = [line.strip() for line in cleaned_response.split("\n") if line.strip() and not line.strip().lower().startswith("as an ai")]
-        final_output = lines[-1] if lines else "Summary could not be generated."
+        non_numbered = [line for line in lines if not re.match(r"^\d+[\).]", line.strip())]
+        final_output = (non_numbered[-1] if non_numbered else lines[-1]) if lines else "Summary could not be generated."
 
         st.subheader("\U0001F4A1 AI-Generated Business Summary")
         st.markdown(
@@ -157,12 +157,12 @@ if "df" in st.session_state:
 
                 cleaned = ai_response.strip()
                 lines = [line.strip() for line in cleaned.split("\n") if line.strip() and not line.lower().startswith("as an ai")]
-                last_line = lines[-1] if lines else "Response could not be generated."
+                non_numbered = [line for line in lines if not re.match(r"^\d+[\).]", line.strip())]
+                last_line = (non_numbered[-1] if non_numbered else lines[-1]) if lines else "Response could not be generated."
                 st.markdown(
                     f"<div style='background-color:#f0f8f5; padding: 12px; border-radius: 6px; font-size: 15px; white-space: pre-wrap'>{last_line}</div>",
                     unsafe_allow_html=True
                 )
-
         
     # Column Classification
     numeric_cols = list(df.select_dtypes(include='number').columns)
