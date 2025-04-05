@@ -111,7 +111,8 @@ if "df" in st.session_state:
 
         # Check for exact stat questions
         else:
-            match = re.match(r".*(mean|average|median|max|min|std).*?(?:of|for)?\\s*([a-zA-Z0-9 _%()\-]+).*", user_question, re.IGNORECASE)
+            match = re.match(r".*(mean|average|median|max|min|std).*?(?:of|for)?\\s*([a-zA-Z0-9 _%()\-]+).*"," +
+    " user_question, re.IGNORECASE)
             if match:
                 stat, col_candidate = match.groups()
                 stat = stat.lower().strip()
@@ -127,16 +128,16 @@ if "df" in st.session_state:
 
                 if matched_col and matched_col in df.select_dtypes(include='number').columns:
                     stat_map = {
-                        'mean': 'mean',
-                        'average': 'mean',
-                        'median': '50%',
-                        'max': 'max',
-                        'min': 'min',
-                        'std': 'std'
+                        'mean': lambda x: x.mean(),
+                        'average': lambda x: x.mean(),
+                        'median': lambda x: x.median(),
+                        'max': lambda x: x.max(),
+                        'min': lambda x: x.min(),
+                        'std': lambda x: x.std()
                     }
-                    stat_key = stat_map.get(stat)
-                    if stat_key:
-                        value = df[matched_col].describe().get(stat_key)
+                    stat_func = stat_map.get(stat)
+                    if stat_func:
+                        value = stat_func(df[matched_col])
                         if value is not None:
                             st.markdown(
                                 f"<div style='background-color:#f0f8f5; padding: 12px; border-radius: 6px; font-size: 15px;'>The {stat} of '<b>{matched_col}</b>' is <b>{value:.4f}</b>.</div>",
@@ -167,6 +168,29 @@ if "df" in st.session_state:
                     f"<div style='background-color:#f0f8f5; padding: 12px; border-radius: 6px; font-size: 15px; white-space: pre-wrap'>{last_line}</div>",
                     unsafe_allow_html=True
                 )
+
+    # Column Classification
+    numeric_cols = list(df.select_dtypes(include='number').columns)
+    categorical_cols = [col for col in df.columns if col not in numeric_cols]
+
+    if (numeric_cols or categorical_cols) and st.checkbox("Show Dataset Overview"):
+        st.subheader("Dataset Overview")
+
+        if numeric_cols:
+            st.markdown("**Numeric columns:**")
+            for col in numeric_cols:
+                st.write(f"- {col}")
+
+        if categorical_cols:
+            st.markdown("**Categorical columns:**")
+            for col in categorical_cols:
+                st.write(f"- {col}")
+
+    if has_missing_data(df) and st.checkbox("Show Missing Value Handler"):
+        st.subheader("Missing Values")
+        st.write(f"Total missing values: {int(df.isna().sum().sum())}")
+        st.dataframe(df[df.isna().any(axis=1)])
+
 
         
     # Column Classification
