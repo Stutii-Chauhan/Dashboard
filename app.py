@@ -107,10 +107,10 @@ if "df" in st.session_state:
                 missing_per_column = df.isna().sum()
                 st.write("### Missing Values per Column")
                 st.dataframe(missing_per_column[missing_per_column > 0])
-
             else:
                 total_missing = df.isna().sum().sum()
                 st.success(f"Total missing values in the dataset: {total_missing}")
+                st.stop()
 
 
     if user_question:
