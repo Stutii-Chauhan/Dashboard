@@ -14,35 +14,42 @@ st.title("Analysis Dashboard")
 st.markdown("Upload your Excel or CSV file to analyze and explore your dataset instantly.")
 
 uploaded_file = st.file_uploader("Upload a file", type=["csv", "xlsx"])
-st.caption("Tip: If you're uploading a CSV exported from Excel, please save it as **CSV UTF-8 (Comma delimited)** to ensure best compatibility.")
 
 if uploaded_file is not None and "df" not in st.session_state:
     try:
         if uploaded_file.name.endswith(".csv"):
             try:
-                df = pd.read_csv(uploaded_file, encoding='utf-8', sep=',', skip_blank_lines=True)
+                df = pd.read_csv(uploaded_file, encoding='utf-8')
             except UnicodeDecodeError:
                 try:
-                    df = pd.read_csv(uploaded_file, encoding='utf-8-sig', sep=',', skip_blank_lines=True)
+                    df = pd.read_csv(uploaded_file, encoding='utf-8-sig')
                 except:
-                    df = pd.read_csv(uploaded_file, encoding='ISO-8859-1', sep=',', skip_blank_lines=True)
+                    df = pd.read_csv(uploaded_file, encoding='ISO-8859-1')
         else:
             df = pd.read_excel(uploaded_file)
 
         st.success(f"Successfully loaded `{uploaded_file.name}`")
 
-        # Show preview for user to verify headers
+        st.markdown("""
+        <span style='font-size: 13px;'>
+        Tip: If you're uploading a CSV exported from Excel, please save it as <b>CSV UTF-8 (Comma delimited)</b> to ensure best compatibility.
+        </span>
+        """, unsafe_allow_html=True)
+
+        # Show preview before header adjustment
         st.markdown("### Preview of the Data")
-        st.dataframe(df.head(10))
+        header_check = st.checkbox("Use first row as header (if not already)", value=False)
+        preview_df = df.copy()
 
-        # Allow adjusting header row interactively
-        if st.checkbox("Use first row as header (if not already)", value=False):
-            new_header = df.iloc[0]
-            df = df[1:]
-            df.columns = new_header
+        if header_check:
+            new_header = preview_df.iloc[0]
+            preview_df = preview_df[1:]
+            preview_df.columns = new_header
 
-        # Save cleaned df into session
-        st.session_state.df = df
+        st.dataframe(preview_df.head(10))
+
+        # Save adjusted df
+        st.session_state.df = preview_df
 
     except Exception as e:
         st.error(f"Error loading file: {e}")
