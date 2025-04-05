@@ -114,6 +114,22 @@ if "df" in st.session_state:
                     st.warning("Could not determine type of relationship analysis.")
             else:
                 st.warning("Please mention two valid numeric columns.")
+
+
+        percentile_match = re.match(r".*?(\d{1,3})%.*?(?:of)?\s*([a-zA-Z0-9 _%()\-]+)", user_question, re.IGNORECASE)
+        if percentile_match:
+            perc, col_candidate = percentile_match.groups()
+            perc = float(perc)
+            col = get_column(col_candidate.strip().lower())
+            if col and col in df.select_dtypes(include='number').columns:
+                try:
+                    result = np.percentile(df[col].dropna(), perc)
+                    st.success(f"The {perc}th percentile of {col} is {result:.4f}.")
+                except Exception as e:
+                    st.error(f"Error while computing percentile: {e}")
+            else:
+                st.warning("Could not match the column for your question.")
+        
         else:
             pattern = r".*?(mean|average|avg|avrg|av|meanvalue|median|med|mode|std|stdev|standard deviation|variance|min|minimum|lowest|max|maximum|highest|range|iqr|skew|kurtosis|25th percentile|75th percentile).*?(25|50|75)(?:th)?\s*(percentile|%)\s*(?:of|for)?\s*([a-zA-Z0-9 _%()\-]+)"
             match = re.match(pattern, user_question, re.IGNORECASE)
