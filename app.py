@@ -90,31 +90,21 @@ if "df" in st.session_state:
             'regression': 'regression'
         }
 
-def get_column(col_candidate):
-    col_candidate = col_candidate.strip().lower()
-    
-    # Clean column candidate of symbols
-    col_candidate_clean = re.sub(r'[^a-z0-9 ]', '', col_candidate)
+        def get_column(col_candidate):
+            col_candidate = col_candidate.strip().lower()
+            col_candidate_clean = re.sub(r'[^a-z0-9 ]', '', col_candidate)
+            cleaned_cols = {
+                re.sub(r'[^a-z0-9 ]', '', col.lower()): col for col in df.columns
+            }
+            for cleaned, original in cleaned_cols.items():
+                if col_candidate_clean in cleaned:
+                    return original
+            matches = difflib.get_close_matches(col_candidate_clean, cleaned_cols.keys(), n=1, cutoff=0.5)
+            if matches:
+                return cleaned_cols[matches[0]]
+            return None
 
-    cleaned_cols = {
-        re.sub(r'[^a-z0-9 ]', '', col.lower()): col
-        for col in df.columns
-    }
-
-    # Direct clean match
-    for cleaned, original in cleaned_cols.items():
-        if col_candidate_clean in cleaned:
-            return original
-
-    # Try fuzzy match on cleaned keys
-    matches = difflib.get_close_matches(col_candidate_clean, cleaned_cols.keys(), n=1, cutoff=0.5)
-    if matches:
-        return cleaned_cols[matches[0]]
-
-    return None
-
-  
-        if "correlation" in user_question.lower() or "covariance" in user_question.lower() or "regression" in user_question.lower():
+        if any(keyword in user_question.lower() for keyword in ["correlation", "covariance", "regression"]):
             cols = re.findall(r"[a-zA-Z0-9 _%()\-]+", user_question)
             matched_cols = [get_column(c.lower()) for c in cols if get_column(c.lower()) in df.columns]
             if len(matched_cols) >= 2:
@@ -133,7 +123,6 @@ def get_column(col_candidate):
             else:
                 st.warning("Please mention two valid numeric columns.")
 
-
         percentile_match = re.match(r".*?(\d{1,3})%.*?(?:of)?\s*([a-zA-Z0-9 _%()\-]+)", user_question, re.IGNORECASE)
         if percentile_match:
             perc, col_candidate = percentile_match.groups()
@@ -147,12 +136,11 @@ def get_column(col_candidate):
                     st.error(f"Error while computing percentile: {e}")
             else:
                 st.warning("Could not match the column for your question.")
-        
         else:
             pattern = r".*?(mean|average|avg|avrg|av|meanvalue|median|med|mode|std|stdev|standard deviation|variance|min|minimum|lowest|max|maximum|highest|range|iqr|skew|kurtosis|25th percentile|75th percentile).*?(25|50|75)(?:th)?\s*(percentile|%)\s*(?:of|for)?\s*([a-zA-Z0-9 _%()\-]+)"
             match = re.match(pattern, user_question, re.IGNORECASE)
             if match:
-                stat, col_candidate = match.groups()
+                stat, col_candidate = match.groups()[0], match.groups()[-1]
                 stat_key = stat_keywords.get(stat.lower(), None)
                 col = get_column(col_candidate.strip().lower())
                 if col and col in df.select_dtypes(include='number').columns:
@@ -180,7 +168,7 @@ def get_column(col_candidate):
                         elif stat_key == 'kurtosis':
                             result = df[col].kurtosis()
                         elif stat_key == '25th':
-                            result = df[col].describe().loc['25%']  # or use np.percentile if you prefer
+                            result = df[col].describe().loc['25%']
                         elif stat_key == '75th':
                             result = df[col].describe().loc['75%']
                         else:
