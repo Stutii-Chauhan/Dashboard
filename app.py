@@ -477,3 +477,32 @@ if "df" in st.session_state:
                 st.plotly_chart(fig, use_container_width=True)
             else:
                 st.info("Selected time or metric column doesn't have valid data to plot.")
+
+        # 🧠 Chatbot Interface Section
+            if "chat_history" not in st.session_state:
+                st.session_state.chat_history = []
+            
+            st.subheader("💬 Ask a Question About Your Data")
+            
+            # Show chat history
+            for msg in st.session_state.chat_history:
+                with st.chat_message(msg["role"]):
+                    st.markdown(msg["content"])
+            
+            # Chat input field
+            user_input = st.chat_input("What do you want to know?")
+            if user_input:
+                # Add user's message
+                st.session_state.chat_history.append({"role": "user", "content": user_input})
+                with st.chat_message("user"):
+                    st.markdown(user_input)
+            
+                # Placeholder logic (echo-style)
+                response = f"You asked: **{user_input}**\n\n_I'm currently just a placeholder. We can make me smart soon!_"
+            
+                # Add assistant's message
+                st.session_state.chat_history.append({"role": "assistant", "content": response})
+                with st.chat_message("assistant"):
+                    st.markdown(response)
+
+
