@@ -86,15 +86,19 @@ if "df" in st.session_state:
         with st.spinner("Generating AI business summary..."):
             response = query_huggingface(prompt, hf_token)
 
-        last_line = response.strip().split("\n")[-1]
-        st.subheader("AI-Generated Business Summary")
+        cleaned_response = response.strip()
+        # Try to extract clean final paragraph instead of raw last line
+        lines = [line.strip() for line in cleaned_response.split("\n") if line.strip() and not line.strip().lower().startswith("as an ai")]
+        final_output = lines[-1] if lines else "Summary could not be generated."
+
+        st.subheader("\U0001F4A1 AI-Generated Business Summary")
         st.markdown(
-            f"<div style='background-color:#f0f8f5; padding: 15px; border-radius: 8px; font-size: 15px; white-space: pre-wrap'>{last_line}</div>",
+            f"<div style='background-color:#f0f8f5; padding: 15px; border-radius: 8px; font-size: 15px; white-space: pre-wrap'>{final_output}</div>",
             unsafe_allow_html=True
         )
 
     # Ask a Question Section
-    st.subheader("Ask a Question About Your Data")
+    st.subheader("\U0001F9E0 Ask a Question About Your Data")
     user_question = st.text_input("What do you want to know?")
     if user_question:
         # Handle direct missing column question
@@ -108,7 +112,7 @@ if "df" in st.session_state:
 
         # Check for exact stat questions
         else:
-            match = re.match(r".*(mean|average|median|max|min|std).*?(?:of|for)?\\s*([a-zA-Z0-9 _%-]+).*", user_question, re.IGNORECASE)
+            match = re.match(r".*(mean|average|median|max|min|std).*?(?:of|for)?\s*([a-zA-Z0-9 _%-]+).*", user_question, re.IGNORECASE)
             if match:
                 stat, col_candidate = match.groups()
                 stat = stat.lower().strip()
@@ -151,7 +155,9 @@ if "df" in st.session_state:
                 with st.spinner("Getting answer from AI..."):
                     ai_response = query_huggingface(question_prompt, hf_token)
 
-                last_line = ai_response.strip().split("\n")[-1]
+                cleaned = ai_response.strip()
+                lines = [line.strip() for line in cleaned.split("\n") if line.strip() and not line.lower().startswith("as an ai")]
+                last_line = lines[-1] if lines else "Response could not be generated."
                 st.markdown(
                     f"<div style='background-color:#f0f8f5; padding: 12px; border-radius: 6px; font-size: 15px; white-space: pre-wrap'>{last_line}</div>",
                     unsafe_allow_html=True
