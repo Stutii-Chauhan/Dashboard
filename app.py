@@ -3,6 +3,7 @@ import pandas as pd
 import plotly.express as px
 import requests
 import re
+import difflib
 
 st.set_page_config(page_title="Data Analyzer", layout="wide")
 
@@ -100,23 +101,30 @@ if "df" in st.session_state:
     user_question = st.text_input("What do you want to know?")
     if user_question:
         stat_keywords = {
-            'mean': 'mean',
-            'average': 'mean',
-            'median': '50%',
-            'max': 'max',
-            'min': 'min',
-            'std': 'std'
+            'mean': 'mean', 'average': 'mean', 'avg': 'mean', 'avrg': 'mean', 'meanvalue': 'mean', 'av': 'mean',
+            'median': '50%', 'med': '50%',
+            'max': 'max', 'maximum': 'max', 'highest': 'max',
+            'min': 'min', 'minimum': 'min', 'lowest': 'min',
+            'std': 'std', 'stdev': 'std', 'standard deviation': 'std'
         }
-        match = re.match(r".*(mean|average|median|max|min|std).*?(?:of|for)?\s*([a-zA-Z0-9 _%()\-]+).*", user_question, re.IGNORECASE)
+
+        match = re.match(r".*(mean|average|avg|avrg|av|meanvalue|median|med|max|maximum|highest|min|minimum|lowest|std|stdev|standard deviation).*?(?:of|for)?\\s*([a-zA-Z0-9 _%()\-]+).*"," + 
+                         user_question, re.IGNORECASE)
+
         if match:
             stat, col_candidate = match.groups()
             stat = stat.lower().strip()
             col_candidate = col_candidate.strip().lower()
-            matched_col = next((col for col in df.columns if col_candidate in col.lower()), None)
+
+            possible_matches = [col for col in df.columns if col_candidate in col.lower()]
+            if not possible_matches:
+                possible_matches = difflib.get_close_matches(col_candidate, df.columns, n=1, cutoff=0.6)
+
+            matched_col = possible_matches[0] if possible_matches else None
 
             if matched_col and matched_col in df.select_dtypes(include='number').columns:
                 try:
-                    result = df[matched_col].mean() if stat in ['mean', 'average'] else df[matched_col].describe()[stat_keywords[stat]]
+                    result = df[matched_col].mean() if stat_keywords[stat] == 'mean' else df[matched_col].describe()[stat_keywords[stat]]
                     st.success(f"The {stat} of {matched_col} is {result:.4f}.")
                 except Exception as e:
                     st.warning(f"Could not compute {stat} for {matched_col}: {e}")
