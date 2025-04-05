@@ -11,8 +11,10 @@ st.markdown("Upload your Excel or CSV file to analyze and explore your dataset i
 
 uploaded_file = st.file_uploader("Upload a file", type=["csv", "xlsx"])
 
+
 def has_missing_data(dataframe):
     return dataframe.isna().sum().sum() > 0
+
 
 def detect_datetime_columns(df):
     datetime_cols = []
@@ -25,6 +27,7 @@ def detect_datetime_columns(df):
             except:
                 continue
     return datetime_cols
+
 
 def query_huggingface(prompt, api_token, model="tiiuae/falcon-7b-instruct"):
     API_URL = f"https://api-inference.huggingface.co/models/{model}"
@@ -58,12 +61,11 @@ if uploaded_file is not None and "df" not in st.session_state:
 if "df" in st.session_state:
     df = st.session_state.df
 
-    # Data Preview
     st.subheader("Preview of the Data")
     st.dataframe(df.head(50))
     st.write(f"Shape: {df.shape[0]} rows × {df.shape[1]} columns")
 
-    # LLM-Enhanced Insight Button
+    # Falcon Summary
     if st.button("Generate Business Summary using AI"):
         numeric_cols = df.select_dtypes(include='number').columns
         desc = df[numeric_cols].describe().T
@@ -96,77 +98,51 @@ if "df" in st.session_state:
             unsafe_allow_html=True
         )
 
-    # Ask a Question Section
+    # Natural Language Questions
     st.subheader("\U0001F9E0 Ask a Question About Your Data")
     user_question = st.text_input("What do you want to know?")
     if user_question:
-        # Handle direct missing column question
-        if "missing" in user_question.lower() and "column" in user_question.lower():
-            missing_counts = df.isna().sum()
-            missing_col = missing_counts[missing_counts > 0].idxmax()
+        stat_keywords = {
+            'mean': 'mean',
+            'average': 'mean',
+            'median': '50%',
+            'max': 'max',
+            'min': 'min',
+            'std': 'std'
+        }
+        match = re.match(r".*(mean|average|median|max|min|std).*?(?:of|for)?\\s*([a-zA-Z0-9 _%()\-]+).*", user_question, re.IGNORECASE)
+        if match:
+            stat, col_candidate = match.groups()
+            stat = stat.lower().strip()
+            col_candidate = col_candidate.strip().lower()
+            matched_col = next((col for col in df.columns if col_candidate in col.lower()), None)
+
+            if matched_col and matched_col in df.select_dtypes(include='number').columns:
+                try:
+                    result = df[matched_col].describe()[stat_keywords[stat]]
+                    st.success(f"The {stat} of {matched_col} is {result:.4f}.")
+                except Exception as e:
+                    st.warning(f"Could not compute {stat} for {matched_col}: {e}")
+            else:
+                st.warning("Could not match the column for your question.")
+        else:
+            # Fallback to Falcon LLM
+            question_prompt = (
+                f"Answer the following based on the dataset:\n"
+                f"Dataset has {df.shape[0]} rows and {df.shape[1]} columns. Columns: {', '.join(df.columns)}\n"
+                f"Sample Data: {df.head(3).to_string(index=False)}\n\n"
+                f"Question: {user_question}"
+            )
+            with st.spinner("Getting answer from AI..."):
+                ai_response = query_huggingface(question_prompt, hf_token)
+
+            cleaned = ai_response.strip()
+            lines = [line.strip() for line in cleaned.split("\n") if line.strip() and not line.lower().startswith("as an ai")]
+            last_line = lines[-1] if lines else "Response could not be generated."
             st.markdown(
-                f"<div style='background-color:#f0f8f5; padding: 12px; border-radius: 6px; font-size: 15px;'>The column with missing values is <b>{missing_col}</b>.</div>",
+                f"<div style='background-color:#f0f8f5; padding: 12px; border-radius: 6px; font-size: 15px; white-space: pre-wrap'>{last_line}</div>",
                 unsafe_allow_html=True
             )
-
-        # Check for exact stat questions
-        else:
-            match = re.match(r".*(mean|average|median|max|min|std).*?(?:of|for)?\\s*([a-zA-Z0-9 _%()\-]+).*", user_question, re.IGNORECASE)
-            if match:
-                stat, col_candidate = match.groups()
-                stat = stat.lower().strip()
-                col_candidate = col_candidate.strip().lower()
-
-                def best_column_match(candidate, df_columns):
-                    for col in df_columns:
-                        if candidate in col.lower():
-                            return col
-                    return None
-
-                matched_col = best_column_match(col_candidate, df.columns)
-
-                if matched_col and matched_col in df.select_dtypes(include='number').columns:
-                    stat_map = {
-                        'mean': lambda x: x.mean(),
-                        'average': lambda x: x.mean(),
-                        'median': lambda x: x.median(),
-                        'max': lambda x: x.max(),
-                        'min': lambda x: x.min(),
-                        'std': lambda x: x.std()
-                    }
-                    stat_func = stat_map.get(stat)
-                    if stat_func:
-                        value = stat_func(df[matched_col])
-                        if value is not None:
-                            st.markdown(
-                                f"<div style='background-color:#f0f8f5; padding: 12px; border-radius: 6px; font-size: 15px;'>The {stat} of '<b>{matched_col}</b>' is <b>{value:.4f}</b>.</div>",
-                                unsafe_allow_html=True
-                            )
-                        else:
-                            st.warning("Could not find the requested statistic.")
-                    else:
-                        st.warning("Unsupported statistic requested.")
-                else:
-                    st.warning("Could not match the column for your question.")
-            else:
-                # Fallback to LLM if it's not a clean stat question
-                question_prompt = (
-                    f"Answer the following based on the dataset:\n"
-                    f"Dataset has {df.shape[0]} rows and {df.shape[1]} columns. Columns: {', '.join(df.columns)}\n"
-                    f"Sample Data: {df.head(3).to_string(index=False)}\n\n"
-                    f"Question: {user_question}"
-                )
-                hf_token = st.secrets["hf_token"]
-                with st.spinner("Getting answer from AI..."):
-                    ai_response = query_huggingface(question_prompt, hf_token)
-
-                cleaned = ai_response.strip()
-                lines = [line.strip() for line in cleaned.split("\n") if line.strip() and not line.lower().startswith("as an ai")]
-                last_line = lines[-1] if lines else "Response could not be generated."
-                st.markdown(
-                    f"<div style='background-color:#f0f8f5; padding: 12px; border-radius: 6px; font-size: 15px; white-space: pre-wrap'>{last_line}</div>",
-                    unsafe_allow_html=True
-                )
 
       # Column Classification
     numeric_cols = list(df.select_dtypes(include='number').columns)
