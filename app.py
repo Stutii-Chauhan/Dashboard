@@ -28,7 +28,7 @@ with st.sidebar:
     theme_mode = st.radio("Choose Theme", ["Light", "Dark"], index=0)
     st.markdown("</div>", unsafe_allow_html=True)
 
-# 🖍️ Inject custom CSS for themes with auto-contrast fonts and hide default sidebar toggle
+# Inject custom CSS for themes with auto-contrast fonts and hide default sidebar toggle
 base_css = """
 <style>
 [data-testid="collapsedControl"] {
@@ -90,10 +90,9 @@ css_theme_vars = {
     }
 }
 
-# Fallback in case of unexpected theme_mode
-theme_vars = css_theme_vars.get(theme_mode, css_theme_vars["Light"])
+# Safely get theme vars
+theme_vars = css_theme_vars[theme_mode] if theme_mode in css_theme_vars else css_theme_vars["Light"]
 st.markdown(base_css.format(**theme_vars), unsafe_allow_html=True)
-
 
 st.title("Analysis Dashboard")
 st.markdown("Upload your Excel or CSV file to analyze and explore your dataset instantly.")
