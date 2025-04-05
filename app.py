@@ -87,14 +87,14 @@ if "df" in st.session_state:
             response = query_huggingface(prompt, hf_token)
 
         last_line = response.strip().split("\n")[-1]
-        st.subheader("AI-Generated Business Summary")
+        st.subheader("💡 AI-Generated Business Summary")
         st.markdown(
             f"<div style='background-color:#f0f8f5; padding: 15px; border-radius: 8px; font-size: 15px; white-space: pre-wrap'>{last_line}</div>",
             unsafe_allow_html=True
         )
 
     # Ask a Question Section
-    st.subheader("Ask a Question About Your Data")
+    st.subheader("🧠 Ask a Question About Your Data")
     user_question = st.text_input("What do you want to know?")
     if user_question:
         # Handle direct missing column question
@@ -108,7 +108,7 @@ if "df" in st.session_state:
 
         # Check for exact stat questions
         else:
-            match = re.match(r".*(mean|average|median|max|min|std).*?(?:of|for)?\s*([a-zA-Z0-9 _%-]+).*"," re.IGNORECASE)
+            match = re.match(r".*(mean|average|median|max|min|std).*?(?:of|for)?\\s*([a-zA-Z0-9 _%-]+).*", user_question, re.IGNORECASE)
             if match:
                 stat, col_candidate = match.groups()
                 stat = stat.lower().strip()
@@ -156,6 +156,7 @@ if "df" in st.session_state:
                     f"<div style='background-color:#f0f8f5; padding: 12px; border-radius: 6px; font-size: 15px; white-space: pre-wrap'>{last_line}</div>",
                     unsafe_allow_html=True
                 )
+
         
     # Column Classification
     numeric_cols = list(df.select_dtypes(include='number').columns)
