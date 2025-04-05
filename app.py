@@ -49,6 +49,11 @@ if uploaded_file is not None:
             df.columns = new_header
 
         st.session_state.df = df  # Save for downstream use
+        
+        # Preview right after upload
+        st.subheader("Preview of the Data")
+        st.dataframe(df.head(50))
+        st.write(f"Shape: {df.shape[0]} rows × {df.shape[1]} columns")
 
     except Exception as e:
         st.error(f"Error loading file: {e}")
