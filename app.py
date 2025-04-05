@@ -11,10 +11,8 @@ st.markdown("Upload your Excel or CSV file to analyze and explore your dataset i
 
 uploaded_file = st.file_uploader("Upload a file", type=["csv", "xlsx"])
 
-
 def has_missing_data(dataframe):
     return dataframe.isna().sum().sum() > 0
-
 
 def detect_datetime_columns(df):
     datetime_cols = []
@@ -27,7 +25,6 @@ def detect_datetime_columns(df):
             except:
                 continue
     return datetime_cols
-
 
 def query_huggingface(prompt, api_token, model="tiiuae/falcon-7b-instruct"):
     API_URL = f"https://api-inference.huggingface.co/models/{model}"
@@ -110,7 +107,7 @@ if "df" in st.session_state:
             'min': 'min',
             'std': 'std'
         }
-        match = re.match(r".*(mean|average|median|max|min|std).*?(?:of|for)?\\s*([a-zA-Z0-9 _%()\-]+).*", user_question, re.IGNORECASE)
+        match = re.match(r".*(mean|average|median|max|min|std).*?(?:of|for)?\s*([a-zA-Z0-9 _%()\-]+).*", user_question, re.IGNORECASE)
         if match:
             stat, col_candidate = match.groups()
             stat = stat.lower().strip()
@@ -119,7 +116,7 @@ if "df" in st.session_state:
 
             if matched_col and matched_col in df.select_dtypes(include='number').columns:
                 try:
-                    result = df[matched_col].describe()[stat_keywords[stat]]
+                    result = df[matched_col].mean() if stat in ['mean', 'average'] else df[matched_col].describe()[stat_keywords[stat]]
                     st.success(f"The {stat} of {matched_col} is {result:.4f}.")
                 except Exception as e:
                     st.warning(f"Could not compute {stat} for {matched_col}: {e}")
@@ -127,6 +124,7 @@ if "df" in st.session_state:
                 st.warning("Could not match the column for your question.")
         else:
             # Fallback to Falcon LLM
+            hf_token = st.secrets["hf_token"]
             question_prompt = (
                 f"Answer the following based on the dataset:\n"
                 f"Dataset has {df.shape[0]} rows and {df.shape[1]} columns. Columns: {', '.join(df.columns)}\n"
@@ -143,6 +141,7 @@ if "df" in st.session_state:
                 f"<div style='background-color:#f0f8f5; padding: 12px; border-radius: 6px; font-size: 15px; white-space: pre-wrap'>{last_line}</div>",
                 unsafe_allow_html=True
             )
+
 
       # Column Classification
     numeric_cols = list(df.select_dtypes(include='number').columns)
