@@ -15,6 +15,35 @@ st.markdown("Upload your Excel or CSV file to analyze and explore your dataset i
 
 uploaded_file = st.file_uploader("Upload a file", type=["csv", "xlsx"])
 
+if uploaded_file is not None and "df" not in st.session_state:
+    try:
+        if uploaded_file.name.endswith(".csv"):
+            try:
+                df = pd.read_csv(uploaded_file, encoding='utf-8')
+            except UnicodeDecodeError:
+                try:
+                    df = pd.read_csv(uploaded_file, encoding='utf-8-sig')
+                except:
+                    df = pd.read_csv(uploaded_file, encoding='ISO-8859-1')
+        else:
+            df = pd.read_excel(uploaded_file)
+            
+        preview_df = df.head(10)
+        st.markdown("### Preview First 10 Rows (for header alignment check)")
+        st.dataframe(preview_df)
+
+        use_first_row_as_header = st.checkbox("Use first row as header (if not already)?")
+        if use_first_row_as_header:
+            new_header = df.iloc[0]
+            df = df[1:]
+            df.columns = new_header
+            
+        st.session_state.df = df
+        st.success(f"Successfully loaded `{uploaded_file.name}`")
+
+    except Exception as e:
+        st.error(f"Error loading file: {e}")
+
 def has_missing_data(dataframe):
     return dataframe.isna().sum().sum() > 0
 
