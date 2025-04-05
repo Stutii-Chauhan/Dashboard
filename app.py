@@ -90,14 +90,29 @@ if "df" in st.session_state:
             'regression': 'regression'
         }
 
-        def get_column(col_candidate):
-            col_candidate = col_candidate.strip().lower()
-            for col in df.columns:
-                if col_candidate in col.lower():
-                    return col
-    # Try fuzzy match as fallback
-            matches = difflib.get_close_matches(col_candidate, df.columns, n=1, cutoff=0.5)
-            return matches[0] if matches else None
+def get_column(col_candidate):
+    col_candidate = col_candidate.strip().lower()
+    
+    # Clean column candidate of symbols
+    col_candidate_clean = re.sub(r'[^a-z0-9 ]', '', col_candidate)
+
+    cleaned_cols = {
+        re.sub(r'[^a-z0-9 ]', '', col.lower()): col
+        for col in df.columns
+    }
+
+    # Direct clean match
+    for cleaned, original in cleaned_cols.items():
+        if col_candidate_clean in cleaned:
+            return original
+
+    # Try fuzzy match on cleaned keys
+    matches = difflib.get_close_matches(col_candidate_clean, cleaned_cols.keys(), n=1, cutoff=0.5)
+    if matches:
+        return cleaned_cols[matches[0]]
+
+    return None
+
   
         if "correlation" in user_question.lower() or "covariance" in user_question.lower() or "regression" in user_question.lower():
             cols = re.findall(r"[a-zA-Z0-9 _%()\-]+", user_question)
