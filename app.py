@@ -28,9 +28,14 @@ with st.sidebar:
     theme_mode = st.radio("Choose Theme", ["Light", "Dark"], index=0)
     st.markdown("</div>", unsafe_allow_html=True)
 
-# Inject custom CSS for themes with auto-contrast fonts
+# 🖌️ Inject custom CSS for themes with auto-contrast fonts and hide default sidebar toggle
 base_css = """
 <style>
+/* Hide the default sidebar collapse button */
+[data-testid="collapsedControl"] {
+    display: none;
+}
+
 html, body, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {{
     background-color: {bg_color};
     color: {font_color};
