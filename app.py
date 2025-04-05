@@ -36,26 +36,19 @@ if uploaded_file is not None:
         </span>
         """, unsafe_allow_html=True)
 
-        # Interactive checkbox for header row with rerun
         if 'apply_header' not in st.session_state:
             st.session_state.apply_header = False
 
-        def toggle_header():
-            st.session_state.apply_header = not st.session_state.apply_header
-
-        st.checkbox("Use first row as header (if not already)", value=st.session_state.apply_header, on_change=toggle_header)
+        apply_header = st.checkbox("Use first row as header (if not already)", value=st.session_state.apply_header)
+        st.session_state.apply_header = apply_header
 
         # Apply header fix if checked
-        if st.session_state.apply_header:
+        if apply_header:
             new_header = df.iloc[0]
             df = df[1:].copy()
             df.columns = new_header
 
         st.session_state.df = df  # Save for downstream use
-
-        st.markdown("### Preview of the Data")
-        st.dataframe(df.head(10))
-        st.write(f"Shape: {df.shape[0]} rows × {df.shape[1]} columns")
 
     except Exception as e:
         st.error(f"Error loading file: {e}")
