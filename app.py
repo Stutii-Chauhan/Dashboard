@@ -22,6 +22,40 @@ def detect_datetime_columns(df):
 
 st.set_page_config(page_title="Data Analyzer", layout="wide")
 
+#Theme Toggle
+theme_mode = st.sidebar.radio("Choose Theme", ["Light", "Dark"], index=0)
+
+#Inject custom CSS for themes
+light_theme = """
+<style>
+body {
+    background-color: #ffffff;
+    color: #000000;
+}
+</style>
+"""
+
+dark_theme = """
+<style>
+body {
+    background-color: #0e1117;
+    color: #fafafa;
+}
+[data-testid="stAppViewContainer"] {
+    background-color: #0e1117;
+}
+[data-testid="stHeader"] {
+    background-color: #0e1117;
+}
+</style>
+"""
+
+# Inject the appropriate theme
+if theme_mode == "Dark":
+    st.markdown(dark_theme, unsafe_allow_html=True)
+else:
+    st.markdown(light_theme, unsafe_allow_html=True)
+
 st.title("Analysis Dashboard")
 st.markdown("Upload your Excel or CSV file to analyze and explore your dataset instantly.")
 
