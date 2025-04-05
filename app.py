@@ -86,25 +86,32 @@ def query_huggingface(prompt, api_token, model="tiiuae/falcon-7b-instruct"):
     except:
         return "LLM failed to generate a response. Please try again."
 
-if uploaded_file is not None and "df" not in st.session_state:
-    try:
-        if uploaded_file.name.endswith('.csv'):
-            st.session_state.df = pd.read_csv(uploaded_file)
-        else:
-            st.session_state.df = pd.read_excel(uploaded_file)
-        st.success(f"Successfully loaded `{uploaded_file.name}`")
-    except Exception as e:
-        st.error(f"Error loading file: {e}")
-
+# --- Ask a Question Functionality (extended for missing values insight) ---
 if "df" in st.session_state:
     df = st.session_state.df
 
-    st.subheader("Preview of the Data")
-    st.dataframe(df.head(50))
-    st.write(f"Shape: {df.shape[0]} rows × {df.shape[1]} columns")
-
-    st.subheader("\U0001F9E0 Ask a Question About Your Data")
+    st.subheader("Ask a Question About Your Data")
     user_question = st.text_input("What do you want to know?")
+
+    if user_question:
+        q = user_question.lower()
+
+        if "missing" in q:
+            if "which column" in q and ("most" in q or "maximum" in q):
+                missing_per_column = df.isna().sum()
+                most_missing_col = missing_per_column.idxmax()
+                count = missing_per_column.max()
+                st.success(f"Column with the most missing values is '{most_missing_col}' with {count} missing entries.")
+
+            elif "per column" in q or "column wise" in q or "each column" in q:
+                missing_per_column = df.isna().sum()
+                st.write("### Missing Values per Column")
+                st.dataframe(missing_per_column[missing_per_column > 0])
+
+            else:
+                total_missing = df.isna().sum().sum()
+                st.success(f"Total missing values in the dataset: {total_missing}")
+
 
     if user_question:
         stat_keywords = {
