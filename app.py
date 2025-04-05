@@ -87,14 +87,14 @@ if "df" in st.session_state:
             response = query_huggingface(prompt, hf_token)
 
         last_line = response.strip().split("\n")[-1]
-        st.subheader("💡 AI-Generated Business Summary")
+        st.subheader("AI-Generated Business Summary")
         st.markdown(
             f"<div style='background-color:#f0f8f5; padding: 15px; border-radius: 8px; font-size: 15px; white-space: pre-wrap'>{last_line}</div>",
             unsafe_allow_html=True
         )
 
     # Ask a Question Section
-    st.subheader("🧠 Ask a Question About Your Data")
+    st.subheader("Ask a Question About Your Data")
     user_question = st.text_input("What do you want to know?")
     if user_question:
         # Handle direct missing column question
