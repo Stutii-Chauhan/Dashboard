@@ -23,8 +23,6 @@ def detect_datetime_columns(df):
 st.set_page_config(page_title="Data Analyzer", layout="wide")
 
 st.title("Analysis Dashboard")
-
-st.title("Analysis Dashboard")
 st.markdown("Upload your Excel or CSV file to analyze and explore your dataset instantly.")
 
 uploaded_file = st.file_uploader("Upload a file", type=["csv", "xlsx"])
