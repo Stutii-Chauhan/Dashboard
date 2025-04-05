@@ -8,7 +8,21 @@ import difflib
 import numpy as np
 from scipy import stats
 
+def detect_datetime_columns(df):
+    datetime_cols = []
+    for col in df.columns:
+        if df[col].dtype == object:
+            try:
+                converted = pd.to_datetime(df[col], errors='coerce', dayfirst=True)
+                if converted.notna().sum() > 0:
+                    datetime_cols.append(col)
+            except:
+                continue
+    return datetime_cols
+
 st.set_page_config(page_title="Data Analyzer", layout="wide")
+
+st.title("Analysis Dashboard")
 
 st.title("Analysis Dashboard")
 st.markdown("Upload your Excel or CSV file to analyze and explore your dataset instantly.")
