@@ -3,6 +3,7 @@ import pandas as pd
 import plotly.express as px
 import requests
 import re
+import math
 import difflib
 import numpy as np
 from scipy import stats
@@ -82,6 +83,8 @@ if "df" in st.session_state:
             'iqr': 'iqr',
             'skew': 'skew',
             'kurtosis': 'kurtosis',
+            '75%': '75th',
+            '25%': '25th',
             '25th percentile': '25th', '75th percentile': '75th',
             'correlation': 'correlation', 'covariance': 'covariance',
             'regression': 'regression'
@@ -112,7 +115,7 @@ if "df" in st.session_state:
             else:
                 st.warning("Please mention two valid numeric columns.")
         else:
-            pattern = r".*?(mean|average|avg|avrg|av|meanvalue|median|med|mode|std|stdev|standard deviation|variance|min|minimum|lowest|max|maximum|highest|range|iqr|skew|kurtosis|25th percentile|75th percentile).*?(?:of|for)?\s*([a-zA-Z0-9 _%()\-]+).*"
+            pattern = r".*?(mean|average|avg|avrg|av|meanvalue|median|med|mode|std|stdev|standard deviation|variance|min|minimum|lowest|max|maximum|highest|range|iqr|skew|kurtosis|25th percentile|75th percentile).*?(25|50|75)(?:th)?\s*(percentile|%)\s*(?:of|for)?\s*([a-zA-Z0-9 _%()\-]+)"
             match = re.match(pattern, user_question, re.IGNORECASE)
             if match:
                 stat, col_candidate = match.groups()
@@ -143,9 +146,9 @@ if "df" in st.session_state:
                         elif stat_key == 'kurtosis':
                             result = df[col].kurtosis()
                         elif stat_key == '25th':
-                            result = np.percentile(df[col].dropna(), 25)
+                            result = df[col].describe().loc['25%']  # or use np.percentile if you prefer
                         elif stat_key == '75th':
-                            result = np.percentile(df[col].dropna(), 75)
+                            result = df[col].describe().loc['75%']
                         else:
                             result = None
 
