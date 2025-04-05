@@ -168,11 +168,11 @@ if "df" in st.session_state:
                     unsafe_allow_html=True
                 )
 
-    # Column Classification
+      # Column Classification
     numeric_cols = list(df.select_dtypes(include='number').columns)
     categorical_cols = [col for col in df.columns if col not in numeric_cols]
 
-    if (numeric_cols or categorical_cols) and st.checkbox("Show Dataset Overview"):
+    if (numeric_cols or categorical_cols) and st.checkbox("Show Dataset Overview", key="dataset_overview_checkbox"):
         st.subheader("Dataset Overview")
 
         if numeric_cols:
@@ -185,53 +185,7 @@ if "df" in st.session_state:
             for col in categorical_cols:
                 st.write(f"- {col}")
 
-    if has_missing_data(df) and st.checkbox("Show Missing Value Handler"):
-        st.subheader("Missing Values")
-        st.write(f"Total missing values: {int(df.isna().sum().sum())}")
-        st.dataframe(df[df.isna().any(axis=1)])
-
-    # Column Classification
-    numeric_cols = list(df.select_dtypes(include='number').columns)
-    categorical_cols = [col for col in df.columns if col not in numeric_cols]
-
-    if (numeric_cols or categorical_cols) and st.checkbox("Show Dataset Overview"):
-        st.subheader("Dataset Overview")
-
-        if numeric_cols:
-            st.markdown("**Numeric columns:**")
-            for col in numeric_cols:
-                st.write(f"- {col}")
-
-        if categorical_cols:
-            st.markdown("**Categorical columns:**")
-            for col in categorical_cols:
-                st.write(f"- {col}")
-
-    if has_missing_data(df) and st.checkbox("Show Missing Value Handler"):
-        st.subheader("Missing Values")
-        st.write(f"Total missing values: {int(df.isna().sum().sum())}")
-        st.dataframe(df[df.isna().any(axis=1)])
-
-
-        
-    # Column Classification
-    numeric_cols = list(df.select_dtypes(include='number').columns)
-    categorical_cols = [col for col in df.columns if col not in numeric_cols]
-
-    if (numeric_cols or categorical_cols) and st.checkbox("Show Dataset Overview"):
-        st.subheader("Dataset Overview")
-
-        if numeric_cols:
-            st.markdown("**Numeric columns:**")
-            for col in numeric_cols:
-                st.write(f"- {col}")
-
-        if categorical_cols:
-            st.markdown("**Categorical columns:**")
-            for col in categorical_cols:
-                st.write(f"- {col}")
-
-    if has_missing_data(df) and st.checkbox("Show Missing Value Handler"):
+    if has_missing_data(df) and st.checkbox("Show Missing Value Handler", key="missing_value_checkbox"):
         st.subheader("Missing Values")
         st.write(f"Total missing values: {int(df.isna().sum().sum())}")
         st.dataframe(df[df.isna().any(axis=1)])
@@ -307,13 +261,14 @@ if "df" in st.session_state:
                 st.session_state.df = df
                 st.success("Dropped all rows containing missing values.")
                 st.rerun()
-    if numeric_cols and st.checkbox("Show Descriptive Statistics"):
+
+    if numeric_cols and st.checkbox("Show Descriptive Statistics", key="descriptive_stats_checkbox"):
         st.subheader("Descriptive Statistics")
         st.dataframe(df[numeric_cols].describe())
 
     st.markdown("---")
 
-    if (categorical_cols or numeric_cols) and st.checkbox("Show Basic Visualizations"):
+    if (categorical_cols or numeric_cols) and st.checkbox("Show Basic Visualizations", key="basic_viz_checkbox"):
         st.subheader("Basic Visualizations")
 
         if categorical_cols:
@@ -333,7 +288,7 @@ if "df" in st.session_state:
                 fig = px.histogram(df, x=col, title=f"Distribution of {col}")
                 st.plotly_chart(fig, use_container_width=True)
 
-    if st.checkbox("Show Advanced Visualizations"):
+    if st.checkbox("Show Advanced Visualizations", key="advanced_viz_checkbox"):
         st.subheader("Advanced Visualizations")
 
         if categorical_cols:
