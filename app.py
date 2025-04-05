@@ -22,10 +22,10 @@ def detect_datetime_columns(df):
 
 st.set_page_config(page_title="Data Analyzer", layout="wide")
 
-# 🌗 Theme Toggle
+# Theme Toggle
 theme_mode = st.sidebar.radio("Choose Theme", ["Light", "Dark"], index=0)
 
-# 🖌️ Inject custom CSS for themes with auto-contrast fonts
+# Inject custom CSS for themes with auto-contrast fonts
 base_css = """
 <style>
 html, body, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {{
@@ -47,12 +47,12 @@ button, .stButton > button {{
     border-radius: 4px;
 }}
 
-.stCheckbox > label, .stRadio > div {{
-    color: {font_color};
+.stCheckbox > label, .stRadio > div, label, p, h1, h2, h3, h4, h5, h6, span, div {{
+    color: {font_color} !important;
 }}
 
-table, th, td {{
-    color: {font_color};
+[data-testid="stDataFrame"] td, [data-testid="stDataFrame"] th {{
+    color: {font_color} !important;
 }}
 </style>
 """
@@ -73,7 +73,6 @@ else:
         button_bg="#dddddd",
         button_color="#000000"
     ), unsafe_allow_html=True)
-
 
 st.title("Analysis Dashboard")
 st.markdown("Upload your Excel or CSV file to analyze and explore your dataset instantly.")
