@@ -3,6 +3,7 @@ import pandas as pd
 import plotly.express as px
 import requests
 import re
+import difflib
 
 st.set_page_config(page_title="Data Analyzer", layout="wide")
 
@@ -97,14 +98,19 @@ if "df" in st.session_state:
     st.subheader("🧠 Ask a Question About Your Data")
     user_question = st.text_input("What do you want to know?")
     if user_question:
-        # Check for exact stat questions
-        match = re.match(r".*(mean|average|median|max|min|std).*?(?:of|for)?\s*([a-zA-Z0-9 _%-]+).*", user_question, re.IGNORECASE)
+        def normalize(text):
+            return re.sub(r'[^a-z0-9]', '', text.lower())
+
+        match = re.match(r".*(mean|average|median|max|min|std).*?(?:of|for)?\s*([a-zA-Z0-9 _%\-()]+).*", user_question, re.IGNORECASE)
         if match:
             stat, col_candidate = match.groups()
             stat = stat.lower().strip()
-            col_candidate = col_candidate.strip().lower()
+            col_candidate = col_candidate.strip()
 
-            matched_col = next((col for col in df.columns if col.lower() == col_candidate), None)
+            normalized_cols = {normalize(col): col for col in df.columns}
+            col_key = normalize(col_candidate)
+            closest_match = difflib.get_close_matches(col_key, normalized_cols.keys(), n=1, cutoff=0.6)
+            matched_col = normalized_cols[closest_match[0]] if closest_match else None
 
             if matched_col and matched_col in df.select_dtypes(include='number').columns:
                 stat_map = {
@@ -120,7 +126,7 @@ if "df" in st.session_state:
                     value = df[matched_col].describe().get(stat_key)
                     if value is not None:
                         st.markdown(
-                            f"<div style='background-color:#f0f8f5; padding: 12px; border-radius: 6px; font-size: 15px;'>The {stat} of '{matched_col}' is <b>{value:.4f}</b>.</div>",
+                            f"<div style='background-color:#f0f8f5; padding: 12px; border-radius: 6px; font-size: 15px;'>The {stat} of '<b>{matched_col}</b>' is <b>{value:.4f}</b>.</div>",
                             unsafe_allow_html=True
                         )
                     else:
@@ -146,6 +152,7 @@ if "df" in st.session_state:
                 f"<div style='background-color:#f0f8f5; padding: 12px; border-radius: 6px; font-size: 15px; white-space: pre-wrap'>{last_line}</div>",
                 unsafe_allow_html=True
             )
+
         
     # Column Classification
     numeric_cols = list(df.select_dtypes(include='number').columns)
