@@ -120,6 +120,7 @@ if "df" in st.session_state:
             'skew': 'skew',
             'kurtosis': 'kurtosis',
             '75%': '75th', '25%': '25th',
+            'nulls': 'missing', 'missing': 'missing', 'nan': 'missing', 'na': 'missing', 'none': 'missing', 'blank': 'missing',
             '25th percentile': '25th', '75th percentile': '75th',
             'correlation': 'correlation', 'covariance': 'covariance',
             'regression': 'regression'
@@ -138,6 +139,11 @@ if "df" in st.session_state:
             return None
 
         # Handle correlation, regression, covariance
+        if any(keyword in user_question.lower() for keyword in ['missing', 'null', 'nan', 'na', 'none', 'blank']):
+            total_missing = df.isna().sum().sum()
+            st.success(f"Total missing values in the dataset: {total_missing}")
+
+        
         if any(keyword in user_question.lower() for keyword in ["correlation", "covariance", "regression"]):
             cols = re.findall(r"[a-zA-Z0-9 _%()\-]+", user_question)
             matched_cols = [get_column(c.lower()) for c in cols if get_column(c.lower()) in df.columns]
