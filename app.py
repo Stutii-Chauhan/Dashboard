@@ -28,71 +28,60 @@ with st.sidebar:
     theme_mode = st.radio("Choose Theme", ["Light", "Dark"], index=0)
     st.markdown("</div>", unsafe_allow_html=True)
 
-# Inject custom CSS for themes with auto-contrast fonts and hide default sidebar toggle
+# Inject custom CSS for themes with auto-contrast fonts
 base_css = """
 <style>
-[data-testid="collapsedControl"] {
-    display: none;
-}
-
-html, body, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {
+html, body, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {{
     background-color: {bg_color};
     color: {font_color};
-}
+}}
 
-section[data-testid="stSidebar"] > div:first-child {
-    width: 160px !important;
-}
+section[data-testid="stSidebar"] > div:first-child {{
+    width: 230px;
+}}
 
-input, textarea, .stTextInput > div > input {
+input, textarea, .stTextInput > div > input {{
     background-color: {input_bg};
     color: {font_color};
     border: 1px solid #ccc;
-}
+}}
 
-button, .stButton > button {
+button, .stButton > button {{
     background-color: {button_bg};
     color: {button_color};
     border: none;
     padding: 0.4rem 1rem;
     border-radius: 4px;
-}
+}}
 
-.stCheckbox > label, .stRadio > div, label, p, h1, h2, h3, h4, h5, h6, span, div {
+.stCheckbox > label, .stRadio > div, label, p, h1, h2, h3, h4, h5, h6, span, div {{
     color: {font_color} !important;
-}
+}}
 
-[data-testid="stDataFrame"] td, [data-testid="stDataFrame"] th {
+[data-testid="stDataFrame"] td, [data-testid="stDataFrame"] th {{
     color: {font_color} !important;
-}
-
-/* Sidebar radio label fix */
-section[data-testid="stSidebar"] label, section[data-testid="stSidebar"] p {
-    color: {font_color} !important;
-}
+}}
 </style>
 """
 
-css_theme_vars = {
-    "Dark": {
-        "bg_color": "#0e1117",
-        "font_color": "#ffffff",
-        "input_bg": "#262730",
-        "button_bg": "#444",
-        "button_color": "#ffffff"
-    },
-    "Light": {
-        "bg_color": "#ffffff",
-        "font_color": "#000000",
-        "input_bg": "#f0f2f6",
-        "button_bg": "#dddddd",
-        "button_color": "#000000"
-    }
-}
+if theme_mode == "Dark":
+    st.markdown(base_css.format(
+        bg_color="#0e1117",
+        font_color="#ffffff",
+        input_bg="#262730",
+        button_bg="#444",
+        button_color="#ffffff"
+    ), unsafe_allow_html=True)
+else:
+    st.markdown(base_css.format(
+        bg_color="#ffffff",
+        font_color="#000000",
+        input_bg="#f0f2f6",
+        button_bg="#dddddd",
+        button_color="#000000"
+    ), unsafe_allow_html=True)
 
-# Safely get theme vars
-theme_vars = css_theme_vars[theme_mode] if theme_mode in css_theme_vars else css_theme_vars["Light"]
-st.markdown(base_css.format(**theme_vars), unsafe_allow_html=True)
+
 
 st.title("Analysis Dashboard")
 st.markdown("Upload your Excel or CSV file to analyze and explore your dataset instantly.")
