@@ -26,45 +26,54 @@ st.set_page_config(page_title="Data Analyzer", layout="wide")
 theme_mode = st.sidebar.radio("Choose Theme", ["Light", "Dark"], index=0)
 
 # 🖌️ Inject custom CSS for themes with auto-contrast fonts
-light_theme = """
+base_css = """
 <style>
-body {
-    background-color: #ffffff;
-    color: #000000;
-}
-[data-testid="stAppViewContainer"] {
-    background-color: #ffffff;
-    color: #000000;
-}
-[data-testid="stHeader"] {
-    background-color: #ffffff;
-    color: #000000;
-}
+html, body, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {{
+    background-color: {bg_color};
+    color: {font_color};
+}}
+
+input, textarea, .stTextInput > div > input {{
+    background-color: {input_bg};
+    color: {font_color};
+    border: 1px solid #ccc;
+}}
+
+button, .stButton > button {{
+    background-color: {button_bg};
+    color: {button_color};
+    border: none;
+    padding: 0.4rem 1rem;
+    border-radius: 4px;
+}}
+
+.stCheckbox > label, .stRadio > div {{
+    color: {font_color};
+}}
+
+table, th, td {{
+    color: {font_color};
+}}
 </style>
 """
 
-dark_theme = """
-<style>
-body {
-    background-color: #0e1117;
-    color: #fafafa;
-}
-[data-testid="stAppViewContainer"] {
-    background-color: #0e1117;
-    color: #fafafa;
-}
-[data-testid="stHeader"] {
-    background-color: #0e1117;
-    color: #fafafa;
-}
-</style>
-"""
-
-# Inject the appropriate theme
 if theme_mode == "Dark":
-    st.markdown(dark_theme, unsafe_allow_html=True)
+    st.markdown(base_css.format(
+        bg_color="#0e1117",
+        font_color="#ffffff",
+        input_bg="#262730",
+        button_bg="#444",
+        button_color="#ffffff"
+    ), unsafe_allow_html=True)
 else:
-    st.markdown(light_theme, unsafe_allow_html=True)
+    st.markdown(base_css.format(
+        bg_color="#ffffff",
+        font_color="#000000",
+        input_bg="#f0f2f6",
+        button_bg="#dddddd",
+        button_color="#000000"
+    ), unsafe_allow_html=True)
+
 
 st.title("Analysis Dashboard")
 st.markdown("Upload your Excel or CSV file to analyze and explore your dataset instantly.")
