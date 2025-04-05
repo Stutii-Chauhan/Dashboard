@@ -167,3 +167,63 @@ if "df" in st.session_state:
                     f"<div style='background-color:#f0f8f5; padding: 12px; border-radius: 6px; font-size: 15px; white-space: pre-wrap'>{last_line}</div>",
                     unsafe_allow_html=True
                 )
+
+
+        # Check for exact stat questions
+        else:
+            match = re.match(r".*(mean|average|median|max|min|std).*?(?:of|for)?\s*([a-zA-Z0-9 _%()-]+).*", user_question, re.IGNORECASE)
+            if match:
+                stat, col_candidate = match.groups()
+                stat = stat.lower().strip()
+                col_candidate = col_candidate.strip().lower()
+
+                def best_column_match(candidate, df_columns):
+                    for col in df_columns:
+                        if candidate in col.lower():
+                            return col
+                    return None
+
+                matched_col = best_column_match(col_candidate, df.columns)
+
+                if matched_col and matched_col in df.select_dtypes(include='number').columns:
+                    stat_map = {
+                        'mean': 'mean',
+                        'average': 'mean',
+                        'median': '50%',
+                        'max': 'max',
+                        'min': 'min',
+                        'std': 'std'
+                    }
+                    stat_key = stat_map.get(stat)
+                    if stat_key:
+                        value = df[matched_col].describe().get(stat_key)
+                        if value is not None:
+                            st.markdown(
+                                f"<div style='background-color:#f0f8f5; padding: 12px; border-radius: 6px; font-size: 15px;'>The {stat} of '<b>{matched_col}</b>' is <b>{value:.4f}</b>.</div>",
+                                unsafe_allow_html=True
+                            )
+                        else:
+                            st.warning("Could not find the requested statistic.")
+                    else:
+                        st.warning("Unsupported statistic requested.")
+                else:
+                    st.warning("Could not match the column for your question.")
+            else:
+                # Fallback to LLM if it's not a clean stat question
+                question_prompt = (
+                    f"Answer the following based on the dataset:\n"
+                    f"Dataset has {df.shape[0]} rows and {df.shape[1]} columns. Columns: {', '.join(df.columns)}\n"
+                    f"Sample Data: {df.head(3).to_string(index=False)}\n\n"
+                    f"Question: {user_question}"
+                )
+                hf_token = st.secrets["hf_token"]
+                with st.spinner("Getting answer from AI..."):
+                    ai_response = query_huggingface(question_prompt, hf_token)
+
+                cleaned = ai_response.strip()
+                lines = [line.strip() for line in cleaned.split("\n") if line.strip() and not line.lower().startswith("as an ai")]
+                last_line = lines[-1] if lines else "Response could not be generated."
+                st.markdown(
+                    f"<div style='background-color:#f0f8f5; padding: 12px; border-radius: 6px; font-size: 15px; white-space: pre-wrap'>{last_line}</div>",
+                    unsafe_allow_html=True
+                )
