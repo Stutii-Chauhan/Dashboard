@@ -80,17 +80,7 @@ if uploaded_file is not None:
 def has_missing_data(dataframe):
     return dataframe.isna().sum().sum() > 0
 
-def detect_datetime_columns(df):
-    datetime_cols = []
-    for col in df.columns:
-        if df[col].dtype == object:
-            try:
-                converted = pd.to_datetime(df[col], errors='coerce', dayfirst=True)
-                if converted.notna().sum() > 0:
-                    datetime_cols.append(col)
-            except:
-                continue
-    return datetime_cols
+
 
 def query_huggingface(prompt, api_token, model="tiiuae/falcon-7b-instruct"):
     API_URL = f"https://api-inference.huggingface.co/models/{model}"
