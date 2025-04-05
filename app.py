@@ -106,9 +106,11 @@ if "df" in st.session_state:
 
         if any(keyword in user_question.lower() for keyword in ["correlation", "covariance", "regression"]):
             matched_cols = []
+            question_clean = user_question.lower().replace(" ", "")
+        
             for col in df.columns:
-                cleaned_col = col.lower().replace(" ", "")
-                if cleaned_col in user_question.lower().replace(" ", ""):
+                col_clean = col.lower().replace(" ", "")
+                if col_clean in question_clean:
                     matched_cols.append(col)
             if len(matched_cols) >= 2:
                 col1, col2 = matched_cols[:2]
