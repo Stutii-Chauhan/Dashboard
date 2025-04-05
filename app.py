@@ -48,7 +48,6 @@ def query_huggingface(prompt, api_token, model="tiiuae/falcon-7b-instruct"):
     except:
         return "LLM failed to generate a response. Please try again."
 
-# Load into session state once
 if uploaded_file is not None and "df" not in st.session_state:
     try:
         if uploaded_file.name.endswith('.csv'):
@@ -66,7 +65,6 @@ if "df" in st.session_state:
     st.dataframe(df.head(50))
     st.write(f"Shape: {df.shape[0]} rows × {df.shape[1]} columns")
 
-    # Ask a Question
     st.subheader("\U0001F9E0 Ask a Question About Your Data")
     user_question = st.text_input("What do you want to know?")
 
@@ -76,15 +74,14 @@ if "df" in st.session_state:
             'median': 'median', 'med': 'median',
             'mode': 'mode',
             'std': 'std', 'stdev': 'std', 'standard deviation': 'std',
-            'variance': 'var',
+            'variance': 'var', 'var': 'var',
             'min': 'min', 'minimum': 'min', 'lowest': 'min',
             'max': 'max', 'maximum': 'max', 'highest': 'max',
             'range': 'range',
             'iqr': 'iqr',
             'skew': 'skew',
             'kurtosis': 'kurtosis',
-            '75%': '75th',
-            '25%': '25th',
+            '75%': '75th', '25%': '25th',
             '25th percentile': '25th', '75th percentile': '75th',
             'correlation': 'correlation', 'covariance': 'covariance',
             'regression': 'regression'
@@ -93,9 +90,7 @@ if "df" in st.session_state:
         def get_column(col_candidate):
             col_candidate = col_candidate.strip().lower()
             col_candidate_clean = re.sub(r'[^a-z0-9 ]', '', col_candidate)
-            cleaned_cols = {
-                re.sub(r'[^a-z0-9 ]', '', col.lower()): col for col in df.columns
-            }
+            cleaned_cols = {re.sub(r'[^a-z0-9 ]', '', col.lower()): col for col in df.columns}
             for cleaned, original in cleaned_cols.items():
                 if col_candidate_clean in cleaned:
                     return original
@@ -104,14 +99,10 @@ if "df" in st.session_state:
                 return cleaned_cols[matches[0]]
             return None
 
+        # Handle correlation, regression, covariance
         if any(keyword in user_question.lower() for keyword in ["correlation", "covariance", "regression"]):
-            matched_cols = []
-            question_clean = user_question.lower().replace(" ", "")
-        
-            for col in df.columns:
-                col_clean = col.lower().replace(" ", "")
-                if col_clean in question_clean:
-                    matched_cols.append(col)
+            cols = re.findall(r"[a-zA-Z0-9 _%()\-]+", user_question)
+            matched_cols = [get_column(c.lower()) for c in cols if get_column(c.lower()) in df.columns]
             if len(matched_cols) >= 2:
                 col1, col2 = matched_cols[:2]
                 if "correlation" in user_question.lower():
@@ -128,68 +119,69 @@ if "df" in st.session_state:
             else:
                 st.warning("Please mention two valid numeric columns.")
 
-        percentile_match = re.match(r".*?(\d{1,3})%.*?(?:of)?\s*([a-zA-Z0-9 _%()\-]+)", user_question, re.IGNORECASE)
-        if percentile_match:
-            perc, col_candidate = percentile_match.groups()
-            perc = float(perc)
-            col = get_column(col_candidate.strip().lower())
-            if col and col in df.select_dtypes(include='number').columns:
-                try:
-                    result = np.percentile(df[col].dropna(), perc)
-                    st.success(f"The {perc}th percentile of {col} is {result:.4f}.")
-                except Exception as e:
-                    st.error(f"Error while computing percentile: {e}")
-            else:
-                st.warning("Could not match the column for your question.")
+        # Handle percentile queries
         else:
-            pattern = r".*?(mean|average|avg|avrg|av|meanvalue|median|med|mode|std|stdev|standard deviation|variance|min|minimum|lowest|max|maximum|highest|range|iqr|skew|kurtosis|25th percentile|75th percentile).*?(25|50|75)(?:th)?\s*(percentile|%)\s*(?:of|for)?\s*([a-zA-Z0-9 _%()\-]+)"
-            match = re.match(pattern, user_question, re.IGNORECASE)
-            if match:
-                stat, col_candidate = match.groups()[0], match.groups()[-1]
-                stat_key = stat_keywords.get(stat.lower(), None)
+            percentile_match = re.match(r".*?(\d{1,3})%.*?(?:of)?\s*([a-zA-Z0-9 _%()\-]+)", user_question, re.IGNORECASE)
+            if percentile_match:
+                perc, col_candidate = percentile_match.groups()
+                perc = float(perc)
                 col = get_column(col_candidate.strip().lower())
                 if col and col in df.select_dtypes(include='number').columns:
                     try:
-                        if stat_key == 'mean':
-                            result = df[col].mean()
-                        elif stat_key == 'median':
-                            result = df[col].median()
-                        elif stat_key == 'mode':
-                            result = df[col].mode().iloc[0]
-                        elif stat_key == 'std':
-                            result = df[col].std()
-                        elif stat_key == 'var':
-                            result = df[col].var()
-                        elif stat_key == 'min':
-                            result = df[col].min()
-                        elif stat_key == 'max':
-                            result = df[col].max()
-                        elif stat_key == 'range':
-                            result = df[col].max() - df[col].min()
-                        elif stat_key == 'iqr':
-                            result = np.percentile(df[col].dropna(), 75) - np.percentile(df[col].dropna(), 25)
-                        elif stat_key == 'skew':
-                            result = df[col].skew()
-                        elif stat_key == 'kurtosis':
-                            result = df[col].kurtosis()
-                        elif stat_key == '25th':
-                            result = df[col].describe().loc['25%']
-                        elif stat_key == '75th':
-                            result = df[col].describe().loc['75%']
-                        else:
-                            result = None
-
-                        if result is not None:
-                            st.success(f"The {stat} of {col} is {result:.4f}.")
-                        else:
-                            st.warning("This operation is not supported yet.")
+                        result = np.percentile(df[col].dropna(), perc)
+                        st.success(f"The {perc}th percentile of {col} is {result:.4f}.")
                     except Exception as e:
-                        st.error(f"Error while computing: {e}")
+                        st.error(f"Error while computing percentile: {e}")
                 else:
                     st.warning("Could not match the column for your question.")
             else:
-                st.info("Couldn't match to a known operation. Please rephrase or check column names.")
+                # Generic stat query match
+                stat_match = re.match(r".*?(mean|average|avg|avrg|av|meanvalue|median|med|mode|std|stdev|standard deviation|variance|min|minimum|lowest|max|maximum|highest|range|iqr|skew|kurtosis).*?(?:of|for)?\s*([a-zA-Z0-9 _%()\-]+).*", user_question, re.IGNORECASE)
+                if stat_match:
+                    stat, col_candidate = stat_match.groups()
+                    stat_key = stat_keywords.get(stat.lower(), None)
+                    col = get_column(col_candidate.strip().lower())
+                    if col and col in df.select_dtypes(include='number').columns:
+                        try:
+                            if stat_key == 'mean':
+                                result = df[col].mean()
+                            elif stat_key == 'median':
+                                result = df[col].median()
+                            elif stat_key == 'mode':
+                                result = df[col].mode().iloc[0]
+                            elif stat_key == 'std':
+                                result = df[col].std()
+                            elif stat_key == 'var':
+                                result = df[col].var()
+                            elif stat_key == 'min':
+                                result = df[col].min()
+                            elif stat_key == 'max':
+                                result = df[col].max()
+                            elif stat_key == 'range':
+                                result = df[col].max() - df[col].min()
+                            elif stat_key == 'iqr':
+                                result = np.percentile(df[col].dropna(), 75) - np.percentile(df[col].dropna(), 25)
+                            elif stat_key == 'skew':
+                                result = df[col].skew()
+                            elif stat_key == 'kurtosis':
+                                result = df[col].kurtosis()
+                            elif stat_key == '25th':
+                                result = df[col].describe().loc['25%']
+                            elif stat_key == '75th':
+                                result = df[col].describe().loc['75%']
+                            else:
+                                result = None
 
+                            if result is not None:
+                                st.success(f"The {stat} of {col} is {result:.4f}.")
+                            else:
+                                st.warning("This operation is not supported yet.")
+                        except Exception as e:
+                            st.error(f"Error while computing: {e}")
+                    else:
+                        st.warning("Could not match the column for your question.")
+                else:
+                    st.info("Couldn't match to a known operation. Please rephrase or check column names.")
 
 
       # Column Classification
