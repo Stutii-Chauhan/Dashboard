@@ -28,10 +28,9 @@ with st.sidebar:
     theme_mode = st.radio("Choose Theme", ["Light", "Dark"], index=0)
     st.markdown("</div>", unsafe_allow_html=True)
 
-# Inject custom CSS for themes with auto-contrast fonts and hide default sidebar toggle
+# 🖍️ Inject custom CSS for themes with auto-contrast fonts and hide default sidebar toggle
 base_css = """
 <style>
-/* Hide the default sidebar collapse button */
 [data-testid="collapsedControl"] {
     display: none;
 }
@@ -42,7 +41,7 @@ html, body, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {
 }
 
 section[data-testid="stSidebar"] > div:first-child {
-    width: 230px;
+    width: 160px !important;
 }
 
 input, textarea, .stTextInput > div > input {
@@ -66,26 +65,32 @@ button, .stButton > button {
 [data-testid="stDataFrame"] td, [data-testid="stDataFrame"] th {
     color: {font_color} !important;
 }
+
+/* Sidebar radio label fix */
+section[data-testid="stSidebar"] label, section[data-testid="stSidebar"] p {
+    color: {font_color} !important;
+}
 </style>
 """
 
-if theme_mode == "Dark":
-    st.markdown(base_css.format(
-        bg_color="#0e1117",
-        font_color="#ffffff",
-        input_bg="#262730",
-        button_bg="#444",
-        button_color="#ffffff"
-    ), unsafe_allow_html=True)
-else:
-    st.markdown(base_css.format(
-        bg_color="#ffffff",
-        font_color="#000000",
-        input_bg="#f0f2f6",
-        button_bg="#dddddd",
-        button_color="#000000"
-    ), unsafe_allow_html=True)
+css_theme_vars = {
+    "Dark": {
+        "bg_color": "#0e1117",
+        "font_color": "#ffffff",
+        "input_bg": "#262730",
+        "button_bg": "#444",
+        "button_color": "#ffffff"
+    },
+    "Light": {
+        "bg_color": "#ffffff",
+        "font_color": "#000000",
+        "input_bg": "#f0f2f6",
+        "button_bg": "#dddddd",
+        "button_color": "#000000"
+    }
+}
 
+st.markdown(base_css.format(**css_theme_vars[theme_mode]), unsafe_allow_html=True)
 
 st.title("Analysis Dashboard")
 st.markdown("Upload your Excel or CSV file to analyze and explore your dataset instantly.")
