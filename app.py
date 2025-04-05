@@ -4,6 +4,8 @@ import plotly.express as px
 import requests
 import re
 import difflib
+import numpy as np
+from scipy import stats
 
 st.set_page_config(page_title="Data Analyzer", layout="wide")
 
@@ -63,92 +65,101 @@ if "df" in st.session_state:
     st.dataframe(df.head(50))
     st.write(f"Shape: {df.shape[0]} rows × {df.shape[1]} columns")
 
-    # Falcon Summary
-    if st.button("Generate Business Summary using AI"):
-        numeric_cols = df.select_dtypes(include='number').columns
-        desc = df[numeric_cols].describe().T
-
-        metrics_summary = "\n\n".join(
-            [
-                f"Column: {col}\nMean: {desc.loc[col, 'mean']:.2f}\nStd: {desc.loc[col, 'std']:.2f}\nMin: {desc.loc[col, 'min']:.2f}\nMax: {desc.loc[col, 'max']:.2f}"
-                for col in desc.index
-            ]
-        )
-
-        prompt = (
-            f"Answer the following based on the dataset:\n"
-            f"Dataset has {df.shape[0]} rows and {df.shape[1]} columns. Columns: {', '.join(df.columns)}\n\n"
-            f"Summary statistics:\n{metrics_summary}\n\n"
-            f"Question: What trends and insights can you derive from this data?"
-        )
-
-        hf_token = st.secrets["hf_token"]
-        with st.spinner("Generating AI business summary..."):
-            response = query_huggingface(prompt, hf_token)
-
-        cleaned_response = response.strip()
-        lines = [line.strip() for line in cleaned_response.split("\n") if line.strip() and not line.strip().lower().startswith("as an ai")]
-        final_output = lines[-1] if lines else "Summary could not be generated."
-
-        st.subheader("\U0001F4A1 AI-Generated Business Summary")
-        st.markdown(
-            f"<div style='background-color:#f0f8f5; padding: 15px; border-radius: 8px; font-size: 15px; white-space: pre-wrap'>{final_output}</div>",
-            unsafe_allow_html=True
-        )
-
-    # Natural Language Questions
+    # Ask a Question
     st.subheader("\U0001F9E0 Ask a Question About Your Data")
     user_question = st.text_input("What do you want to know?")
+
     if user_question:
         stat_keywords = {
-            'mean': 'mean', 'average': 'mean', 'avg': 'mean', 'avrg': 'mean', 'meanvalue': 'mean', 'av': 'mean',
-            'median': '50%', 'med': '50%',
-            'max': 'max', 'maximum': 'max', 'highest': 'max',
+            'mean': 'mean', 'average': 'mean', 'avg': 'mean', 'avrg': 'mean', 'av': 'mean', 'meanvalue': 'mean',
+            'median': 'median', 'med': 'median',
+            'mode': 'mode',
+            'std': 'std', 'stdev': 'std', 'standard deviation': 'std',
+            'variance': 'var',
             'min': 'min', 'minimum': 'min', 'lowest': 'min',
-            'std': 'std', 'stdev': 'std', 'standard deviation': 'std'
+            'max': 'max', 'maximum': 'max', 'highest': 'max',
+            'range': 'range',
+            'iqr': 'iqr',
+            'skew': 'skew',
+            'kurtosis': 'kurtosis',
+            '25th percentile': '25th', '75th percentile': '75th',
+            'correlation': 'correlation', 'covariance': 'covariance',
+            'regression': 'regression'
         }
 
-        pattern = r".*(mean|average|avg|avrg|av|meanvalue|median|med|max|maximum|highest|min|minimum|lowest|std|stdev|standard deviation).*?(?:of|for)?\s*([a-zA-Z0-9 _%()\-]+).*"
-        match = re.match(pattern, user_question, re.IGNORECASE)
-        
-        if match:
-            stat, col_candidate = match.groups()
-            stat = stat.lower().strip()
-            col_candidate = col_candidate.strip().lower()
-
+        def get_column(col_candidate):
             possible_matches = [col for col in df.columns if col_candidate in col.lower()]
             if not possible_matches:
                 possible_matches = difflib.get_close_matches(col_candidate, df.columns, n=1, cutoff=0.6)
+            return possible_matches[0] if possible_matches else None
 
-            matched_col = possible_matches[0] if possible_matches else None
-
-            if matched_col and matched_col in df.select_dtypes(include='number').columns:
-                try:
-                    result = df[matched_col].mean() if stat_keywords[stat] == 'mean' else df[matched_col].describe()[stat_keywords[stat]]
-                    st.success(f"The {stat} of {matched_col} is {result:.4f}.")
-                except Exception as e:
-                    st.warning(f"Could not compute {stat} for {matched_col}: {e}")
+        if "correlation" in user_question.lower() or "covariance" in user_question.lower() or "regression" in user_question.lower():
+            cols = re.findall(r"[a-zA-Z0-9 _%()\-]+", user_question)
+            matched_cols = [get_column(c.lower()) for c in cols if get_column(c.lower()) in df.columns]
+            if len(matched_cols) >= 2:
+                col1, col2 = matched_cols[:2]
+                if "correlation" in user_question.lower():
+                    val = df[col1].corr(df[col2])
+                    st.success(f"Correlation between {col1} and {col2} is {val:.4f}.")
+                elif "covariance" in user_question.lower():
+                    val = df[col1].cov(df[col2])
+                    st.success(f"Covariance between {col1} and {col2} is {val:.4f}.")
+                elif "regression" in user_question.lower():
+                    result = stats.linregress(df[col1].dropna(), df[col2].dropna())
+                    st.success(f"Regression between {col1} and {col2}: Slope = {result.slope:.4f}, Intercept = {result.intercept:.4f}, R = {result.rvalue:.4f}")
+                else:
+                    st.warning("Could not determine type of relationship analysis.")
             else:
-                st.warning("Could not match the column for your question.")
+                st.warning("Please mention two valid numeric columns.")
         else:
-            # Fallback to Falcon LLM
-            hf_token = st.secrets["hf_token"]
-            question_prompt = (
-                f"Answer the following based on the dataset:\n"
-                f"Dataset has {df.shape[0]} rows and {df.shape[1]} columns. Columns: {', '.join(df.columns)}\n"
-                f"Sample Data: {df.head(3).to_string(index=False)}\n\n"
-                f"Question: {user_question}"
-            )
-            with st.spinner("Getting answer from AI..."):
-                ai_response = query_huggingface(question_prompt, hf_token)
+            pattern = r".*?(mean|average|avg|avrg|av|meanvalue|median|med|mode|std|stdev|standard deviation|variance|min|minimum|lowest|max|maximum|highest|range|iqr|skew|kurtosis|25th percentile|75th percentile).*?(?:of|for)?\s*([a-zA-Z0-9 _%()\-]+).*"
+            match = re.match(pattern, user_question, re.IGNORECASE)
+            if match:
+                stat, col_candidate = match.groups()
+                stat_key = stat_keywords.get(stat.lower(), None)
+                col = get_column(col_candidate.strip().lower())
+                if col and col in df.select_dtypes(include='number').columns:
+                    try:
+                        if stat_key == 'mean':
+                            result = df[col].mean()
+                        elif stat_key == 'median':
+                            result = df[col].median()
+                        elif stat_key == 'mode':
+                            result = df[col].mode().iloc[0]
+                        elif stat_key == 'std':
+                            result = df[col].std()
+                        elif stat_key == 'var':
+                            result = df[col].var()
+                        elif stat_key == 'min':
+                            result = df[col].min()
+                        elif stat_key == 'max':
+                            result = df[col].max()
+                        elif stat_key == 'range':
+                            result = df[col].max() - df[col].min()
+                        elif stat_key == 'iqr':
+                            result = np.percentile(df[col].dropna(), 75) - np.percentile(df[col].dropna(), 25)
+                        elif stat_key == 'skew':
+                            result = df[col].skew()
+                        elif stat_key == 'kurtosis':
+                            result = df[col].kurtosis()
+                        elif stat_key == '25th':
+                            result = np.percentile(df[col].dropna(), 25)
+                        elif stat_key == '75th':
+                            result = np.percentile(df[col].dropna(), 75)
+                        else:
+                            result = None
 
-            cleaned = ai_response.strip()
-            lines = [line.strip() for line in cleaned.split("\n") if line.strip() and not line.lower().startswith("as an ai")]
-            last_line = lines[-1] if lines else "Response could not be generated."
-            st.markdown(
-                f"<div style='background-color:#f0f8f5; padding: 12px; border-radius: 6px; font-size: 15px; white-space: pre-wrap'>{last_line}</div>",
-                unsafe_allow_html=True
-            )
+                        if result is not None:
+                            st.success(f"The {stat} of {col} is {result:.4f}.")
+                        else:
+                            st.warning("This operation is not supported yet.")
+                    except Exception as e:
+                        st.error(f"Error while computing: {e}")
+                else:
+                    st.warning("Could not match the column for your question.")
+            else:
+                st.info("Couldn't match to a known operation. Please rephrase or check column names.")
+
 
 
       # Column Classification
