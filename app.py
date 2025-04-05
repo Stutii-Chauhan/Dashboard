@@ -91,11 +91,14 @@ if "df" in st.session_state:
         }
 
         def get_column(col_candidate):
-            possible_matches = [col for col in df.columns if col_candidate in col.lower()]
-            if not possible_matches:
-                possible_matches = difflib.get_close_matches(col_candidate, df.columns, n=1, cutoff=0.6)
-            return possible_matches[0] if possible_matches else None
-
+            col_candidate = col_candidate.strip().lower()
+            for col in df.columns:
+                if col_candidate in col.lower():
+                    return col
+    # Try fuzzy match as fallback
+            matches = difflib.get_close_matches(col_candidate, df.columns, n=1, cutoff=0.5)
+            return matches[0] if matches else None
+  
         if "correlation" in user_question.lower() or "covariance" in user_question.lower() or "regression" in user_question.lower():
             cols = re.findall(r"[a-zA-Z0-9 _%()\-]+", user_question)
             matched_cols = [get_column(c.lower()) for c in cols if get_column(c.lower()) in df.columns]
