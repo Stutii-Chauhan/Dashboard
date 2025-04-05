@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import requests
+import re
 
 st.set_page_config(page_title="Data Analyzer", layout="wide")
 
@@ -67,58 +68,84 @@ if "df" in st.session_state:
         numeric_cols = df.select_dtypes(include='number').columns
         desc = df[numeric_cols].describe().T
 
-        # Calculate accurate metrics summary
-        metrics_summary = []
-        for col in desc.index:
-            mean = desc.loc[col, 'mean']
-            std = desc.loc[col, 'std']
-            min_val = desc.loc[col, 'min']
-            max_val = desc.loc[col, 'max']
-            metrics_summary.append(
-                f"{col}: Mean = {mean:.2f}, Std = {std:.2f}, Min = {min_val:.2f}, Max = {max_val:.2f}"
-            )
+        metrics_summary = "\n\n".join(
+            [
+                f"Column: {col}\nMean: {desc.loc[col, 'mean']:.2f}\nStd: {desc.loc[col, 'std']:.2f}\nMin: {desc.loc[col, 'min']:.2f}\nMax: {desc.loc[col, 'max']:.2f}"
+                for col in desc.index
+            ]
+        )
 
         prompt = (
-            "You are a helpful data analyst. Summarize key insights based on the following column-level metrics from a dataset.\n"
-            f"Dataset has {df.shape[0]} rows and {df.shape[1]} columns.\n"
-            f"Metrics Summary:\n{chr(10).join(metrics_summary)}\n"
-            "Provide only the most important trends or business insights as bullet points (max 3), and avoid repeating values from the prompt."
+            f"Answer the following based on the dataset:\n"
+            f"Dataset has {df.shape[0]} rows and {df.shape[1]} columns. Columns: {', '.join(df.columns)}\n\n"
+            f"Summary statistics:\n{metrics_summary}\n\n"
+            f"Question: What trends and insights can you derive from this data?"
         )
 
         hf_token = st.secrets["hf_token"]
         with st.spinner("Generating AI business summary..."):
             response = query_huggingface(prompt, hf_token)
 
-        summary_lines = [line for line in response.strip().split("\n") if line.strip() and not line.strip().lower().startswith("answer")]
-        final_response = "\n".join(summary_lines[-3:])  # Last 3 relevant lines
-
-        st.subheader("AI-Generated Business Summary")
+        last_line = response.strip().split("\n")[-1]
+        st.subheader("💡 AI-Generated Business Summary")
         st.markdown(
-            f"<div style='background-color:#f0f8f5; padding: 15px; border-radius: 8px; font-size: 15px; white-space: pre-wrap'>{final_response}</div>",
+            f"<div style='background-color:#f0f8f5; padding: 15px; border-radius: 8px; font-size: 15px; white-space: pre-wrap'>{last_line}</div>",
             unsafe_allow_html=True
         )
 
     # Ask a Question Section
-    st.subheader(" Ask a Question About Your Data")
+    st.subheader("🧠 Ask a Question About Your Data")
     user_question = st.text_input("What do you want to know?")
     if user_question:
-        question_prompt = (
-            "You are a helpful assistant answering data-related questions.\n"
-            f"Dataset has {df.shape[0]} rows and {df.shape[1]} columns.\n"
-            f"Columns: {', '.join(df.columns)}\n"
-            f"Sample Data:\n{df.head(3).to_string(index=False)}\n"
-            f"Question: {user_question}"
-        )
-        hf_token = st.secrets["hf_token"]
-        with st.spinner("Getting answer from AI..."):
-            ai_response = query_huggingface(question_prompt, hf_token)
+        # Check for exact stat questions
+        match = re.match(r".*(mean|average|median|max|min|std).*?(?:of|for)?\s*([a-zA-Z0-9 _%-]+).*", user_question, re.IGNORECASE)
+        if match:
+            stat, col_candidate = match.groups()
+            stat = stat.lower().strip()
+            col_candidate = col_candidate.strip().lower()
 
-        short_response = ai_response.strip().split("\n")[-1]
-        st.markdown(
-            f"<div style='background-color:#f0f8f5; padding: 12px; border-radius: 6px; font-size: 15px; white-space: pre-wrap'>{short_response}</div>",
-            unsafe_allow_html=True
-        )
+            matched_col = next((col for col in df.columns if col.lower() == col_candidate), None)
 
+            if matched_col and matched_col in df.select_dtypes(include='number').columns:
+                stat_map = {
+                    'mean': 'mean',
+                    'average': 'mean',
+                    'median': '50%',
+                    'max': 'max',
+                    'min': 'min',
+                    'std': 'std'
+                }
+                stat_key = stat_map.get(stat)
+                if stat_key:
+                    value = df[matched_col].describe().get(stat_key)
+                    if value is not None:
+                        st.markdown(
+                            f"<div style='background-color:#f0f8f5; padding: 12px; border-radius: 6px; font-size: 15px;'>The {stat} of '{matched_col}' is <b>{value:.4f}</b>.</div>",
+                            unsafe_allow_html=True
+                        )
+                    else:
+                        st.warning("Could not find the requested statistic.")
+                else:
+                    st.warning("Unsupported statistic requested.")
+            else:
+                st.warning("Could not match the column for your question.")
+        else:
+            # Fallback to LLM if it's not a clean stat question
+            question_prompt = (
+                f"Answer the following based on the dataset:\n"
+                f"Dataset has {df.shape[0]} rows and {df.shape[1]} columns. Columns: {', '.join(df.columns)}\n"
+                f"Sample Data: {df.head(3).to_string(index=False)}\n\n"
+                f"Question: {user_question}"
+            )
+            hf_token = st.secrets["hf_token"]
+            with st.spinner("Getting answer from AI..."):
+                ai_response = query_huggingface(question_prompt, hf_token)
+
+            last_line = ai_response.strip().split("\n")[-1]
+            st.markdown(
+                f"<div style='background-color:#f0f8f5; padding: 12px; border-radius: 6px; font-size: 15px; white-space: pre-wrap'>{last_line}</div>",
+                unsafe_allow_html=True
+            )
         
     # Column Classification
     numeric_cols = list(df.select_dtypes(include='number').columns)
