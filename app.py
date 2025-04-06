@@ -8,17 +8,6 @@ import difflib
 import numpy as np
 from scipy import stats
 
-def detect_datetime_columns(df):
-    datetime_cols = []
-    for col in df.columns:
-        if df[col].dtype == object:
-            try:
-                converted = pd.to_datetime(df[col], errors='coerce', dayfirst=True)
-                if converted.notna().sum() > 0:
-                    datetime_cols.append(col)
-            except:
-                continue
-    return datetime_cols
 
 st.set_page_config(page_title="Data Analyzer", layout="wide")
 
@@ -112,24 +101,39 @@ if apply_header:
     df = df[1:].copy()
     df.columns = new_header
 
-datetime_cols = detect_datetime_columns(df)
+
+def detect_datetime_columns(df):
+    datetime_cols = []
+    for col in df.columns:
+        if df[col].dtype == object:
+            try:
+                converted = pd.to_datetime(df[col], errors='coerce', dayfirst=True)
+                if converted.notna().sum() > 0:
+                    datetime_cols.append(col)
+            except:
+                continue
+    return datetime_cols
+
+df = st.session_state.df
+
 for col in datetime_cols:
     df[col] = pd.to_datetime(df[col], errors='coerce', dayfirst=True)
 st.session_state.df = df
-df = st.session_state.df
 
-preview_placeholder = st.empty()
 
-def update_preview():
-    df = st.session_state.df
-    preview_placeholder.subheader("Preview of the Data")
-    preview_placeholder.dataframe(df.head(50))
-    preview_placeholder.write(f"Shape: {df.shape[0]} rows × {df.shape[1]} columns")
+# def update_preview():
+#     df = st.session_state.df
+#     preview_placeholder.subheader("Preview of the Data")
+#     preview_placeholder.dataframe(df.head(50))
+#     preview_placeholder.write(f"Shape: {df.shape[0]} rows × {df.shape[1]} columns")
 
-update_preview()
+st.subheader("Data Preview")
+st.dataframe(df.head(50))
+st.write(f"Shape: {df.shape[0]} rows × {df.shape[1]} columns")
+#update_preview()
 
-def has_missing_data(dataframe):
-    return dataframe.isna().sum().sum() > 0
+# def has_missing_data(dataframe):
+#     return dataframe.isna().sum().sum() > 0
 
 def query_huggingface(prompt, api_token, model="tiiuae/falcon-7b-instruct"):
     API_URL = f"https://api-inference.huggingface.co/models/{model}"
@@ -308,82 +312,138 @@ if (numeric_cols or categorical_cols) and st.checkbox("Show Dataset Overview"):
             st.write(f"- {col}")
 
 # --- MISSING VALUE HANDLER ---
+# missing_count = df.isna().sum().sum()
+
+# if missing_count > 0:
+#     if st.checkbox("Show Missing Value Handler", key="missing_value_checkbox"):
+#         st.subheader("Missing Values")
+#         st.write(f"Total missing values: {int(missing_count)}")
+#         st.dataframe(df[df.isna().any(axis=1)])
+#         st.subheader("Handle Missing Data")
+#         missing_cols = df.columns[df.isna().any()].tolist()
+
+#         with st.expander("Fill a specific column", expanded=False):
+#             col1, col2 = st.columns([1, 2])
+#             with col1:
+#                 selected_col = st.selectbox("Select column", missing_cols, key="col_fill")
+#             method = st.radio("How do you want to fill?", ["Custom value", "Mean", "Median", "Mode"], horizontal=True)
+#             fill_value = None
+#             if method == "Custom value":
+#                 fill_input = st.text_input("Enter the value to fill:", key="custom_val")
+#                 if fill_input:
+#                     try:
+#                         dtype = df[selected_col].dropna().dtype
+#                         fill_value = dtype.type(fill_input)
+#                     except:
+#                         fill_value = fill_input
+#             elif method == "Mean":
+#                 fill_value = df[selected_col].mean()
+#             elif method == "Median":
+#                 fill_value = df[selected_col].median()
+#             elif method == "Mode":
+#                 mode_vals = df[selected_col].mode()
+#                 fill_value = mode_vals[0] if not mode_vals.empty else None
+#             if st.button("Apply", key="apply_single_col"):
+#                 if fill_value is not None:
+#                     df[selected_col].fillna(fill_value, inplace=True)
+#                     st.session_state.df = df
+#                     st.success(f"Filled missing values in '{selected_col}' using {method.lower()}: {fill_value}")
+#                     update_preview()
+
+#         with st.expander("Fill all missing values (entire dataset)", expanded=False):
+#             fill_option = st.radio("Choose fill method", ["Custom value", "Mean", "Median", "Mode"], horizontal=True, key="fill_all_choice")
+#             if fill_option == "Custom value":
+#                 global_default = st.text_input("Enter a global default value:", key="global_custom")
+#                 if global_default and st.button("Apply Global Fill", key="fill_global_custom"):
+#                     df.fillna(global_default, inplace=True)
+#                     st.session_state.df = df
+#                     st.success(f"All missing values filled with '{global_default}'")
+#                     update_preview()
+#             elif fill_option in ["Mean", "Median", "Mode"]:
+#                 if st.button("Apply Global Fill", key="fill_global_stat"):
+#                     for col in df.columns:
+#                         if df[col].isna().any():
+#                             try:
+#                                 if fill_option == "Mean":
+#                                     value = df[col].mean()
+#                                 elif fill_option == "Median":
+#                                     value = df[col].median()
+#                                 elif fill_option == "Mode":
+#                                     mode_vals = df[col].mode()
+#                                     value = mode_vals[0] if not mode_vals.empty else None
+#                                 if value is not None:
+#                                     df[col].fillna(value, inplace=True)
+#                             except:
+#                                 continue
+#                     st.session_state.df = df
+#                     st.success(f"Filled all missing values using column-wise {fill_option.lower()}")
+#                     update_preview()
+
+#         with st.expander("Drop all rows with missing values", expanded=False):
+#             if st.button("Drop rows"):
+#                 original_shape = df.shape
+#                 df.dropna(inplace=True)
+#                 st.session_state.df = df
+#                 st.success(f"Dropped all rows containing missing values. Shape changed from {original_shape} to {df.shape}.")
+#                 update_preview()
+# else:
+#     st.info("No missing values remain in your dataset. The missing value handler is hidden.")
 missing_count = df.isna().sum().sum()
-
 if missing_count > 0:
-    if st.checkbox("Show Missing Value Handler", key="missing_value_checkbox"):
-        st.subheader("Missing Values")
-        st.write(f"Total missing values: {int(missing_count)}")
-        st.dataframe(df[df.isna().any(axis=1)])
-        st.subheader("Handle Missing Data")
-        missing_cols = df.columns[df.isna().any()].tolist()
+    with st.expander(f"🧹 Handle Missing Values ({int(missing_count)} missing)", expanded=True):
 
-        with st.expander("Fill a specific column", expanded=False):
-            col1, col2 = st.columns([1, 2])
-            with col1:
-                selected_col = st.selectbox("Select column", missing_cols, key="col_fill")
-            method = st.radio("How do you want to fill?", ["Custom value", "Mean", "Median", "Mode"], horizontal=True)
-            fill_value = None
-            if method == "Custom value":
-                fill_input = st.text_input("Enter the value to fill:", key="custom_val")
-                if fill_input:
-                    try:
-                        dtype = df[selected_col].dropna().dtype
-                        fill_value = dtype.type(fill_input)
-                    except:
-                        fill_value = fill_input
-            elif method == "Mean":
-                fill_value = df[selected_col].mean()
-            elif method == "Median":
-                fill_value = df[selected_col].median()
-            elif method == "Mode":
-                mode_vals = df[selected_col].mode()
-                fill_value = mode_vals[0] if not mode_vals.empty else None
-            if st.button("Apply", key="apply_single_col"):
-                if fill_value is not None:
-                    df[selected_col].fillna(fill_value, inplace=True)
-                    st.session_state.df = df
-                    st.success(f"Filled missing values in '{selected_col}' using {method.lower()}: {fill_value}")
-                    update_preview()
+        st.markdown("Choose a strategy for missing values:")
+        method = st.radio("Fill Method", ["Custom value", "Mean", "Median", "Mode"], horizontal=True)
 
-        with st.expander("Fill all missing values (entire dataset)", expanded=False):
-            fill_option = st.radio("Choose fill method", ["Custom value", "Mean", "Median", "Mode"], horizontal=True, key="fill_all_choice")
-            if fill_option == "Custom value":
-                global_default = st.text_input("Enter a global default value:", key="global_custom")
-                if global_default and st.button("Apply Global Fill", key="fill_global_custom"):
-                    df.fillna(global_default, inplace=True)
-                    st.session_state.df = df
-                    st.success(f"All missing values filled with '{global_default}'")
-                    update_preview()
-            elif fill_option in ["Mean", "Median", "Mode"]:
-                if st.button("Apply Global Fill", key="fill_global_stat"):
-                    for col in df.columns:
-                        if df[col].isna().any():
-                            try:
-                                if fill_option == "Mean":
-                                    value = df[col].mean()
-                                elif fill_option == "Median":
-                                    value = df[col].median()
-                                elif fill_option == "Mode":
-                                    mode_vals = df[col].mode()
-                                    value = mode_vals[0] if not mode_vals.empty else None
-                                if value is not None:
-                                    df[col].fillna(value, inplace=True)
-                            except:
-                                continue
-                    st.session_state.df = df
-                    st.success(f"Filled all missing values using column-wise {fill_option.lower()}")
-                    update_preview()
+        if method == "Custom value":
+            custom_val = st.text_input("Enter custom fill value")
 
-        with st.expander("Drop all rows with missing values", expanded=False):
-            if st.button("Drop rows"):
-                original_shape = df.shape
-                df.dropna(inplace=True)
-                st.session_state.df = df
-                st.success(f"Dropped all rows containing missing values. Shape changed from {original_shape} to {df.shape}.")
-                update_preview()
+        col_scope = st.radio("Apply to", ["All columns", "Specific column"], horizontal=True)
+
+        if col_scope == "Specific column":
+            col_selected = st.selectbox("Select a column", df.columns[df.isna().any()])
+
+        if st.button("Apply Fill"):
+            if col_scope == "All columns":
+                for col in df.columns:
+                    if df[col].isna().any():
+                        try:
+                            if method == "Mean":
+                                val = df[col].mean()
+                            elif method == "Median":
+                                val = df[col].median()
+                            elif method == "Mode":
+                                val = df[col].mode()[0]
+                            else:
+                                val = custom_val
+                            df[col] = df[col].fillna(val)
+                        except:
+                            continue
+            else:
+                if method == "Mean":
+                    val = df[col_selected].mean()
+                elif method == "Median":
+                    val = df[col_selected].median()
+                elif method == "Mode":
+                    val = df[col_selected].mode()[0]
+                else:
+                    val = custom_val
+                df[col_selected] = df[col_selected].fillna(val)
+
+            st.session_state.df = df
+            st.success("Missing values filled successfully!")
+            st.experimental_rerun()
+
+    if st.button("🚫 Drop Rows with Missing Values"):
+        original_shape = df.shape
+        df.dropna(inplace=True)
+        st.session_state.df = df
+        st.success(f"Dropped rows with missing values. Shape changed from {original_shape} to {df.shape}.")
+        st.experimental_rerun()
 else:
-    st.info("No missing values remain in your dataset. The missing value handler is hidden.")
+    st.success("✅ No missing values in your dataset!")
+
+
 
 # --- DESCRIPTIVE STATISTICS ---
 if numeric_cols and st.checkbox("Show Descriptive Statistics"):
