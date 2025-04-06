@@ -93,11 +93,40 @@ if uploaded_file is not None:
         st.session_state.df = df
         st.success(f"Successfully loaded {uploaded_file.name}")
 
+#for the note
+	st.markdown("""
+        <span style='font-size: 13px;'>
+        Tip: If you're uploading a CSV exported from Excel, please save it as <b>CSV UTF-8 (Comma delimited)</b> to ensure best compatibility.
+        </span>
+        """, unsafe_allow_html=True)
+
+        if 'apply_header' not in st.session_state:
+            st.session_state.apply_header = False
+
+        apply_header = st.checkbox("Use first row as header (if not already)", value=st.session_state.apply_header)
+        st.session_state.apply_header = apply_header
+
+        # Apply header fix if checked
+        if apply_header:
+            new_header = df.iloc[0]
+            df = df[1:].copy()
+            df.columns = new_header
+
+        # Convert detected date columns to datetime
+        datetime_cols = detect_datetime_columns(df)
+        for col in datetime_cols:
+            df[col] = pd.to_datetime(df[col], errors='coerce', dayfirst=True)
+
+        st.session_state.df = df  # Save for downstream use
+        
+        # Preview right after upload
+        st.subheader("Preview of the Data")
+        st.dataframe(df.head(50))
+        st.write(f"Shape: {df.shape[0]} rows × {df.shape[1]} columns")
+
     except Exception as e:
         st.error(f"Error loading file: {e}")
         st.stop()
-
-
 
 def has_missing_data(dataframe):
     return dataframe.isna().sum().sum() > 0
