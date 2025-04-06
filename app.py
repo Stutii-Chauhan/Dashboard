@@ -8,7 +8,6 @@ import difflib
 import numpy as np
 from scipy import stats
 
-# Function to detect columns that can be parsed as datetime
 def detect_datetime_columns(df):
     datetime_cols = []
     for col in df.columns:
@@ -23,13 +22,11 @@ def detect_datetime_columns(df):
 
 st.set_page_config(page_title="Data Analyzer", layout="wide")
 
-# --- THEME TOGGLE ---
 with st.sidebar:
     st.markdown("<div style='padding-left: 10px;'>", unsafe_allow_html=True)
     theme_mode = st.radio("Choose Theme", ["Light", "Dark"], index=0)
     st.markdown("</div>", unsafe_allow_html=True)
 
-# Inject custom CSS for themes
 base_css = """
 <style>
 html, body, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {{
@@ -80,7 +77,6 @@ else:
 st.title("Analysis Dashboard")
 st.markdown("Upload your Excel or CSV file to analyze and explore your dataset instantly.")
 
-# --- FILE UPLOADER AND SESSION STATE INITIALIZATION ---
 uploaded_file = st.file_uploader("Upload a file", type=["csv", "xlsx"])
 
 if uploaded_file is not None and "df" not in st.session_state:
@@ -90,7 +86,6 @@ if uploaded_file is not None and "df" not in st.session_state:
                 df_try = pd.read_csv(uploaded_file, encoding='utf-8')
             except UnicodeDecodeError:
                 df_try = pd.read_csv(uploaded_file, encoding='latin1')
-            # Check if header is likely shifted (compare first column header to first cell)
             if df_try.columns[0] == df_try.iloc[0][0]:
                 df_try.columns = df_try.iloc[0]
                 df_try = df_try[1:]
@@ -107,9 +102,9 @@ if "df" not in st.session_state or st.session_state.df is None:
 
 df = st.session_state.df
 
-# --- OPTIONAL: FIRST-ROW-AS-HEADER ---
 if 'apply_header' not in st.session_state:
     st.session_state.apply_header = False
+
 apply_header = st.checkbox("Use first row as header (if not already)", value=st.session_state.apply_header)
 st.session_state.apply_header = apply_header
 if apply_header:
@@ -117,15 +112,12 @@ if apply_header:
     df = df[1:].copy()
     df.columns = new_header
 
-# --- DETECT DATE COLUMNS ---
 datetime_cols = detect_datetime_columns(df)
 for col in datetime_cols:
     df[col] = pd.to_datetime(df[col], errors='coerce', dayfirst=True)
 st.session_state.df = df
-df = st.session_state.df  # Reassign for consistency
+df = st.session_state.df
 
-# ----------------- PREVIEW PLACEHOLDER -----------------
-# Create a placeholder for the preview; this will be updated when missing values are handled.
 preview_placeholder = st.empty()
 
 def update_preview():
@@ -134,10 +126,8 @@ def update_preview():
     preview_placeholder.dataframe(df.head(50))
     preview_placeholder.write(f"Shape: {df.shape[0]} rows × {df.shape[1]} columns")
 
-# Initial preview
 update_preview()
 
-# --- UTILITY FUNCTIONS ---
 def has_missing_data(dataframe):
     return dataframe.isna().sum().sum() > 0
 
@@ -158,6 +148,7 @@ def query_huggingface(prompt, api_token, model="tiiuae/falcon-7b-instruct"):
         return response.json()[0]["generated_text"]
     except:
         return "LLM failed to generate a response. Please try again."
+
 
 # --- ASK A QUESTION ---
 st.subheader("Ask a Question About Your Data")
