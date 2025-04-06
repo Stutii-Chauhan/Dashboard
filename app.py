@@ -95,23 +95,30 @@ if uploaded_file is not None:
     try:
         if uploaded_file.name.endswith(".csv"):
             try:
-                df = pd.read_csv(uploaded_file, encoding='utf-8')
+                df = pd.read_csv(uploaded_file, encoding="utf-8")
             except UnicodeDecodeError:
                 try:
-                    df = pd.read_csv(uploaded_file, encoding='utf-8-sig')
-		except Exception:
-                    df = pd.read_csv(uploaded_file, encoding='ISO-8859-1')														 
-															   
+                    df = pd.read_csv(uploaded_file, encoding="utf-8-sig")
+                except Exception:
+                    df = pd.read_csv(uploaded_file, encoding="ISO-8859-1")
         else:
             df = pd.read_excel(uploaded_file)
 
-        st.success(f"Successfully loaded `{uploaded_file.name}`")
+        df = df.reset_index(drop=True)
+        st.session_state.df = df
+        st.success(f"Successfully loaded {uploaded_file.name}")
 
-        st.markdown("""
-        <span style='font-size: 13px;'>
-        Tip: If you're uploading a CSV exported from Excel, please save it as <b>CSV UTF-8 (Comma delimited)</b> to ensure best compatibility.
-        </span>
-        """, unsafe_allow_html=True)
+#for the note
+
+
+	st.markdown(
+	    """
+	    <span style='font-size: 13px;'>
+	    Tip: If you're uploading a CSV exported from Excel, please save it as <b>CSV UTF-8 (Comma delimited)</b> to ensure best compatibility.
+	    </span>
+	    """,
+	    unsafe_allow_html=True)
+
 
         if 'apply_header' not in st.session_state:
             st.session_state.apply_header = False
