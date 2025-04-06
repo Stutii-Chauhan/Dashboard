@@ -143,10 +143,10 @@ for col in datetime_cols:
 st.session_state.df = df
 df = st.session_state.df  # Reassign for consistency
 
-# --- DATA PREVIEW ---
-st.subheader("Preview of the Data")
-st.dataframe(df.head(50))
-st.write(f"Shape: {df.shape[0]} rows × {df.shape[1]} columns")
+# # --- DATA PREVIEW ---
+# st.subheader("Preview of the Data")
+# st.dataframe(df.head(50))
+# st.write(f"Shape: {df.shape[0]} rows × {df.shape[1]} columns")
 
 
 # --- UTILITY FUNCTIONS ---
@@ -412,9 +412,13 @@ if missing_count > 0:
                                 # If an error occurs on a non-numeric column, skip it
                                 continue
                     st.session_state.df = df
-                    st.success(f"Filled all missing values using column-wise {fill_option.lower()}")
-                    st.write("Updated shape:", df.shape)
-                    st.dataframe(df.head(10))
+                    # st.success(f"Filled all missing values using column-wise {fill_option.lower()}")
+                    # st.write("Updated shape:", df.shape)
+                    # st.dataframe(df.head(10))
+                    # --- DATA PREVIEW ---
+                    st.subheader("Preview of the Data")
+                    st.dataframe(df.head(50))
+                    st.write(f"Shape: {df.shape[0]} rows × {df.shape[1]} columns")
 
         with st.expander("Drop all rows with missing values", expanded=False):
             if st.button("Drop rows"):
