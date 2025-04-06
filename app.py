@@ -128,10 +128,11 @@ if uploaded_file is not None and "original_df" not in st.session_state:
 # CSV Tip
 if "df" in st.session_state:
     st.markdown(
-        \"\"\"<span style='font-size: 13px;'>💡 Tip: Save as <b>CSV UTF-8 (Comma delimited)</b></span>\"\"\",
-        unsafe_allow_html=True
-    )
-
+    """
+    <span style='font-size: 13px;'>💡 Tip: Save as <b>CSV UTF-8 (Comma delimited)</b></span>
+    """,
+    unsafe_allow_html=True
+)
     # Apply header (only once per toggle)
     apply_header = st.checkbox("Use first row as header", value=st.session_state.apply_header)
 
