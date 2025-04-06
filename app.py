@@ -93,12 +93,16 @@ if uploaded_file is not None:
         st.session_state.df = df
         st.success(f"Successfully loaded {uploaded_file.name}")
 
-# For the note
-	st.markdown("""
-	<span style='font-size: 13px;'>
-	Tip: If you're uploading a CSV exported from Excel, please save it as <b>CSV UTF-8 (Comma delimited)</b> to ensure best compatibility.
-	</span>
-	""",unsafe_allow_html=True)
+        # For the note
+        st.markdown(
+            """
+            <span style='font-size: 13px;'>
+            Tip: If you're uploading a CSV exported from Excel, please save it as <b>CSV UTF-8 (Comma delimited)</b> to ensure best compatibility.
+            </span>
+            """,
+            unsafe_allow_html=True
+        )
+
 
         if 'apply_header' not in st.session_state:
             st.session_state.apply_header = False
