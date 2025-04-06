@@ -120,7 +120,6 @@ if "df" not in st.session_state or st.session_state.df is None:
     st.warning("Please upload a dataset to begin.")
     st.stop()
 
-# From here on, we can safely use st.session_state.df
 df = st.session_state.df
 
 # --- OPTIONAL: FIRST-ROW-AS-HEADER ---
@@ -270,7 +269,10 @@ if user_question:
                 st.warning("Could not match the column for your question.")
         else:
             # Generic stat query match
-            stat_match = re.match(r".*?(mean|average|avg|avrg|av|meanvalue|median|med|mode|std|stdev|standard deviation|variance|min|minimum|lowest|max|maximum|highest|range|iqr|skew|kurtosis).*?(?:of|for)?\s*([a-zA-Z0-9 _%()\-]+).*", user_question, re.IGNORECASE)
+            stat_match = re.match(
+                r".*?(mean|average|avg|avrg|av|meanvalue|median|med|mode|std|stdev|standard deviation|variance|min|minimum|lowest|max|maximum|highest|range|iqr|skew|kurtosis).*?(?:of|for)?\s*([a-zA-Z0-9 _%()\-]+).*",
+                user_question, re.IGNORECASE
+            )
             if stat_match:
                 stat, col_candidate = stat_match.groups()
                 stat_key = stat_keywords.get(stat.lower(), None)
@@ -379,7 +381,8 @@ if missing_count > 0:
                     df[selected_col].fillna(fill_value, inplace=True)
                     st.session_state.df = df
                     st.success(f"Filled missing values in '{selected_col}' using {method.lower()}: {fill_value}")
-                    st.experimental_rerun()
+                    st.write("Updated shape:", df.shape)
+                    st.dataframe(df.head(10))  # Show a preview so user sees the change
 
         with st.expander("Fill all missing values (entire dataset)", expanded=False):
             fill_option = st.radio("Choose fill method", ["Custom value", "Mean", "Median", "Mode"], horizontal=True, key="fill_all_choice")
@@ -389,7 +392,8 @@ if missing_count > 0:
                     df.fillna(global_default, inplace=True)
                     st.session_state.df = df
                     st.success(f"All missing values filled with '{global_default}'")
-                    st.experimental_rerun()
+                    st.write("Updated shape:", df.shape)
+                    st.dataframe(df.head(10))
             elif fill_option in ["Mean", "Median", "Mode"]:
                 if st.button("Apply Global Fill", key="fill_global_stat"):
                     for col in df.columns:
@@ -405,17 +409,20 @@ if missing_count > 0:
                                 if value is not None:
                                     df[col].fillna(value, inplace=True)
                             except:
+                                # If an error occurs on a non-numeric column, skip it
                                 continue
                     st.session_state.df = df
                     st.success(f"Filled all missing values using column-wise {fill_option.lower()}")
-                    st.experimental_rerun()
+                    st.write("Updated shape:", df.shape)
+                    st.dataframe(df.head(10))
 
         with st.expander("Drop all rows with missing values", expanded=False):
             if st.button("Drop rows"):
+                original_shape = df.shape
                 df.dropna(inplace=True)
                 st.session_state.df = df
-                st.success("Dropped all rows containing missing values.")
-                st.experimental_rerun()
+                st.success(f"Dropped all rows containing missing values. Shape changed from {original_shape} to {df.shape}.")
+                st.dataframe(df.head(10))
 else:
     # If no missing values remain, hide the entire missing-value block
     st.info("No missing values remain in your dataset. The missing value handler is hidden.")
