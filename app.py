@@ -110,64 +110,55 @@ def detect_datetime_columns(df):
                 continue
     return datetime_cols
 
-# Load into session state once
+# Load data only once
 if uploaded_file is not None and "original_df" not in st.session_state:
     try:
-        if uploaded_file.name.endswith(".csv"):
-            try:
-                df = pd.read_csv(uploaded_file, encoding='utf-8')
-            except UnicodeDecodeError:
-                try:
-                    df = pd.read_csv(uploaded_file, encoding='utf-8-sig')
-                except Exception:
-                    df = pd.read_csv(uploaded_file, encoding='ISO-8859-1')
-        else:
-            df = pd.read_excel(uploaded_file)
+        # Load logic...
+        df = pd.read_csv(...) or pd.read_excel(...)
 
         df = df.reset_index(drop=True)
-        st.session_state.original_df = df  # Keep untouched version
-        st.session_state.apply_header = False  # Default
+        st.session_state.original_df = df  # 🔒 Keep raw
+        st.session_state.df = df.copy()    # 🧪 Working version
+        st.session_state.apply_header = False
         st.success(f"Successfully loaded `{uploaded_file.name}`")
-
     except Exception as e:
         st.error(f"Error loading file: {e}")
         st.stop()
 
-# If original data is loaded
-if "original_df" in st.session_state:
-    # Show tip
+# CSV Tip
+if "df" in st.session_state:
     st.markdown(
-        """
-        <span style='font-size: 13px;'>
-        Tip: If you're uploading a CSV exported from Excel, please save it as <b>CSV UTF-8 (Comma delimited)</b> to ensure best compatibility.
-        </span>
-        """,
+        \"\"\"<span style='font-size: 13px;'>💡 Tip: Save as <b>CSV UTF-8 (Comma delimited)</b></span>\"\"\",
         unsafe_allow_html=True
     )
 
-    # Toggle checkbox
-    apply_header = st.checkbox("Use first row as header (if not already)", value=st.session_state.apply_header)
-    st.session_state.apply_header = apply_header
+    # Apply header (only once per toggle)
+    apply_header = st.checkbox("Use first row as header", value=st.session_state.apply_header)
 
-    # Reconstruct working df from original
-    df = st.session_state.original_df.copy()
+    if apply_header != st.session_state.apply_header:
+        # Header was toggled
+        df = st.session_state.original_df.copy()
 
-    if apply_header:
-        new_header = df.iloc[0]
-        df = df[1:].copy()
-        df.columns = new_header
+        if apply_header:
+            new_header = df.iloc[0]
+            df = df[1:].copy()
+            df.columns = new_header
+        st.session_state.df = df
+        st.session_state.apply_header = apply_header
 
-    # Convert date columns
+    df = st.session_state.df  # Get working copy
+
+    # Convert datetime columns
     datetime_cols = detect_datetime_columns(df)
     for col in datetime_cols:
         df[col] = pd.to_datetime(df[col], errors='coerce', dayfirst=True)
-
     st.session_state.df = df
 
-    # Show preview
-    st.subheader("Preview of the Data")
+    # Data preview
+    st.subheader("🔍 Preview of the Data")
     st.dataframe(df.head(50))
     st.write(f"Shape: {df.shape[0]} rows × {df.shape[1]} columns")
+
 
     # Column Classification
     numeric_cols = list(df.select_dtypes(include='number').columns)
