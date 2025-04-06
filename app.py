@@ -112,9 +112,18 @@ def detect_datetime_columns(df):
 
 # Load data only once
 if uploaded_file is not None and "original_df" not in st.session_state:
+
     try:
-        # Load logic...
-        df = pd.read_csv(...) or pd.read_excel(...)
+        if uploaded_file.name.endswith(".csv"):
+            try:
+                df = pd.read_csv(uploaded_file, encoding='utf-8')
+            except UnicodeDecodeError:
+                try:
+                    df = pd.read_csv(uploaded_file, encoding='utf-8-sig')
+                except Exception:
+                    df = pd.read_csv(uploaded_file, encoding='ISO-8859-1')
+        else:
+            df = pd.read_excel(uploaded_file)
 
         df = df.reset_index(drop=True)
         st.session_state.original_df = df  # 🔒 Keep raw
