@@ -111,7 +111,7 @@ def detect_datetime_columns(df):
     return datetime_cols
 
 # Load into session state once
-if uploaded_file is not None and "df" not in st.session_state:
+if uploaded_file is not None and "original_df" not in st.session_state:
     try:
         if uploaded_file.name.endswith(".csv"):
             try:
@@ -125,52 +125,49 @@ if uploaded_file is not None and "df" not in st.session_state:
             df = pd.read_excel(uploaded_file)
 
         df = df.reset_index(drop=True)
-        st.session_state.df = df
+        st.session_state.original_df = df  # Keep untouched version
+        st.session_state.apply_header = False  # Default
         st.success(f"Successfully loaded `{uploaded_file.name}`")
 
     except Exception as e:
         st.error(f"Error loading file: {e}")
         st.stop()
 
-# If data is loaded, show options and preview
-if "df" in st.session_state:
-    df = st.session_state.df
-
-    # Show CSV tip
+# If original data is loaded
+if "original_df" in st.session_state:
+    # Show tip
     st.markdown(
         """
         <span style='font-size: 13px;'>
-        💡 Tip: If you're uploading a CSV exported from Excel, please save it as <b>CSV UTF-8 (Comma delimited)</b> to ensure best compatibility.
+        Tip: If you're uploading a CSV exported from Excel, please save it as <b>CSV UTF-8 (Comma delimited)</b> to ensure best compatibility.
         </span>
         """,
         unsafe_allow_html=True
     )
 
-    # Header checkbox
-    if "apply_header" not in st.session_state:
-        st.session_state.apply_header = False
-
+    # Toggle checkbox
     apply_header = st.checkbox("Use first row as header (if not already)", value=st.session_state.apply_header)
     st.session_state.apply_header = apply_header
+
+    # Reconstruct working df from original
+    df = st.session_state.original_df.copy()
 
     if apply_header:
         new_header = df.iloc[0]
         df = df[1:].copy()
         df.columns = new_header
-        st.session_state.df = df
 
-    # Convert detected date columns to datetime
+    # Convert date columns
     datetime_cols = detect_datetime_columns(df)
     for col in datetime_cols:
         df[col] = pd.to_datetime(df[col], errors='coerce', dayfirst=True)
+
     st.session_state.df = df
 
-    # Preview
-    st.subheader("🔍 Preview of the Data")
+    # Show preview
+    st.subheader("Preview of the Data")
     st.dataframe(df.head(50))
     st.write(f"Shape: {df.shape[0]} rows × {df.shape[1]} columns")
-																						  
-
 
     # Column Classification
     numeric_cols = list(df.select_dtypes(include='number').columns)
