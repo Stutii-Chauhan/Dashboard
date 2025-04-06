@@ -130,10 +130,10 @@ if uploaded_file is not None:
             df = df[1:].copy()
             df.columns = new_header
 
-        # Convert detected date columns to datetime
-        datetime_cols = detect_datetime_columns(df)
-        for col in datetime_cols:
-            df[col] = pd.to_datetime(df[col], errors='coerce', dayfirst=True)
+        # # Convert detected date columns to datetime
+        # datetime_cols = detect_datetime_columns(df)
+        # for col in datetime_cols:
+        #     df[col] = pd.to_datetime(df[col], errors='coerce', dayfirst=True)
 
         st.session_state.df = df  # Save for downstream use
         
