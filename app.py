@@ -80,23 +80,23 @@ if uploaded_file is not None:
     try:
         if uploaded_file.name.endswith(".csv"):
             try:
-                df = pd.read_csv(uploaded_file, encoding='utf-8')
+                df = pd.read_csv(uploaded_file, encoding="utf-8")
             except UnicodeDecodeError:
                 try:
-                    df = pd.read_csv(uploaded_file, encoding='utf-8-sig')
-		except Exception:
-                    df = pd.read_csv(uploaded_file, encoding='ISO-8859-1')											 						   
+                    df = pd.read_csv(uploaded_file, encoding="utf-8-sig")
+                except Exception:
+                    df = pd.read_csv(uploaded_file, encoding="ISO-8859-1")
         else:
             df = pd.read_excel(uploaded_file)
-        st.success(f"Successfully loaded `{uploaded_file.name}`")
 
+        df = df.reset_index(drop=True)
+        st.session_state.df = df
+        st.success(f"Successfully loaded {uploaded_file.name}")
 
-	df = df.reset_index(drop=True)
-	st.session_state.df = df
-	st.success(f"Successfully loaded {uploaded_file.name}")
     except Exception as e:
-	st.error(f"Error loading file: {e}")
-	st.stop()
+        st.error(f"Error loading file: {e}")
+        st.stop()
+
 
 
 def has_missing_data(dataframe):
