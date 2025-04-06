@@ -11,6 +11,19 @@ import numpy as np
 from scipy import stats
 
 st.set_page_config(page_title="Data Analyzer", layout="wide")
+
+def detect_datetime_columns(df):
+    datetime_cols = []
+    for col in df.columns:
+        if df[col].dtype == object:
+            try:
+                converted = pd.to_datetime(df[col], errors='coerce', dayfirst=True)
+                if converted.notna().sum() > 0:
+                    datetime_cols.append(col)
+            except:
+                continue
+    return datetime_cols
+
 # Theme Toggle
 with st.sidebar:
     st.markdown("<div style='padding-left: 10px;'>", unsafe_allow_html=True)
@@ -76,6 +89,8 @@ st.title("Analysis Dashboard")
 st.markdown("Upload your Excel or CSV file to analyze and explore your dataset instantly.")
 
 uploaded_file = st.file_uploader("Upload a file", type=["csv", "xlsx"])
+def has_missing_data(dataframe):
+    return dataframe.isna().sum().sum() > 0
 if uploaded_file is not None:
     try:
         if uploaded_file.name.endswith(".csv"):
@@ -102,7 +117,6 @@ if uploaded_file is not None:
             """,
             unsafe_allow_html=True
         )
-
 
         if 'apply_header' not in st.session_state:
             st.session_state.apply_header = False
