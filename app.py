@@ -90,37 +90,28 @@ st.title("Analysis Dashboard")
 st.markdown("Upload your Excel or CSV file to analyze and explore your dataset instantly.")
 
 uploaded_file = st.file_uploader("Upload a file", type=["csv", "xlsx"])
-def has_missing_data(dataframe):
-    return dataframe.isna().sum().sum() > 0
 
 if uploaded_file is not None:
     try:
         if uploaded_file.name.endswith(".csv"):
             try:
-                df = pd.read_csv(uploaded_file, encoding="utf-8")
+                df = pd.read_csv(uploaded_file, encoding='utf-8')
             except UnicodeDecodeError:
                 try:
-                    df = pd.read_csv(uploaded_file, encoding="utf-8-sig")
-                except Exception:
-                    df = pd.read_csv(uploaded_file, encoding="ISO-8859-1")
+                    df = pd.read_csv(uploaded_file, encoding='utf-8-sig')
+		except Exception:
+                    df = pd.read_csv(uploaded_file, encoding='ISO-8859-1')														 
+															   
         else:
             df = pd.read_excel(uploaded_file)
 
-        df = df.reset_index(drop=True)
-        st.session_state.df = df
-        st.success(f"Successfully loaded {uploaded_file.name}")
+        st.success(f"Successfully loaded `{uploaded_file.name}`")
 
-
-        # For the note
-        st.markdown(
-            """
-            <span style='font-size: 13px;'>
-            Tip: If you're uploading a CSV exported from Excel, please save it as <b>CSV UTF-8 (Comma delimited)</b> to ensure best compatibility.
-            </span>
-            """,
-            unsafe_allow_html=True
-        )
-
+        st.markdown("""
+        <span style='font-size: 13px;'>
+        Tip: If you're uploading a CSV exported from Excel, please save it as <b>CSV UTF-8 (Comma delimited)</b> to ensure best compatibility.
+        </span>
+        """, unsafe_allow_html=True)
 
         if 'apply_header' not in st.session_state:
             st.session_state.apply_header = False
@@ -151,7 +142,8 @@ if uploaded_file is not None:
 
 
 
-
+def has_missing_data(dataframe):
+    return dataframe.isna().sum().sum() > 0
 
 def detect_datetime_columns(df):
     datetime_cols = []
