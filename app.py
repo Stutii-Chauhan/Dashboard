@@ -12,17 +12,17 @@ from scipy import stats
 
 st.set_page_config(page_title="Data Analyzer", layout="wide")
 
-def detect_datetime_columns(df):
-    datetime_cols = []
-    for col in df.columns:
-        if df[col].dtype == object:
-            try:
-                converted = pd.to_datetime(df[col], errors='coerce', dayfirst=True)
-                if converted.notna().sum() > 0:
-                    datetime_cols.append(col)
-            except:
-                continue
-    return datetime_cols
+# def detect_datetime_columns(df):
+#     datetime_cols = []
+#     for col in df.columns:
+#         if df[col].dtype == object:
+#             try:
+#                 converted = pd.to_datetime(df[col], errors='coerce', dayfirst=True)
+#                 if converted.notna().sum() > 0:
+#                     datetime_cols.append(col)
+#             except:
+#                 continue
+#     return datetime_cols
 
 # Theme Toggle
 with st.sidebar:
