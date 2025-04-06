@@ -81,8 +81,6 @@ else:
         button_color="#000000"
     ), unsafe_allow_html=True)
 
-
-
 st.title("Analysis Dashboard")
 st.markdown("Upload your Excel or CSV file to analyze and explore your dataset instantly.")
 
@@ -139,8 +137,6 @@ if uploaded_file is not None:
 def has_missing_data(dataframe):
     return dataframe.isna().sum().sum() > 0
 
-
-
 def query_huggingface(prompt, api_token, model="tiiuae/falcon-7b-instruct"):
     API_URL = f"https://api-inference.huggingface.co/models/{model}"
     headers = {"Authorization": f"Bearer {api_token}"}
@@ -175,7 +171,6 @@ if "df" in st.session_state:
                 most_missing_col = missing_per_column.idxmax()
                 count = missing_per_column.max()
                 st.success(f"Column with the most missing values is '{most_missing_col}' with {count} missing entries.")
-
             elif "per column" in q or "column wise" in q or "each column" in q:
                 missing_per_column = df.isna().sum()
                 st.write("### Missing Values per Column")
@@ -183,8 +178,7 @@ if "df" in st.session_state:
             else:
                 total_missing = df.isna().sum().sum()
                 st.success(f"Total missing values in the dataset: {total_missing}")
-                st.stop()
-
+                # Removed st.stop() to allow further processing
 
     if user_question:
         stat_keywords = {
@@ -222,7 +216,6 @@ if "df" in st.session_state:
         if any(keyword in user_question.lower() for keyword in ['missing', 'null', 'nan', 'na', 'none', 'blank']):
             total_missing = df.isna().sum().sum()
             st.success(f"Total missing values in the dataset: {total_missing}")
-
         
         if any(keyword in user_question.lower() for keyword in ["correlation", "covariance", "regression"]):
             cols = re.findall(r"[a-zA-Z0-9 _%()\-]+", user_question)
@@ -236,15 +229,18 @@ if "df" in st.session_state:
                     val = df[col1].cov(df[col2])
                     st.success(f"Covariance between {col1} and {col2} is {val:.4f}.")
                 elif "regression" in user_question.lower():
-                    result = stats.linregress(df[col1].dropna(), df[col2].dropna())
-                    st.success(f"Regression between {col1} and {col2}: Slope = {result.slope:.4f}, Intercept = {result.intercept:.4f}, R = {result.rvalue:.4f}")
+                    valid_rows = df[[col1, col2]].dropna()
+                    if not valid_rows.empty:
+                        result = stats.linregress(valid_rows[col1], valid_rows[col2])
+                        st.success(f"Regression between {col1} and {col2}: Slope = {result.slope:.4f}, Intercept = {result.intercept:.4f}, R = {result.rvalue:.4f}")
+                    else:
+                        st.warning("Not enough valid data for regression.")
                 else:
                     st.warning("Could not determine type of relationship analysis.")
             else:
                 st.warning("Please mention two valid numeric columns.")
-
-        # Handle percentile queries
         else:
+            # Handle percentile queries
             percentile_match = re.match(r".*?(\d{1,3})%.*?(?:of)?\s*([a-zA-Z0-9 _%()\-]+)", user_question, re.IGNORECASE)
             if percentile_match:
                 perc, col_candidate = percentile_match.groups()
@@ -307,19 +303,16 @@ if "df" in st.session_state:
                 else:
                     st.info("Couldn't match to a known operation. Please rephrase or check column names.")
 
-
-      # Column Classification
+    # Column Classification
     numeric_cols = list(df.select_dtypes(include='number').columns)
     categorical_cols = [col for col in df.columns if col not in numeric_cols]
 
     if (numeric_cols or categorical_cols) and st.checkbox("Show Dataset Overview", key="dataset_overview_checkbox"):
         st.subheader("Dataset Overview")
-
         if numeric_cols:
             st.markdown("**Numeric columns:**")
             for col in numeric_cols:
                 st.write(f"- {col}")
-
         if categorical_cols:
             st.markdown("**Categorical columns:**")
             for col in categorical_cols:
@@ -336,11 +329,8 @@ if "df" in st.session_state:
             col1, col2 = st.columns([1, 2])
             with col1:
                 selected_col = st.selectbox("Select column", missing_cols, key="col_fill")
-
             method = st.radio("How do you want to fill?", ["Custom value", "Mean", "Median", "Mode"], horizontal=True)
-
             fill_value = None
-
             if method == "Custom value":
                 fill_input = st.text_input("Enter the value to fill:", key="custom_val")
                 if fill_input:
@@ -362,19 +352,17 @@ if "df" in st.session_state:
                     df[selected_col].fillna(fill_value, inplace=True)
                     st.session_state.df = df
                     st.success(f"Filled missing values in '{selected_col}' using {method.lower()}: {fill_value}")
-                    st.rerun()
+                    st.experimental_rerun()
 
         with st.expander("Fill all missing values (entire dataset)", expanded=False):
             fill_option = st.radio("Choose fill method", ["Custom value", "Mean", "Median", "Mode"], horizontal=True, key="fill_all_choice")
-
             if fill_option == "Custom value":
                 global_default = st.text_input("Enter a global default value:", key="global_custom")
                 if global_default and st.button("Apply Global Fill", key="fill_global_custom"):
                     df.fillna(global_default, inplace=True)
                     st.session_state.df = df
                     st.success(f"All missing values filled with '{global_default}'")
-                    st.rerun()
-
+                    st.experimental_rerun()
             elif fill_option in ["Mean", "Median", "Mode"]:
                 if st.button("Apply Global Fill", key="fill_global_stat"):
                     for col in df.columns:
@@ -393,14 +381,14 @@ if "df" in st.session_state:
                                 continue
                     st.session_state.df = df
                     st.success(f"Filled all missing values using column-wise {fill_option.lower()}")
-                    st.rerun()
+                    st.experimental_rerun()
 
         with st.expander("Drop all rows with missing values", expanded=False):
             if st.button("Drop rows"):
                 df.dropna(inplace=True)
                 st.session_state.df = df
                 st.success("Dropped all rows containing missing values.")
-                st.rerun()
+                st.experimental_rerun()
 
     if numeric_cols and st.checkbox("Show Descriptive Statistics", key="descriptive_stats_checkbox"):
         st.subheader("Descriptive Statistics")
@@ -410,7 +398,6 @@ if "df" in st.session_state:
 
     if (categorical_cols or numeric_cols) and st.checkbox("Show Basic Visualizations", key="basic_viz_checkbox"):
         st.subheader("Basic Visualizations")
-
         if categorical_cols:
             st.markdown("### Categorical Column Distributions")
             for col in categorical_cols:
@@ -421,7 +408,6 @@ if "df" in st.session_state:
                              labels={'x': col, 'y': 'Count'},
                              title=f"{col} Distribution")
                 st.plotly_chart(fig, use_container_width=True)
-
         if numeric_cols:
             st.markdown("### Histograms of Numeric Columns")
             for col in numeric_cols:
@@ -430,7 +416,6 @@ if "df" in st.session_state:
 
     if st.checkbox("Show Advanced Visualizations", key="advanced_viz_checkbox"):
         st.subheader("Advanced Visualizations")
-
         if categorical_cols:
             st.markdown("### Pie Charts (Top 5 Categories)")
             for col in categorical_cols:
@@ -439,13 +424,11 @@ if "df" in st.session_state:
                     fig = px.pie(values=vc.values, names=vc.index,
                                  title=f"{col} (Top 5 Categories)")
                     st.plotly_chart(fig, use_container_width=True)
-
         if numeric_cols:
             st.markdown("### Box Plots (Outlier Detection)")
             for col in numeric_cols:
                 fig = px.box(df, y=col, title=f"Box Plot of {col}")
                 st.plotly_chart(fig, use_container_width=True)
-
         if len(numeric_cols) > 1:
             st.markdown("### Correlation Heatmap")
             corr = df[numeric_cols].corr()
@@ -455,16 +438,13 @@ if "df" in st.session_state:
                             aspect="auto",
                             color_continuous_scale="RdBu_r")
             st.plotly_chart(fig, use_container_width=True)
-
         st.markdown("### Scatter Plot (Select Variables)")
         if len(numeric_cols) >= 2:
             col1 = st.selectbox("X-axis", numeric_cols, key="scatter_x")
             col2 = st.selectbox("Y-axis", [col for col in numeric_cols if col != col1], key="scatter_y")
             fig = px.scatter(df, x=col1, y=col2, title=f"{col1} vs {col2}")
             st.plotly_chart(fig, use_container_width=True)
-
         datetime_cols = detect_datetime_columns(df)
-
         if datetime_cols and numeric_cols:
             st.markdown("### Time Series (Line Plot)")
             time_col = st.selectbox("Select datetime column", datetime_cols, key="line_dt")
