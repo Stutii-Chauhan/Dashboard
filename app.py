@@ -29,7 +29,6 @@ st.set_page_config(page_title="Data Analyzer", layout="wide")
 
 #Theme Toggle
 
-# Theme Toggle
 with st.sidebar:
     st.markdown("<div style='padding-left: 10px;'>", unsafe_allow_html=True)
     theme_mode = st.radio("Choose Theme", ["Light", "Dark"], index=0)
@@ -114,21 +113,53 @@ def detect_datetime_columns(df):
 # Load into session state once
 if uploaded_file is not None and "df" not in st.session_state:									 						 
     try:
-        if uploaded_file.name.endswith('.csv'):
+        if uploaded_file.name.endswith(".csv"):
             try:
-                df_try = pd.read_csv(uploaded_file, encoding='utf-8')
+                df = pd.read_csv(uploaded_file, encoding='utf-8')
             except UnicodeDecodeError:
-					
-                df_try = pd.read_csv(uploaded_file, encoding='latin1')
-
-            if df_try.columns[0] == df_try.iloc[0][0]:  # likely header got shifted
-                df_try.columns = df_try.iloc[0]  # use first row as header
-                df_try = df_try[1:]  # drop the first row
-            st.session_state.df = df_try.reset_index(drop=True)
+                try:
+                    df = pd.read_csv(uploaded_file, encoding='utf-8-sig')
+		except Exception:
+                    df = pd.read_csv(uploaded_file, encoding='ISO-8859-1')													 														   
         else:
-            st.session_state.df = pd.read_excel(uploaded_file)
+            df = pd.read_excel(uploaded_file)
 
-        st.success(f"Successfully loaded {uploaded_file.name}")
+        st.success(f"Successfully loaded `{uploaded_file.name}`")
+
+        # For the note
+        st.markdown(
+            """
+            <span style='font-size: 13px;'>
+            Tip: If you're uploading a CSV exported from Excel, please save it as <b>CSV UTF-8 (Comma delimited)</b> to ensure best compatibility.
+            </span>
+            """,
+            unsafe_allow_html=True
+        )
+
+        if 'apply_header' not in st.session_state:
+            st.session_state.apply_header = False
+
+        apply_header = st.checkbox("Use first row as header (if not already)", value=st.session_state.apply_header)
+        st.session_state.apply_header = apply_header
+
+        # Apply header fix if checked
+        if apply_header:
+            new_header = df.iloc[0]
+            df = df[1:].copy()
+            df.columns = new_header
+
+        # Convert detected date columns to datetime
+        datetime_cols = detect_datetime_columns(df)
+        for col in datetime_cols:
+            df[col] = pd.to_datetime(df[col], errors='coerce', dayfirst=True)
+
+        st.session_state.df = df  # Save for downstream use
+        
+        # Preview right after upload
+        st.subheader("Preview of the Data")
+        st.dataframe(df.head(50))
+        st.write(f"Shape: {df.shape[0]} rows × {df.shape[1]} columns")
+
     except Exception as e:
         st.error(f"Error loading file: {e}")
 																			
@@ -140,151 +171,7 @@ if "df" in st.session_state:
     st.dataframe(df.head(50))
     st.write(f"Shape: {df.shape[0]} rows × {df.shape[1]} columns")
 
-    # LLM Summary Generator Button
-								 
-
-    if st.button("Generate Dataset Summary (LLM Ready Text)"):
-        summary = []
-        summary.append(f"The dataset contains {df.shape[0]} rows and {df.shape[1]} columns.\n")
-        summary.append("Column-wise summary:")
-        for col in df.columns:
-            dtype = df[col].dtype
-            missing = df[col].isna().sum()
-            summary.append(f"- **{col}**: Type = {dtype}, Missing = {missing}")
-
-        numeric_cols = df.select_dtypes(include='number').columns
-        if not numeric_cols.empty:
-            desc = df[numeric_cols].describe().T
-            summary.append("\nKey statistics:")
-            for col in desc.index:
-                mean = desc.loc[col, 'mean']
-                std = desc.loc[col, 'std']
-                min_val = desc.loc[col, 'min']
-                max_val = desc.loc[col, 'max']
-                summary.append(f"- {col}: Mean = {mean:.2f}, Std = {std:.2f}, Range = [{min_val:.2f}, {max_val:.2f}]")
-
-        st.markdown("\n".join(summary))
-
-					 
-						 
-																												
-												
-						   
-																	  
-											
-															
-															 
-							 
-						 
-						   
-								   
-										 
-																															   
-																 
-																	 
-									  
-		 
-
-									  
-														 
-																		  
 																							  
-														  
-												  
-								   
-																										  
-					   
-											   
-					   
-
-													
-																												  
-												 
-																			   
-
-		
-																											
-																	
-																									   
-									  
-											 
-														  
-												 
-																					  
-														   
-												
-																					 
-														   
-																				   
-																																								
-					 
-																					
-				 
-																	   
-
-								   
-			 
-																														 
-								
-															   
-								  
-															   
-																			 
-						
-																	  
-																						
-										  
-																		  
-					 
-																			   
-				 
-										  
-																																																																			
-							  
-															 
-																	
-																   
-																				 
-							
-												  
-													   
-													  
-														 
-													
-															   
-												   
-													  
-												   
-													  
-												   
-													  
-												   
-													  
-													 
-																	  
-												   
-																												  
-													
-													   
-														
-														   
-													
-																	  
-													
-																	  
-								 
-											 
-
-												  
-																				   
-								 
-																				  
-											  
-																   
-						 
-																				   
-					 
-																										  
 
 
     # Column Classification
