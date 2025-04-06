@@ -85,7 +85,7 @@ for col in detect_datetime_columns(df):
 st.session_state.df = df
 
 # --- Data Preview ---
-st.subheader("🔍 Data Preview")
+st.subheader("Data Preview")
 st.dataframe(df.head(50))
 st.write(f"Shape: {df.shape[0]} rows × {df.shape[1]} columns")
 
@@ -94,7 +94,7 @@ numeric_cols = list(df.select_dtypes(include='number').columns)
 categorical_cols = [col for col in df.columns if col not in numeric_cols]
 
 if st.checkbox("Show Dataset Overview"):
-    st.subheader("📊 Dataset Overview")
+    st.subheader("Dataset Overview")
     if numeric_cols:
         st.markdown("**Numeric columns:**")
         for col in numeric_cols:
@@ -107,7 +107,7 @@ if st.checkbox("Show Dataset Overview"):
 # --- Missing Value Handler ---
 missing_count = df.isna().sum().sum()
 if missing_count > 0:
-    with st.expander(f"🧹 Handle Missing Values ({int(missing_count)} missing)", expanded=True):
+    with st.expander(f"Handle Missing Values ({int(missing_count)} missing)", expanded=True):
 
         st.markdown("Choose a strategy for missing values:")
         method = st.radio("Fill Method", ["Custom value", "Mean", "Median", "Mode"], horizontal=True)
@@ -151,11 +151,11 @@ if missing_count > 0:
             st.success("Missing values filled successfully!")
             st.rerun()
 
-    if st.button("🚫 Drop Rows with Missing Values"):
+    if st.button("Drop Rows with Missing Values"):
         original_shape = df.shape
         df.dropna(inplace=True)
         st.session_state.df = df
         st.success(f"Dropped rows with missing values. Shape changed from {original_shape} to {df.shape}.")
-        st.experimental_rerun()
+        st.rerun()
 else:
-    st.success("✅ No missing values in your dataset!")
+    st.success("No missing values in your dataset!")
