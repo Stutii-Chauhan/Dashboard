@@ -149,7 +149,7 @@ if missing_count > 0:
 
             st.session_state.df = df
             st.success("Missing values filled successfully!")
-            st.experimental_rerun()
+            st.rerun()
 
     if st.button("🚫 Drop Rows with Missing Values"):
         original_shape = df.shape
