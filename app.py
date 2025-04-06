@@ -70,11 +70,26 @@ else:
         button_color="#000000"
     ), unsafe_allow_html=True)
 
+#title and subtitle
 
 st.title("Analysis Dashboard")
 st.markdown("Upload your Excel or CSV file to analyze and explore your dataset instantly.")
 
 uploaded_file = st.file_uploader("Upload a file", type=["csv", "xlsx"])
+if uploaded_file is not None:
+    try:
+        if uploaded_file.name.endswith(".csv"):
+            try:
+                df = pd.read_csv(uploaded_file, encoding='utf-8')
+            except UnicodeDecodeError:
+                try:
+                    df = pd.read_csv(uploaded_file, encoding='utf-8-sig')
+                except:
+                    df = pd.read_csv(uploaded_file, encoding='ISO-8859-1')											 						   
+        else:
+            df = pd.read_excel(uploaded_file)
+        st.success(f"Successfully loaded `{uploaded_file.name}`")
+
 
 def has_missing_data(dataframe):
     return dataframe.isna().sum().sum() > 0
