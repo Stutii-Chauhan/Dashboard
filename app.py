@@ -129,7 +129,7 @@ if 'apply_header' not in st.session_state:
 apply_header = st.checkbox("Use first row as header (if not already)", value=st.session_state.apply_header)
 st.session_state.apply_header = apply_header
 
-if apply_header:
+if apply_header and len(df) > 0:
     new_header = df.iloc[0]
     df = df[1:].copy()
     df.columns = new_header
@@ -143,11 +143,10 @@ for col in datetime_cols:
 st.session_state.df = df
 df = st.session_state.df  # Reassign for consistency
 
-# --- DATA PREVIEW ---
+# --- DATA PREVIEW (Remove if you don't want ANY preview at all) ---
 st.subheader("Preview of the Data")
 st.dataframe(df.head(50))
 st.write(f"Shape: {df.shape[0]} rows × {df.shape[1]} columns")
-
 
 # --- UTILITY FUNCTIONS ---
 def has_missing_data(dataframe):
@@ -171,13 +170,13 @@ def query_huggingface(prompt, api_token, model="tiiuae/falcon-7b-instruct"):
     except:
         return "LLM failed to generate a response. Please try again."
 
-
 # --- ASK A QUESTION ---
 st.subheader("Ask a Question About Your Data")
 user_question = st.text_input("What do you want to know?")
 
 if user_question:
     q = user_question.lower()
+    # You can keep or remove these checks for missing-value questions
     if "missing" in q:
         if "which column" in q and ("most" in q or "maximum" in q):
             missing_per_column = df.isna().sum()
@@ -335,7 +334,6 @@ if (numeric_cols or categorical_cols) and st.checkbox("Show Dataset Overview", k
         for col in categorical_cols:
             st.write(f"- {col}")
 
-
 # --- MISSING VALUE HANDLER ---
 missing_count = df.isna().sum().sum()
 
@@ -345,8 +343,8 @@ if missing_count > 0:
         st.subheader("Missing Values")
         st.write(f"Total missing values: {int(missing_count)}")
 
-        # Show rows with missing data
-        st.dataframe(df[df.isna().any(axis=1)])
+        # We won't show the actual rows with missing data to keep it minimal:
+        # st.dataframe(df[df.isna().any(axis=1)])  # Remove or keep as you wish
 
         st.subheader("Handle Missing Data")
         missing_cols = df.columns[df.isna().any()].tolist()
@@ -381,8 +379,11 @@ if missing_count > 0:
                     df[selected_col].fillna(fill_value, inplace=True)
                     st.session_state.df = df
                     st.success(f"Filled missing values in '{selected_col}' using {method.lower()}: {fill_value}")
-                    st.write("Updated shape:", df.shape)
-                    st.dataframe(df.head(10))  # Show a preview so user sees the change
+                    # Recalculate missing_count
+                    missing_count = df.isna().sum().sum()
+                    # If missing_count is now 0, automatically hide this section
+                    if missing_count == 0:
+                        st.session_state.missing_value_checkbox = False
 
         with st.expander("Fill all missing values (entire dataset)", expanded=False):
             fill_option = st.radio("Choose fill method", ["Custom value", "Mean", "Median", "Mode"], horizontal=True, key="fill_all_choice")
@@ -392,8 +393,10 @@ if missing_count > 0:
                     df.fillna(global_default, inplace=True)
                     st.session_state.df = df
                     st.success(f"All missing values filled with '{global_default}'")
-                    st.write("Updated shape:", df.shape)
-                    st.dataframe(df.head(10))
+                    missing_count = df.isna().sum().sum()
+                    if missing_count == 0:
+                        st.session_state.missing_value_checkbox = False
+
             elif fill_option in ["Mean", "Median", "Mode"]:
                 if st.button("Apply Global Fill", key="fill_global_stat"):
                     for col in df.columns:
@@ -413,8 +416,9 @@ if missing_count > 0:
                                 continue
                     st.session_state.df = df
                     st.success(f"Filled all missing values using column-wise {fill_option.lower()}")
-                    st.write("Updated shape:", df.shape)
-                    st.dataframe(df.head(10))
+                    missing_count = df.isna().sum().sum()
+                    if missing_count == 0:
+                        st.session_state.missing_value_checkbox = False
 
         with st.expander("Drop all rows with missing values", expanded=False):
             if st.button("Drop rows"):
@@ -422,11 +426,13 @@ if missing_count > 0:
                 df.dropna(inplace=True)
                 st.session_state.df = df
                 st.success(f"Dropped all rows containing missing values. Shape changed from {original_shape} to {df.shape}.")
-                st.dataframe(df.head(10))
+                missing_count = df.isna().sum().sum()
+                if missing_count == 0:
+                    st.session_state.missing_value_checkbox = False
+
 else:
     # If no missing values remain, hide the entire missing-value block
     st.info("No missing values remain in your dataset. The missing value handler is hidden.")
-
 
 # --- DESCRIPTIVE STATISTICS ---
 if numeric_cols and st.checkbox("Show Descriptive Statistics", key="descriptive_stats_checkbox"):
