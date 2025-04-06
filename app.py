@@ -90,6 +90,8 @@ st.title("Analysis Dashboard")
 st.markdown("Upload your Excel or CSV file to analyze and explore your dataset instantly.")
 
 uploaded_file = st.file_uploader("Upload a file", type=["csv", "xlsx"])
+def has_missing_data(dataframe):
+    return dataframe.isna().sum().sum() > 0
 
 if uploaded_file is not None:
     try:
@@ -149,8 +151,7 @@ if uploaded_file is not None:
 
 
 
-def has_missing_data(dataframe):
-    return dataframe.isna().sum().sum() > 0
+
 
 def detect_datetime_columns(df):
     datetime_cols = []
