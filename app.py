@@ -489,7 +489,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-st.set_page_config(page_title="Smart Data Analyzer", layout="wide")
+st.set_page_config(page_title="Data Analyzer", layout="wide")
 
 st.title("Analysis Dashboard")
 st.markdown("Upload your Excel or CSV file to analyze and explore your dataset instantly.")
@@ -499,14 +499,34 @@ uploaded_file = st.file_uploader("Upload a file", type=["csv", "xlsx"])
 def has_missing_data(dataframe):
     return dataframe.isna().sum().sum() > 0
 
+def detect_datetime_columns(df):
+    datetime_cols = []
+    for col in df.columns:
+        if df[col].dtype == object:
+            try:
+                converted = pd.to_datetime(df[col], errors='coerce', dayfirst=True)
+                if converted.notna().sum() > 0:
+                    datetime_cols.append(col)
+            except:
+                continue
+    return datetime_cols
+
 # Load into session state once
 if uploaded_file is not None and "df" not in st.session_state:
     try:
         if uploaded_file.name.endswith('.csv'):
-            st.session_state.df = pd.read_csv(uploaded_file)
+            try:
+                df_try = pd.read_csv(uploaded_file, encoding='utf-8')
+            except UnicodeDecodeError:
+                df_try = pd.read_csv(uploaded_file, encoding='latin1')
+
+            if df_try.columns[0] == df_try.iloc[0][0]:  # likely header got shifted
+                df_try.columns = df_try.iloc[0]  # use first row as header
+                df_try = df_try[1:]  # drop the first row
+            st.session_state.df = df_try.reset_index(drop=True)
         else:
             st.session_state.df = pd.read_excel(uploaded_file)
-        st.success(f"Successfully loaded `{uploaded_file.name}`")
+        st.success(f"Successfully loaded {uploaded_file.name}")
     except Exception as e:
         st.error(f"Error loading file: {e}")
 
@@ -518,25 +538,48 @@ if "df" in st.session_state:
     st.dataframe(df.head(50))
     st.write(f"Shape: {df.shape[0]} rows × {df.shape[1]} columns")
 
+    # LLM Summary Generator Button
+
+    if st.button("Generate Dataset Summary (LLM Ready Text)"):
+        summary = []
+        summary.append(f"The dataset contains {df.shape[0]} rows and {df.shape[1]} columns.\n")
+        summary.append("Column-wise summary:")
+        for col in df.columns:
+            dtype = df[col].dtype
+            missing = df[col].isna().sum()
+            summary.append(f"- **{col}**: Type = {dtype}, Missing = {missing}")
+
+        numeric_cols = df.select_dtypes(include='number').columns
+        if not numeric_cols.empty:
+            desc = df[numeric_cols].describe().T
+            summary.append("\nKey statistics:")
+            for col in desc.index:
+                mean = desc.loc[col, 'mean']
+                std = desc.loc[col, 'std']
+                min_val = desc.loc[col, 'min']
+                max_val = desc.loc[col, 'max']
+                summary.append(f"- {col}: Mean = {mean:.2f}, Std = {std:.2f}, Range = [{min_val:.2f}, {max_val:.2f}]")
+
+        st.markdown("\n".join(summary))
+
     # Column Classification
     numeric_cols = list(df.select_dtypes(include='number').columns)
     categorical_cols = [col for col in df.columns if col not in numeric_cols]
 
-    if numeric_cols or categorical_cols:
+    if (numeric_cols or categorical_cols) and st.checkbox("Show Dataset Overview"):
         st.subheader("Dataset Overview")
 
-    if numeric_cols:
-        st.markdown("**Numeric columns:**")
-        for col in numeric_cols:
-            st.write(f"- {col}")
+        if numeric_cols:
+            st.markdown("**Numeric columns:**")
+            for col in numeric_cols:
+                st.write(f"- {col}")
 
-    if categorical_cols:
-        st.markdown("**Categorical columns:**")
-        for col in categorical_cols:
-            st.write(f"- {col}")
+        if categorical_cols:
+            st.markdown("**Categorical columns:**")
+            for col in categorical_cols:
+                st.write(f"- {col}")
 
-    # Missing Values
-    if has_missing_data(df):
+    if has_missing_data(df) and st.checkbox("Show Missing Value Handler"):
         st.subheader("Missing Values")
         st.write(f"Total missing values: {int(df.isna().sum().sum())}")
         st.dataframe(df[df.isna().any(axis=1)])
@@ -544,7 +587,6 @@ if "df" in st.session_state:
         st.subheader("Handle Missing Data")
         missing_cols = df.columns[df.isna().any()].tolist()
 
-        # 1. Fill a specific column
         with st.expander("Fill a specific column", expanded=False):
             col1, col2 = st.columns([1, 2])
             with col1:
@@ -577,7 +619,6 @@ if "df" in st.session_state:
                     st.success(f"Filled missing values in '{selected_col}' using {method.lower()}: {fill_value}")
                     st.rerun()
 
-        # 2. Global fill for all missing values
         with st.expander("Fill all missing values (entire dataset)", expanded=False):
             fill_option = st.radio("Choose fill method", ["Custom value", "Mean", "Median", "Mode"], horizontal=True, key="fill_all_choice")
 
@@ -609,7 +650,6 @@ if "df" in st.session_state:
                     st.success(f"Filled all missing values using column-wise {fill_option.lower()}")
                     st.rerun()
 
-        # 3. Drop rows with missing values
         with st.expander("Drop all rows with missing values", expanded=False):
             if st.button("Drop rows"):
                 df.dropna(inplace=True)
@@ -617,26 +657,78 @@ if "df" in st.session_state:
                 st.success("Dropped all rows containing missing values.")
                 st.rerun()
 
-    # Descriptive Statistics
-    if numeric_cols:
+    if numeric_cols and st.checkbox("Show Descriptive Statistics"):
         st.subheader("Descriptive Statistics")
         st.dataframe(df[numeric_cols].describe())
 
-    # Categorical Distributions
-    if categorical_cols:
-        st.subheader("Categorical Column Distributions")
-        for col in categorical_cols:
-            st.markdown(f"**{col}**")
-            vc = df[col].value_counts().head(20)
-            st.dataframe(vc)
-            fig = px.bar(x=vc.index, y=vc.values,
-                         labels={'x': col, 'y': 'Count'},
-                         title=f"{col} Distribution")
+    st.markdown("---")
+
+    if (categorical_cols or numeric_cols) and st.checkbox("Show Basic Visualizations"):
+        st.subheader("Basic Visualizations")
+
+        if categorical_cols:
+            st.markdown("### Categorical Column Distributions")
+            for col in categorical_cols:
+                st.markdown(f"**{col}**")
+                vc = df[col].value_counts().head(20)
+                st.dataframe(vc)
+                fig = px.bar(x=vc.index, y=vc.values,
+                             labels={'x': col, 'y': 'Count'},
+                             title=f"{col} Distribution")
+                st.plotly_chart(fig, use_container_width=True)
+
+        if numeric_cols:
+            st.markdown("### Histograms of Numeric Columns")
+            for col in numeric_cols:
+                fig = px.histogram(df, x=col, title=f"Distribution of {col}")
+                st.plotly_chart(fig, use_container_width=True)
+
+    if st.checkbox("Show Advanced Visualizations"):
+        st.subheader("Advanced Visualizations")
+
+        if categorical_cols:
+            st.markdown("### Pie Charts (Top 5 Categories)")
+            for col in categorical_cols:
+                vc = df[col].value_counts().head(5)
+                if len(vc) > 1:
+                    fig = px.pie(values=vc.values, names=vc.index,
+                                 title=f"{col} (Top 5 Categories)")
+                    st.plotly_chart(fig, use_container_width=True)
+
+        if numeric_cols:
+            st.markdown("### Box Plots (Outlier Detection)")
+            for col in numeric_cols:
+                fig = px.box(df, y=col, title=f"Box Plot of {col}")
+                st.plotly_chart(fig, use_container_width=True)
+
+        if len(numeric_cols) > 1:
+            st.markdown("### Correlation Heatmap")
+            corr = df[numeric_cols].corr()
+            fig = px.imshow(corr,
+                            text_auto=".2f",
+                            title="Correlation Matrix",
+                            aspect="auto",
+                            color_continuous_scale="RdBu_r")
             st.plotly_chart(fig, use_container_width=True)
 
-    # Numeric Distributions
-    if numeric_cols:
-        st.subheader("Histograms of Numeric Columns")
-        for col in numeric_cols:
-            fig = px.histogram(df, x=col, title=f"Distribution of {col}")
+        st.markdown("### Scatter Plot (Select Variables)")
+        if len(numeric_cols) >= 2:
+            col1 = st.selectbox("X-axis", numeric_cols, key="scatter_x")
+            col2 = st.selectbox("Y-axis", [col for col in numeric_cols if col != col1], key="scatter_y")
+            fig = px.scatter(df, x=col1, y=col2, title=f"{col1} vs {col2}")
             st.plotly_chart(fig, use_container_width=True)
+
+        datetime_cols = detect_datetime_columns(df)
+
+        if datetime_cols and numeric_cols:
+            st.markdown("### Time Series (Line Plot)")
+            time_col = st.selectbox("Select datetime column", datetime_cols, key="line_dt")
+            metric_col = st.selectbox("Select numeric column to plot", numeric_cols, key="line_val")
+            df[time_col] = pd.to_datetime(df[time_col], errors='coerce')
+            valid_rows = df[[time_col, metric_col]].dropna()
+            if not valid_rows.empty and pd.api.types.is_datetime64_any_dtype(df[time_col]):
+                fig = px.line(valid_rows.sort_values(by=time_col), x=time_col, y=metric_col,
+                              title=f"{metric_col} over time ({time_col})")
+                st.plotly_chart(fig, use_container_width=True)
+            else:
+                st.info("Selected time or metric column doesn't have valid data to plot.")
