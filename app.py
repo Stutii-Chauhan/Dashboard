@@ -11,19 +11,6 @@ import numpy as np
 from scipy import stats
 
 st.set_page_config(page_title="Data Analyzer", layout="wide")
-
-# def detect_datetime_columns(df):
-#     datetime_cols = []
-#     for col in df.columns:
-#         if df[col].dtype == object:
-#             try:
-#                 converted = pd.to_datetime(df[col], errors='coerce', dayfirst=True)
-#                 if converted.notna().sum() > 0:
-#                     datetime_cols.append(col)
-#             except:
-#                 continue
-#     return datetime_cols
-
 # Theme Toggle
 with st.sidebar:
     st.markdown("<div style='padding-left: 10px;'>", unsafe_allow_html=True)
@@ -89,8 +76,6 @@ st.title("Analysis Dashboard")
 st.markdown("Upload your Excel or CSV file to analyze and explore your dataset instantly.")
 
 uploaded_file = st.file_uploader("Upload a file", type=["csv", "xlsx"])
-# def has_missing_data(dataframe):
-#     return dataframe.isna().sum().sum() > 0
 if uploaded_file is not None:
     try:
         if uploaded_file.name.endswith(".csv"):
@@ -108,15 +93,12 @@ if uploaded_file is not None:
         st.session_state.df = df
         st.success(f"Successfully loaded {uploaded_file.name}")
 
-        # For the note
-        st.markdown(
-            """
-            <span style='font-size: 13px;'>
-            Tip: If you're uploading a CSV exported from Excel, please save it as <b>CSV UTF-8 (Comma delimited)</b> to ensure best compatibility.
-            </span>
-            """,
-            unsafe_allow_html=True
-        )
+# For the note
+	st.markdown("""
+	<span style='font-size: 13px;'>
+	Tip: If you're uploading a CSV exported from Excel, please save it as <b>CSV UTF-8 (Comma delimited)</b> to ensure best compatibility.
+	</span>
+	""",unsafe_allow_html=True)
 
         if 'apply_header' not in st.session_state:
             st.session_state.apply_header = False
@@ -130,10 +112,10 @@ if uploaded_file is not None:
             df = df[1:].copy()
             df.columns = new_header
 
-        # # Convert detected date columns to datetime
-        # datetime_cols = detect_datetime_columns(df)
-        # for col in datetime_cols:
-        #     df[col] = pd.to_datetime(df[col], errors='coerce', dayfirst=True)
+        # Convert detected date columns to datetime
+        datetime_cols = detect_datetime_columns(df)
+        for col in datetime_cols:
+            df[col] = pd.to_datetime(df[col], errors='coerce', dayfirst=True)
 
         st.session_state.df = df  # Save for downstream use
         
@@ -186,10 +168,10 @@ if uploaded_file is not None and "df" not in st.session_state:
 if "df" in st.session_state:
     df = st.session_state.df
 
-    # # Data Preview
-    # st.subheader("Preview of the Data")
-    # st.dataframe(df.head(50))
-    # st.write(f"Shape: {df.shape[0]} rows × {df.shape[1]} columns")
+    # Data Preview
+    st.subheader("Preview of the Data")
+    st.dataframe(df.head(50))
+    st.write(f"Shape: {df.shape[0]} rows × {df.shape[1]} columns")
 
     # LLM Summary Generator Button
 								 
@@ -387,4 +369,3 @@ if "df" in st.session_state:
     #             st.plotly_chart(fig, use_container_width=True)
     #         else:
     #             st.info("Selected time or metric column doesn't have valid data to plot.")
-
