@@ -2,13 +2,6 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-import requests
-import re
-import math
-import difflib
-import numpy as np
-from scipy import stats
-#suar 
 
 st.set_page_config(page_title="Data Analyzer", layout="wide")
 
@@ -35,6 +28,70 @@ def detect_datetime_columns(df):
 # Load into session state once
 if uploaded_file is not None and "df" not in st.session_state:
 			  
+				
+																			
+																	 
+												 
+
+													   
+			  
+	   
+																		   
+								 
+						
+  
+
+													 
+				 
+  
+
+											  
+								 
+						
+						   
+  
+
+							 
+								  
+						  
+				 
+						 
+					   
+  
+
+																				   
+								   
+  
+
+																 
+								   
+  
+		
+   
+
+						
+								
+						   
+							 
+						   
+						 
+							  
+							  
+	 
+								
+						   
+							 
+						   
+							
+							  
+							  
+
+
+
+							  
+																						   
+
+																	   
 
 							 
     try:
@@ -53,11 +110,62 @@ if uploaded_file is not None and "df" not in st.session_state:
             st.session_state.df = pd.read_excel(uploaded_file)
 
         st.success(f"Successfully loaded {uploaded_file.name}")
+
+					   
+									   
+																																			  
+			   
+									
+
+												  
+												 
+
+																												   
+													
+
+									 
+						
+								   
+							  
+								   
+
+												   
+												   
+								 
+																			 
+
+														   
+		
+									
 										   
+								 
+																	   
 
     except Exception as e:
         st.error(f"Error loading file: {e}")
 
+								
+										   
+
+
+
+																			
+																	
+													  
+			   
+						 
+					   
+								  
+							   
+						 
+									  
+		 
+	 
+																	
+		
+												   
+		   
+																	 
 
 																			
 if "df" in st.session_state:
@@ -92,6 +200,127 @@ if "df" in st.session_state:
                 summary.append(f"- {col}: Mean = {mean:.2f}, Std = {std:.2f}, Range = [{min_val:.2f}, {max_val:.2f}]")
 
         st.markdown("\n".join(summary))
+
+					 
+						 
+																												
+												
+						   
+																	  
+											
+															
+															 
+							 
+						 
+						   
+								   
+										 
+																															   
+																 
+																	 
+									  
+		 
+
+									  
+														 
+																		  
+																							  
+														  
+												  
+								   
+																										  
+					   
+											   
+					   
+
+													
+																												  
+												 
+																			   
+
+		
+																											
+																	
+																									   
+									  
+											 
+														  
+												 
+																					  
+														   
+												
+																					 
+														   
+																				   
+																																								
+					 
+																					
+				 
+																	   
+
+								   
+			 
+																														 
+								
+															   
+								  
+															   
+																			 
+						
+																	  
+																						
+										  
+																		  
+					 
+																			   
+				 
+										  
+																																																																			
+							  
+															 
+																	
+																   
+																				 
+							
+												  
+													   
+													  
+														 
+													
+															   
+												   
+													  
+												   
+													  
+												   
+													  
+												   
+													  
+													 
+																	  
+												   
+																												  
+													
+													   
+														
+														   
+													
+																	  
+													
+																	  
+								 
+											 
+
+												  
+																				   
+								 
+																				  
+											  
+																   
+						 
+																				   
+					 
+																										  
 
 
     # Column Classification
@@ -195,73 +424,99 @@ if "df" in st.session_state:
 
     st.markdown("---")
 
-    # if (categorical_cols or numeric_cols) and st.checkbox("Show Basic Visualizations"):
-    #     st.subheader("Basic Visualizations")
+    if (categorical_cols or numeric_cols) and st.checkbox("Show Basic Visualizations"):
+        st.subheader("Basic Visualizations")
 
-    #     if categorical_cols:
-    #         st.markdown("### Categorical Column Distributions")
-    #         for col in categorical_cols:
-    #             st.markdown(f"**{col}**")
-    #             vc = df[col].value_counts().head(20)
-    #             st.dataframe(vc)
-    #             fig = px.bar(x=vc.index, y=vc.values,
-    #                          labels={'x': col, 'y': 'Count'},
-    #                          title=f"{col} Distribution")
-    #             st.plotly_chart(fig, use_container_width=True)
+        if categorical_cols:
+            st.markdown("### Categorical Column Distributions")
+            for col in categorical_cols:
+                st.markdown(f"**{col}**")
+                vc = df[col].value_counts().head(20)
+                st.dataframe(vc)
+                fig = px.bar(x=vc.index, y=vc.values,
+                             labels={'x': col, 'y': 'Count'},
+                             title=f"{col} Distribution")
+                st.plotly_chart(fig, use_container_width=True)
 
-    #     if numeric_cols:
-    #         st.markdown("### Histograms of Numeric Columns")
-    #         for col in numeric_cols:
-    #             fig = px.histogram(df, x=col, title=f"Distribution of {col}")
-    #             st.plotly_chart(fig, use_container_width=True)
+        if numeric_cols:
+            st.markdown("### Histograms of Numeric Columns")
+            for col in numeric_cols:
+                fig = px.histogram(df, x=col, title=f"Distribution of {col}")
+                st.plotly_chart(fig, use_container_width=True)
 
-    # if st.checkbox("Show Advanced Visualizations"):
-    #     st.subheader("Advanced Visualizations")
+    if st.checkbox("Show Advanced Visualizations"):
+        st.subheader("Advanced Visualizations")
 
-    #     if categorical_cols:
-    #         st.markdown("### Pie Charts (Top 5 Categories)")
-    #         for col in categorical_cols:
-    #             vc = df[col].value_counts().head(5)
-    #             if len(vc) > 1:
-    #                 fig = px.pie(values=vc.values, names=vc.index,
-    #                              title=f"{col} (Top 5 Categories)")
-    #                 st.plotly_chart(fig, use_container_width=True)
+        if categorical_cols:
+            st.markdown("### Pie Charts (Top 5 Categories)")
+            for col in categorical_cols:
+                vc = df[col].value_counts().head(5)
+                if len(vc) > 1:
+                    fig = px.pie(values=vc.values, names=vc.index,
+                                 title=f"{col} (Top 5 Categories)")
+                    st.plotly_chart(fig, use_container_width=True)
 
-    #     if numeric_cols:
-    #         st.markdown("### Box Plots (Outlier Detection)")
-    #         for col in numeric_cols:
-    #             fig = px.box(df, y=col, title=f"Box Plot of {col}")
-    #             st.plotly_chart(fig, use_container_width=True)
+        if numeric_cols:
+            st.markdown("### Box Plots (Outlier Detection)")
+            for col in numeric_cols:
+                fig = px.box(df, y=col, title=f"Box Plot of {col}")
+                st.plotly_chart(fig, use_container_width=True)
 
-    #     if len(numeric_cols) > 1:
-    #         st.markdown("### Correlation Heatmap")
-    #         corr = df[numeric_cols].corr()
-    #         fig = px.imshow(corr,
-    #                         text_auto=".2f",
-    #                         title="Correlation Matrix",
-    #                         aspect="auto",
-    #                         color_continuous_scale="RdBu_r")
-    #         st.plotly_chart(fig, use_container_width=True)
+        if len(numeric_cols) > 1:
+            st.markdown("### Correlation Heatmap")
+            corr = df[numeric_cols].corr()
+            fig = px.imshow(corr,
+                            text_auto=".2f",
+                            title="Correlation Matrix",
+                            aspect="auto",
+                            color_continuous_scale="RdBu_r")
+            st.plotly_chart(fig, use_container_width=True)
 
-    #     st.markdown("### Scatter Plot (Select Variables)")
-    #     if len(numeric_cols) >= 2:
-    #         col1 = st.selectbox("X-axis", numeric_cols, key="scatter_x")
-    #         col2 = st.selectbox("Y-axis", [col for col in numeric_cols if col != col1], key="scatter_y")
-    #         fig = px.scatter(df, x=col1, y=col2, title=f"{col1} vs {col2}")
-    #         st.plotly_chart(fig, use_container_width=True)
+        st.markdown("### Scatter Plot (Select Variables)")
+        if len(numeric_cols) >= 2:
+            col1 = st.selectbox("X-axis", numeric_cols, key="scatter_x")
+            col2 = st.selectbox("Y-axis", [col for col in numeric_cols if col != col1], key="scatter_y")
+            fig = px.scatter(df, x=col1, y=col2, title=f"{col1} vs {col2}")
+            st.plotly_chart(fig, use_container_width=True)
 
-    #     datetime_cols = detect_datetime_columns(df)
+        datetime_cols = detect_datetime_columns(df)
 
-    #     if datetime_cols and numeric_cols:
-    #         st.markdown("### Time Series (Line Plot)")
-    #         time_col = st.selectbox("Select datetime column", datetime_cols, key="line_dt")
-    #         metric_col = st.selectbox("Select numeric column to plot", numeric_cols, key="line_val")
-    #         df[time_col] = pd.to_datetime(df[time_col], errors='coerce')
-    #         valid_rows = df[[time_col, metric_col]].dropna()
-    #         if not valid_rows.empty and pd.api.types.is_datetime64_any_dtype(df[time_col]):
-    #             fig = px.line(valid_rows.sort_values(by=time_col), x=time_col, y=metric_col,
-    #                           title=f"{metric_col} over time ({time_col})")
-    #             st.plotly_chart(fig, use_container_width=True)
-    #         else:
-    #             st.info("Selected time or metric column doesn't have valid data to plot.")
+        if datetime_cols and numeric_cols:
+            st.markdown("### Time Series (Line Plot)")
+            time_col = st.selectbox("Select datetime column", datetime_cols, key="line_dt")
+            metric_col = st.selectbox("Select numeric column to plot", numeric_cols, key="line_val")
+            df[time_col] = pd.to_datetime(df[time_col], errors='coerce')
+            valid_rows = df[[time_col, metric_col]].dropna()
+            if not valid_rows.empty and pd.api.types.is_datetime64_any_dtype(df[time_col]):
+                fig = px.line(valid_rows.sort_values(by=time_col), x=time_col, y=metric_col,
+                              title=f"{metric_col} over time ({time_col})")
+                st.plotly_chart(fig, use_container_width=True)
+            else:
+                st.info("Selected time or metric column doesn't have valid data to plot.")
 
+										
+													  
+												  
+			
+															   
+			
+							   
+													 
+												  
+											   
+			
+							  
+																   
+						  
+									
+																							 
+											 
+										   
+			
+												
+																														   
+			
+										 
+																								
+												  
+										 
