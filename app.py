@@ -8,7 +8,6 @@ import difflib
 import numpy as np
 from scipy import stats
 
-
 #detecting date time column
 
 def detect_datetime_columns(df):
