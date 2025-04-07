@@ -485,7 +485,8 @@ try:
     elif chart_type == "Correlation Heatmap":
         numeric_df = df.select_dtypes(include='number')
         corr = numeric_df.corr()
-        fig = px.imshow(corr, text_auto=True, aspect=\"auto\", color_continuous_scale='RdBu_r')
+        fig = px.imshow(corr, text_auto=True, aspect="auto", color_continuous_scale='RdBu_r')
+
 
     if fig:
         st.plotly_chart(fig, use_container_width=True)
