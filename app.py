@@ -8,6 +8,7 @@ import difflib
 import numpy as np
 from scipy import stats
 
+
 #detecting date time column
 
 def detect_datetime_columns(df):
@@ -441,49 +442,72 @@ if "df" in st.session_state:
                     st.info("Couldn't match to a known operation. Please rephrase or check column names.")
 
 
-# # --- CUSTOM VISUALIZATION SECTION ---
-# st.subheader("📊 Create Your Own Chart")
+    # if (categorical_cols or numeric_cols) and st.checkbox("Show Basic Visualizations"):
+    #     st.subheader("Basic Visualizations")
 
-# chart_type = st.selectbox(
-#     "Choose chart type",
-#     ["Line", "Bar", "Scatter", "Histogram", "Box", "Pie", "Scatter with Regression", "Trendline (LOWESS)", "Correlation Heatmap"]
-# )
+    #     if categorical_cols:
+    #         st.markdown("### Categorical Column Distributions")
+    #         for col in categorical_cols:
+    #             st.markdown(f"**{col}**")
+    #             vc = df[col].value_counts().head(20)
+    #             st.dataframe(vc)
+    #             fig = px.bar(x=vc.index, y=vc.values,
+    #                          labels={'x': col, 'y': 'Count'},
+    #                          title=f"{col} Distribution")
+    #             st.plotly_chart(fig, use_container_width=True)
 
-# # Choose columns dynamically
-# x_col = y_col = None
-# if chart_type not in ["Pie", "Correlation Heatmap", "Trendline (LOWESS)"]:
-#     x_col = st.selectbox("Select X-axis", df.columns, key="x_col")
-#     if chart_type not in ["Histogram"]:
-#         y_col = st.selectbox("Select Y-axis", [col for col in df.columns if col != x_col and pd.api.types.is_numeric_dtype(df[col])], key="y_col")
+    #     if numeric_cols:
+    #         st.markdown("### Histograms of Numeric Columns")
+    #         for col in numeric_cols:
+    #             fig = px.histogram(df, x=col, title=f"Distribution of {col}")
+    #             st.plotly_chart(fig, use_container_width=True)
 
-# # Generate the plot
-# fig = None
+    # if st.checkbox("Show Advanced Visualizations"):
+    #     st.subheader("Advanced Visualizations")
 
-# try:
-#     if chart_type == "Line":
-#         fig = px.line(df, x=x_col, y=y_col)
-#     elif chart_type == "Bar":
-#         fig = px.bar(df, x=x_col, y=y_col)
-#     elif chart_type == "Scatter":
-#         fig = px.scatter(df, x=x_col, y=y_col)
-#     elif chart_type == "Histogram":
-#         fig = px.histogram(df, x=x_col)
-#     elif chart_type == "Box":
-#         fig = px.box(df, x=x_col, y=y_col)
-#     elif chart_type == "Pie":
-#         pie_values = df[x_col].value_counts()
-#         fig = px.pie(names=pie_values.index, values=pie_values.values)
-#     elif chart_type == "Scatter with Regression":
-#         fig = px.scatter(df, x=x_col, y=y_col, trendline="ols")
-#     elif chart_type == "Trendline (LOWESS)":
-#         fig = px.scatter(df, x=x_col, y=y_col, trendline="lowess")
-#     elif chart_type == "Correlation Heatmap":
-#         numeric_df = df.select_dtypes(include='number')
-#         corr = numeric_df.corr()
-#         fig = px.imshow(corr, text_auto=True, aspect=\"auto\", color_continuous_scale='RdBu_r')
+    #     if categorical_cols:
+    #         st.markdown("### Pie Charts (Top 5 Categories)")
+    #         for col in categorical_cols:
+    #             vc = df[col].value_counts().head(5)
+    #             if len(vc) > 1:
+    #                 fig = px.pie(values=vc.values, names=vc.index,
+    #                              title=f"{col} (Top 5 Categories)")
+    #                 st.plotly_chart(fig, use_container_width=True)
 
-#     if fig:
-#         st.plotly_chart(fig, use_container_width=True)
+    #     if numeric_cols:
+    #         st.markdown("### Box Plots (Outlier Detection)")
+    #         for col in numeric_cols:
+    #             fig = px.box(df, y=col, title=f"Box Plot of {col}")
+    #             st.plotly_chart(fig, use_container_width=True)
 
-# except Exception as e:
-#     st.error(f\"Error generating chart: {e}\")
+    #     if len(numeric_cols) > 1:
+    #         st.markdown("### Correlation Heatmap")
+    #         corr = df[numeric_cols].corr()
+    #         fig = px.imshow(corr,
+    #                         text_auto=".2f",
+    #                         title="Correlation Matrix",
+    #                         aspect="auto",
+    #                         color_continuous_scale="RdBu_r")
+    #         st.plotly_chart(fig, use_container_width=True)
+
+    #     st.markdown("### Scatter Plot (Select Variables)")
+    #     if len(numeric_cols) >= 2:
+    #         col1 = st.selectbox("X-axis", numeric_cols, key="scatter_x")
+    #         col2 = st.selectbox("Y-axis", [col for col in numeric_cols if col != col1], key="scatter_y")
+    #         fig = px.scatter(df, x=col1, y=col2, title=f"{col1} vs {col2}")
+    #         st.plotly_chart(fig, use_container_width=True)
+
+    #     datetime_cols = detect_datetime_columns(df)
+
+    #     if datetime_cols and numeric_cols:
+    #         st.markdown("### Time Series (Line Plot)")
+    #         time_col = st.selectbox("Select datetime column", datetime_cols, key="line_dt")
+    #         metric_col = st.selectbox("Select numeric column to plot", numeric_cols, key="line_val")
+    #         df[time_col] = pd.to_datetime(df[time_col], errors='coerce')
+    #         valid_rows = df[[time_col, metric_col]].dropna()
+    #         if not valid_rows.empty and pd.api.types.is_datetime64_any_dtype(df[time_col]):
+    #             fig = px.line(valid_rows.sort_values(by=time_col), x=time_col, y=metric_col,
+    #                           title=f"{metric_col} over time ({time_col})")
+    #             st.plotly_chart(fig, use_container_width=True)
+    #         else:
+    #             st.info("Selected time or metric column doesn't have valid data to plot.")
