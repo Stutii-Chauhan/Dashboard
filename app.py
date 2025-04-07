@@ -100,7 +100,7 @@ def has_missing_data(dataframe):
 
 def detect_datetime_columns(df):
     datetime_cols = []
-    for col in df.columns:
+    if col in df.columns and df[col].dtype == object::
         if df[col].dtype == object:
             try:
                 converted = pd.to_datetime(df[col], errors='coerce', dayfirst=True)
@@ -150,7 +150,7 @@ if "df" in st.session_state:
         df = st.session_state.original_df.copy()
 
         if apply_header:
-            new_header = df.iloc[0]
+            new_header = df.iloc[0].astype(str)
             df = df[1:].copy()
             df.columns = new_header
         st.session_state.df = df
