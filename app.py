@@ -100,7 +100,7 @@ def has_missing_data(dataframe):
 
 def detect_datetime_columns(df):
     datetime_cols = []
-    if col in df.columns and df[col].dtype == object::
+    if col in df.columns and df[col].dtype == object:
         if df[col].dtype == object:
             try:
                 converted = pd.to_datetime(df[col], errors='coerce', dayfirst=True)
