@@ -53,10 +53,23 @@ html, body, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {{
     color: {font_color};
 }}
 
-input, textarea, .stTextInput > div > input {{
-    background-color: {input_bg};
-    color: {font_color};
-    border: 1px solid #ccc;
+/* Input containers like selectbox, text_input */
+div[data-baseweb="input"], div[data-baseweb="select"] {{
+    background-color: {input_bg} !important;
+    color: {font_color} !important;
+    border: 1px solid #666 !important;
+    border-radius: 5px;
+}}
+
+div[data-baseweb="input"] input,
+div[data-baseweb="select"] div {{
+    color: {font_color} !important;
+}}
+
+.stTextInput input, .stTextArea textarea {{
+    background-color: {input_bg} !important;
+    color: {font_color} !important;
+    border: 1px solid #666 !important;
 }}
 
 button, .stButton > button {{
@@ -75,7 +88,7 @@ button, .stButton > button {{
     color: {font_color} !important;
 }}
 
-/* Enhance file uploader readability in dark mode */
+/* Uploader */
 [data-testid="stFileDropzone"] {{
     background-color: {input_bg} !important;
     border: 1px solid #555 !important;
@@ -90,11 +103,11 @@ button, .stButton > button {{
 # Apply selected theme
 if theme_mode == "Dark":
     st.markdown(base_css.format(
-        bg_color="#0e1117",      # Main background
-        font_color="#ffffff",    # Text
-        input_bg="#1e1e1e",      # High-contrast input area
-        button_bg="#333333",     # Button
-        button_color="#ffffff"   # Button text
+        bg_color="#0e1117",
+        font_color="#ffffff",
+        input_bg="#1e1e1e",
+        button_bg="#333333",
+        button_color="#ffffff"
     ), unsafe_allow_html=True)
 else:
     st.markdown(base_css.format(
