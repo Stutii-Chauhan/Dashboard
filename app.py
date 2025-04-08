@@ -53,58 +53,57 @@ html, body, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {{
     color: {font_color};
 }}
 
-/* Input containers like selectbox, text_input */
-div[data-baseweb="input"], div[data-baseweb="select"] {{
+/* Inputs and Selectboxes */
+input, textarea, select, [data-baseweb="input"], [data-baseweb="select"] {{
     background-color: {input_bg} !important;
     color: {font_color} !important;
     border: 1px solid #666 !important;
-    border-radius: 5px;
+    border-radius: 5px !important;
 }}
 
-div[data-baseweb="input"] input,
-div[data-baseweb="select"] div {{
+input::placeholder, textarea::placeholder {{
+    color: {font_color}AA !important;
+}}
+
+div[data-baseweb="select"] > div {{
     color: {font_color} !important;
 }}
 
-.stTextInput input, .stTextArea textarea {{
-    background-color: {input_bg} !important;
-    color: {font_color} !important;
-    border: 1px solid #666 !important;
+/* Dropdown indicator */
+svg {{
+    fill: {font_color} !important;
 }}
 
 button, .stButton > button {{
-    background-color: {button_bg};
-    color: {button_color};
+    background-color: {button_bg} !important;
+    color: {button_color} !important;
     border: none;
     padding: 0.4rem 1rem;
-    border-radius: 4px;
+    border-radius: 5px;
 }}
 
-.stCheckbox > label, .stRadio > div, label, p, h1, h2, h3, h4, h5, h6, span, div {{
-    color: {font_color} !important;
-}}
-
-[data-testid="stDataFrame"] td, [data-testid="stDataFrame"] th {{
-    color: {font_color} !important;
-}}
-
-/* Uploader */
 [data-testid="stFileDropzone"] {{
     background-color: {input_bg} !important;
-    border: 1px solid #555 !important;
+    border: 1px dashed #999 !important;
     color: {font_color} !important;
 }}
+
 [data-testid="stFileDropzone"] * {{
+    color: {font_color} !important;
+}}
+
+[data-testid="stDataFrame"] td, [data-testid="stDataFrame"] th,
+.stCheckbox > label, .stRadio > div, label, p, h1, h2, h3, h4, h5, h6, span, div {{
     color: {font_color} !important;
 }}
 </style>
 """
 
-# Apply selected theme
+# Apply updated theme styles
 if theme_mode == "Dark":
     st.markdown(base_css.format(
         bg_color="#0e1117",
-        font_color="#ffffff",
+        font_color="#f1f1f1",
         input_bg="#1e1e1e",
         button_bg="#333333",
         button_color="#ffffff"
@@ -112,12 +111,11 @@ if theme_mode == "Dark":
 else:
     st.markdown(base_css.format(
         bg_color="#ffffff",
-        font_color="#000000",
-        input_bg="#f0f2f6",
-        button_bg="#dddddd",
-        button_color="#000000"
+        font_color="#111111",
+        input_bg="#f9f9f9",
+        button_bg="#e1e1e1",
+        button_color="#111111"
     ), unsafe_allow_html=True)
-
 #Title and Subtitle
 
 st.title("Analysis Dashboard")
