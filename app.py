@@ -74,17 +74,27 @@ button, .stButton > button {{
 [data-testid="stDataFrame"] td, [data-testid="stDataFrame"] th {{
     color: {font_color} !important;
 }}
+
+/* Enhance file uploader readability in dark mode */
+[data-testid="stFileDropzone"] {{
+    background-color: {input_bg} !important;
+    border: 1px solid #555 !important;
+    color: {font_color} !important;
+}}
+[data-testid="stFileDropzone"] * {{
+    color: {font_color} !important;
+}}
 </style>
 """
 
 # Apply selected theme
 if theme_mode == "Dark":
     st.markdown(base_css.format(
-        bg_color="#0e1117",
-        font_color="#ffffff",
-        input_bg="#262730",
-        button_bg="#444",
-        button_color="#ffffff"
+        bg_color="#0e1117",      # Main background
+        font_color="#ffffff",    # Text
+        input_bg="#1e1e1e",      # High-contrast input area
+        button_bg="#333333",     # Button
+        button_color="#ffffff"   # Button text
     ), unsafe_allow_html=True)
 else:
     st.markdown(base_css.format(
@@ -94,7 +104,6 @@ else:
         button_bg="#dddddd",
         button_color="#000000"
     ), unsafe_allow_html=True)
-
 
 #Title and Subtitle
 
