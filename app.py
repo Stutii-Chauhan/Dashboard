@@ -138,9 +138,19 @@ def detect_datetime_columns(df):
                 continue
     return datetime_cols
 
+# Function to smartly read Excel files with possible junk rows
+def read_excel_smart(file):
+    preview = pd.read_excel(file, nrows=5, header=None)
+
+    for i, row in preview.iterrows():
+        str_count = sum(isinstance(x, str) and not str(x).startswith("Unnamed") for x in row)
+        if str_count >= len(row) // 2:
+            return pd.read_excel(file, skiprows=i)
+
+    return pd.read_excel(file)
+
 # Load data only once
 if uploaded_file is not None and "original_df" not in st.session_state:
-
     try:
         if uploaded_file.name.endswith(".csv"):
             try:
@@ -151,17 +161,18 @@ if uploaded_file is not None and "original_df" not in st.session_state:
                 except Exception:
                     df = pd.read_csv(uploaded_file, encoding='ISO-8859-1')
         else:
-            df = pd.read_excel(uploaded_file)
+            df = read_excel_smart(uploaded_file)  # << use the smart loader for Excel
 
         df = df.reset_index(drop=True)
-        st.session_state.original_df = df  #  Keep raw
-        st.session_state.df = df.copy()    #  Working version
+        st.session_state.original_df = df  # Keep raw
+        st.session_state.df = df.copy()    # Working version
         st.session_state.apply_header = False
         st.success(f"Successfully loaded `{uploaded_file.name}`")
+
     except Exception as e:
         st.error(f"Error loading file: {e}")
         st.stop()
-
+	    
 # CSV Tip
 if "df" in st.session_state:
     st.markdown(
