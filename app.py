@@ -28,16 +28,20 @@ def detect_datetime_columns(df):
 st.set_page_config(page_title="Data Analyzer", layout="wide")
 
 # Theme Toggle with Switch
-# Dynamic Theme Toggle (top-left, changes label too)
+# Toggle stays stable, label doesn't change inside the toggle
 col1, _ = st.columns([1, 9])
 with col1:
-    dark_mode = st.toggle(
-        "🌙 Dark Mode" if not st.session_state.get("dark_mode") else "🌞 Light Mode",
-        key="dark_mode"
-    )
-    theme_mode = "Dark" if dark_mode else "Light"
+    dark_mode = st.toggle("🌓 Toggle Theme", value=st.session_state.get("dark_mode", False), key="dark_mode")
 
-# Inject custom CSS for themes with auto-contrast fonts
+# Show current mode label below (optional but pretty)
+mode_icon = "🌙" if dark_mode else "🌞"
+mode_text = "Dark Mode" if dark_mode else "Light Mode"
+st.markdown(f"<span style='font-size: 14px;'>{mode_icon} {mode_text}</span>", unsafe_allow_html=True)
+
+# Set the theme based on toggle
+theme_mode = "Dark" if dark_mode else "Light"
+
+# Inject custom CSS for themes
 base_css = """
 <style>
 html, body, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {{
@@ -69,7 +73,7 @@ button, .stButton > button {{
 </style>
 """
 
-# Apply the selected theme
+# Apply selected theme
 if theme_mode == "Dark":
     st.markdown(base_css.format(
         bg_color="#0e1117",
@@ -86,6 +90,7 @@ else:
         button_bg="#dddddd",
         button_color="#000000"
     ), unsafe_allow_html=True)
+
 
 #Title and Subtitle
 
