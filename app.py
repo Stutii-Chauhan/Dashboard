@@ -554,38 +554,40 @@ with right_col:
         # Close custom style container
         st.markdown("</div>", unsafe_allow_html=True)
 
-# Floating Chatbot UI (Bottom Right Corner)
-theme_class = "dark-mode" if theme_mode == "Dark" else ""
-
+# Chatbot state and toggle button
 if "show_chatbot" not in st.session_state:
     st.session_state.show_chatbot = True
 
-# Button to toggle chat visibility
-toggle_label = "➖" if st.session_state.show_chatbot else "➕"
-if st.button(toggle_label, key="toggle_chatbot", help="Minimize/Maximize Chatbot"):
-    st.session_state.show_chatbot = not st.session_state.show_chatbot
+theme_class = "dark-mode" if theme_mode == "Dark" else ""
 
-# Chatbot UI (only shows when expanded)
-if st.session_state.show_chatbot:
-    with st.container():
-        st.markdown("""
-            <style>
-            #chatbot-container {
-                position: fixed;
-                bottom: 20px;
-                right: 20px;
-                width: 300px;
-                background-color: #ffffff;
-                border: 1px solid #ccc;
-                border-radius: 12px;
-                padding: 10px;
-                box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-                z-index: 9999;
-            }
-            </style>
-            <div id="chatbot-container">
-                <h4>🤖 Boozoo</h4>
-                <div style='font-size: 14px; margin-top: 8px;'>Hi there! I'm Buzz. Ask me anything about your data.</div>
-                <input type='text' placeholder='Type a message...' style='width: 100%; margin-top: 10px; padding: 6px; border-radius: 5px; border: 1px solid #ddd;' disabled />
-            </div>
-        """, unsafe_allow_html=True)
+# Floating Chatbot Container (bottom-right corner styling)
+chat_css = f"""
+<style>
+    .chat-float {{
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 9999;
+    }}
+    .chatbox-inner {{
+        background-color: {"#0e1117" if theme_mode == "Dark" else "#ffffff"};
+        color: {"#ffffff" if theme_mode == "Dark" else "#000000"};
+        padding: 1rem;
+        border-radius: 12px;
+        border: 1px solid #ccc;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+        width: 300px;
+    }}
+</style>
+<div class="chat-float">
+    <div class="chatbox-inner">
+"""
+st.markdown(chat_css, unsafe_allow_html=True)
+
+# Expander toggle UI
+with st.expander("Boozoo 🖤", expanded=st.session_state.show_chatbot):
+    st.markdown("Hi there! I'm Buzz. Ask me anything about your data.")
+    st.text_input("Message", placeholder="Type something...", key="chatbot_input", disabled=True)
+    st.session_state.show_chatbot = True  # Ensure it remains expanded once clicked
+
+st.markdown("</div></div>", unsafe_allow_html=True)
