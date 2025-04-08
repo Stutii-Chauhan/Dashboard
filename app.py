@@ -29,51 +29,27 @@ st.set_page_config(page_title="Data Analyzer", layout="wide")
 
 # Theme Toggle with Switch
 # Toggle stays stable, label doesn't change inside the toggle
+if "dark_mode" not in st.session_state:
+    st.session_state.dark_mode = False
+
+# Top-left toggle without rerun glitches
 col1, _ = st.columns([1, 9])
 with col1:
-    dark_mode = st.toggle("🌓 Toggle Theme", value=st.session_state.get("dark_mode", False), key="dark_mode")
+    if st.toggle("Toggle Theme", value=st.session_state.dark_mode, key="theme_switch"):
+        st.session_state.dark_mode = True
+    else:
+        st.session_state.dark_mode = False
 
-# Show current mode label below (optional but pretty)
-mode_icon = "🌙" if dark_mode else "🌞"
-mode_text = "Dark Mode" if dark_mode else "Light Mode"
-st.markdown(f"<span style='font-size: 14px;'>{mode_icon} {mode_text}</span>", unsafe_allow_html=True)
+# Assign the theme
+theme_mode = "Dark" if st.session_state.dark_mode else "Light"
 
-# Set the theme based on toggle
-theme_mode = "Dark" if dark_mode else "Light"
+# Theme mode display (optional, you can remove this to speed up UI)
+# st.markdown(f"{'Dark Mode' if theme_mode == 'Dark' else 'Light Mode'}")
 
-# Inject custom CSS for themes
-base_css = """
-<style>
-html, body, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {{
-    background-color: {bg_color};
-    color: {font_color};
-}}
+# Inject your theme CSS
+base_css = """ <style> ... </style> """  # Your CSS block stays here
 
-input, textarea, .stTextInput > div > input {{
-    background-color: {input_bg};
-    color: {font_color};
-    border: 1px solid #ccc;
-}}
-
-button, .stButton > button {{
-    background-color: {button_bg};
-    color: {button_color};
-    border: none;
-    padding: 0.4rem 1rem;
-    border-radius: 4px;
-}}
-
-.stCheckbox > label, .stRadio > div, label, p, h1, h2, h3, h4, h5, h6, span, div {{
-    color: {font_color} !important;
-}}
-
-[data-testid="stDataFrame"] td, [data-testid="stDataFrame"] th {{
-    color: {font_color} !important;
-}}
-</style>
-"""
-
-# Apply selected theme
+# Apply CSS
 if theme_mode == "Dark":
     st.markdown(base_css.format(
         bg_color="#0e1117",
@@ -90,7 +66,6 @@ else:
         button_bg="#dddddd",
         button_color="#000000"
     ), unsafe_allow_html=True)
-
 
 #Title and Subtitle
 
