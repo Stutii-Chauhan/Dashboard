@@ -35,12 +35,12 @@ if "dark_mode" not in st.session_state:
 # Toggle
 col1, _ = st.columns([1, 9])
 with col1:
-    dark_mode = st.toggle("🌓 Toggle Theme", value=st.session_state.get("dark_mode", False), key="dark_mode")
+    dark_mode = st.toggle("🌓", value=st.session_state.get("dark_mode", False), key="dark_mode")
 
 # Show current mode label below (optional but pretty)
 mode_icon = "🌙" if dark_mode else "🌞"
-mode_text = "Dark Mode" if dark_mode else "Light Mode"
-st.markdown(f"<span style='font-size: 14px;'>{mode_icon} {mode_text}</span>", unsafe_allow_html=True)
+#mode_text = "Dark Mode" if dark_mode else "Light Mode"
+#st.markdown(f"<span style='font-size: 14px;'>{mode_icon} {mode_text}</span>", unsafe_allow_html=True)
 
 # Set the theme based on toggle
 theme_mode = "Dark" if dark_mode else "Light"
