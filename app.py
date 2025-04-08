@@ -553,3 +553,54 @@ with right_col:
 
         # Close custom style container
         st.markdown("</div>", unsafe_allow_html=True)
+
+# Floating Chatbot UI (Bottom Right Corner)
+chatbot_css = """
+<style>
+#chatbot-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 300px;
+    max-height: 450px;
+    background-color: #ffffff;
+    border: 1px solid #ccc;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    z-index: 9999;
+    padding: 15px;
+    font-family: sans-serif;
+}
+
+#chatbot-container.dark-mode {
+    background-color: #1f1f1f;
+    color: #ffffff;
+    border-color: #444;
+}
+
+#chatbot-container h4 {
+    margin-top: 0;
+}
+
+#chatbot-input {
+    width: 100%;
+    padding: 8px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+}
+</style>
+
+<div id="chatbot-container" class="{theme_class}">
+    <h4>💬 ChatBot</h4>
+    <div style="height: 200px; overflow-y: auto; border: 1px solid #eee; padding: 10px; border-radius: 6px; background-color: #f9f9f9;">
+        <p><i>This is a placeholder. Functionality coming soon...</i></p>
+    </div>
+    <input id="chatbot-input" type="text" placeholder="Type your question..." />
+</div>
+"""
+
+# Determine theme for the chatbot box
+theme_class = "dark-mode" if theme_mode == "Dark" else ""
+
+# Inject chatbot
+st.markdown(chatbot_css.format(theme_class=theme_class), unsafe_allow_html=True)
