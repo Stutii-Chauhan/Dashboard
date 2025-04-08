@@ -447,52 +447,61 @@ if "df" in st.session_state:
 
 
 # --- CUSTOM VISUALIZATION SECTION ---
-st.subheader("📊 Create Your Own Chart")
+# Only show chart builder if data is loaded
+if "df" in st.session_state:
+    df = st.session_state.df
+    numeric_cols = df.select_dtypes(include='number').columns.tolist()
 
-chart_type = st.selectbox(
-    "Choose chart type",
-    ["Line", "Bar", "Scatter", "Histogram", "Box", "Pie", "Scatter with Regression", "Trendline (LOWESS)", "Correlation Heatmap"]
-)
+    st.subheader("Create Your Own Chart")
 
-# Choose columns dynamically
-x_col = y_col = None
-if chart_type not in ["Pie", "Correlation Heatmap", "Trendline (LOWESS)"]:
-    x_col = st.selectbox("Select X-axis", df.columns, key="x_col")
-    if chart_type not in ["Histogram"]:
-        y_col = st.selectbox("Select Y-axis", [col for col in df.columns if col != x_col and pd.api.types.is_numeric_dtype(df[col])], key="y_col")
+    chart_type = st.selectbox("Choose chart type", [
+        "Line", "Bar", "Scatter", "Histogram", "Box",
+        "Pie", "Scatter with Regression", "Trendline (LOWESS)", "Correlation Heatmap"
+    ])
 
-# Generate the plot
-fig = None
+    # Basic guards to avoid failure
+    if not df.empty:
+        x_col = st.selectbox("Select X-axis", df.columns)
 
-try:
-    if chart_type == "Line":
-        fig = px.line(df, x=x_col, y=y_col)
-    elif chart_type == "Bar":
-        fig = px.bar(df, x=x_col, y=y_col)
-    elif chart_type == "Scatter":
-        fig = px.scatter(df, x=x_col, y=y_col)
-    elif chart_type == "Histogram":
-        fig = px.histogram(df, x=x_col)
-    elif chart_type == "Box":
-        fig = px.box(df, x=x_col, y=y_col)
-    elif chart_type == "Pie":
-        pie_values = df[x_col].value_counts()
-        fig = px.pie(names=pie_values.index, values=pie_values.values)
-    elif chart_type == "Scatter with Regression":
-        fig = px.scatter(df, x=x_col, y=y_col, trendline="ols")
-    elif chart_type == "Trendline (LOWESS)":
-        fig = px.scatter(df, x=x_col, y=y_col, trendline="lowess")
-    elif chart_type == "Correlation Heatmap":
-        numeric_df = df.select_dtypes(include='number')
-        corr = numeric_df.corr()
-        fig = px.imshow(corr, text_auto=True, aspect="auto", color_continuous_scale='RdBu_r')
+        # Only allow Y selection where applicable
+        y_col = None
+        if chart_type not in ["Pie", "Histogram", "Correlation Heatmap"]:
+            y_col = st.selectbox(
+                "Select Y-axis",
+                [col for col in numeric_cols if col != x_col]
+            )
 
+        fig = None
+        try:
+            if chart_type == "Line":
+                fig = px.line(df, x=x_col, y=y_col)
+            elif chart_type == "Bar":
+                fig = px.bar(df, x=x_col, y=y_col)
+            elif chart_type == "Scatter":
+                fig = px.scatter(df, x=x_col, y=y_col)
+            elif chart_type == "Histogram":
+                fig = px.histogram(df, x=x_col)
+            elif chart_type == "Box":
+                fig = px.box(df, x=x_col, y=y_col)
+            elif chart_type == "Pie":
+                pie_vals = df[x_col].dropna().value_counts()
+                fig = px.pie(names=pie_vals.index, values=pie_vals.values)
+            elif chart_type == "Scatter with Regression":
+                import statsmodels.api as sm  # ensure it's installed
+                df_clean = df[[x_col, y_col]].dropna()
+                fig = px.scatter(df_clean, x=x_col, y=y_col, trendline="ols")
+            elif chart_type == "Trendline (LOWESS)":
+                df_clean = df[[x_col, y_col]].dropna()
+                fig = px.scatter(df_clean, x=x_col, y=y_col, trendline="lowess")
+            elif chart_type == "Correlation Heatmap":
+                corr = df[numeric_cols].corr()
+                fig = px.imshow(corr, text_auto=True, aspect="auto", color_continuous_scale='RdBu_r')
 
-    if fig:
-        st.plotly_chart(fig, use_container_width=True)
+            if fig:
+                st.plotly_chart(fig, use_container_width=True)
 
-except Exception as e:
-    st.error(f"Error generating chart: {e}")
+        except Exception as e:
+            st.error(f"Error generating chart: {e}")
 
 										
 													  
