@@ -491,7 +491,7 @@ with right_col:
         numeric_cols = df.select_dtypes(include='number').columns.tolist()
 
         with st.container():
-            # Start of styled box
+            # Start of styled container
             st.markdown("""
                 <div style='
                     background-color: #f7f7f9;
@@ -511,17 +511,12 @@ with right_col:
 
             x_col = y_col = None
 
-            # Axis selectors
             if chart_type in ["Line", "Bar", "Scatter", "Box", "Histogram", "Scatter with Regression", "Trendline"]:
                 x_col = st.selectbox("Select X-axis", df.columns)
 
             if chart_type in ["Line", "Bar", "Scatter", "Box", "Scatter with Regression", "Trendline"]:
-                y_col = st.selectbox(
-                    "Select Y-axis",
-                    [col for col in numeric_cols if col != x_col]
-                )
+                y_col = st.selectbox("Select Y-axis", [col for col in numeric_cols if col != x_col])
 
-            # Pie chart input
             if chart_type == "Pie":
                 x_col = st.selectbox("Select category column for pie chart", df.columns)
 
@@ -557,5 +552,6 @@ with right_col:
             except Exception as e:
                 st.error(f"Error generating chart: {e}")
 
-            # Close styled box
+            #Only render closing tag if content was shown
             st.markdown("</div>", unsafe_allow_html=True)
+
