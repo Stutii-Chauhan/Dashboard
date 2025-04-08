@@ -29,20 +29,42 @@ st.set_page_config(page_title="Data Analyzer", layout="wide")
 
 # Theme Toggle with Switch
 # Toggle stays stable, label doesn't change inside the toggle
-col1, _ = st.columns([1, 9])
+col1, col2 = st.columns([1, 1])
 with col1:
-    dark_mode = st.toggle("Toggle Theme", value=st.session_state.get("dark_mode", False), key="dark_mode")
+    if st.button("🌞 Light"):
+        st.session_state["theme_mode"] = "Light"
+with col2:
+    if st.button("🌙 Dark"):
+        st.session_state["theme_mode"] = "Dark"
 
-# Show current mode label below (optional but pretty)
-mode_icon = "🌙" if dark_mode else "🌞"
-mode_text = "Dark Mode" if dark_mode else "Light Mode"
+# Set default if not initialized
+if "theme_mode" not in st.session_state:
+    st.session_state["theme_mode"] = "Light"
+
+# Get current mode
+theme_mode = st.session_state["theme_mode"]
+
+# Show current mode label below
+mode_icon = "🌙" if theme_mode == "Dark" else "🌞"
+mode_text = "Dark Mode" if theme_mode == "Dark" else "Light Mode"
 st.markdown(f"<span style='font-size: 14px;'>{mode_icon} {mode_text}</span>", unsafe_allow_html=True)
 
-# Set the theme based on toggle
-theme_mode = "Dark" if dark_mode else "Light"
+# Auto-contrast color values
+if theme_mode == "Dark":
+    bg_color = "#0e1117"
+    font_color = "#ffffff"
+    input_bg = "#262730"
+    button_bg = "#444"
+    button_color = "#ffffff"
+else:
+    bg_color = "#ffffff"
+    font_color = "#000000"
+    input_bg = "#f0f2f6"
+    button_bg = "#dddddd"
+    button_color = "#000000"
 
-# Inject custom CSS for themes
-base_css = """
+# Inject custom CSS with theme values
+base_css = f"""
 <style>
 html, body, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {{
     background-color: {bg_color};
@@ -73,23 +95,7 @@ button, .stButton > button {{
 </style>
 """
 
-# Apply selected theme
-if theme_mode == "Dark":
-    st.markdown(base_css.format(
-        bg_color="#0e1117",
-        font_color="#ffffff",
-        input_bg="#262730",
-        button_bg="#444",
-        button_color="#ffffff"
-    ), unsafe_allow_html=True)
-else:
-    st.markdown(base_css.format(
-        bg_color="#ffffff",
-        font_color="#000000",
-        input_bg="#f0f2f6",
-        button_bg="#dddddd",
-        button_color="#000000"
-    ), unsafe_allow_html=True)
+st.markdown(base_css, unsafe_allow_html=True)
 
 #Title and Subtitle
 
