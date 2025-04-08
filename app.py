@@ -494,16 +494,16 @@ with right_col:
 	
 	    chart_type = st.selectbox("Choose chart type", [
 	        "Line", "Bar", "Scatter", "Histogram", "Box",
-	        "Pie", "Scatter with Regression", "Trendline (LOWESS)", "Correlation Heatmap"
+	        "Pie", "Scatter with Regression", "Trendline", "Correlation Heatmap"
 	    ])
 	
 	    x_col = y_col = None
 	
 	    # Axis selectors only when needed
-	    if chart_type in ["Line", "Bar", "Scatter", "Box", "Histogram", "Scatter with Regression", "Trendline (LOWESS)"]:
+	    if chart_type in ["Line", "Bar", "Scatter", "Box", "Histogram", "Scatter with Regression", "Trendline"]:
 	        x_col = st.selectbox("Select X-axis", df.columns)
 	
-	    if chart_type in ["Line", "Bar", "Scatter", "Box", "Scatter with Regression", "Trendline (LOWESS)"]:
+	    if chart_type in ["Line", "Bar", "Scatter", "Box", "Scatter with Regression", "Trendline"]:
 	        y_col = st.selectbox(
 	            "Select Y-axis",
 	            [col for col in numeric_cols if col != x_col]
@@ -532,7 +532,7 @@ with right_col:
 	            import statsmodels.api as sm  # just in case
 	            df_clean = df[[x_col, y_col]].dropna()
 	            fig = px.scatter(df_clean, x=x_col, y=y_col, trendline="ols")
-	        elif chart_type == "Trendline (LOWESS)":
+	        elif chart_type == "Trendline":
 	            df_clean = df[[x_col, y_col]].dropna()
 	            fig = px.scatter(df_clean, x=x_col, y=y_col, trendline="lowess")
 	        elif chart_type == "Correlation Heatmap":
