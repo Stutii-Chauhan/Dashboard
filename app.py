@@ -609,7 +609,7 @@ st.markdown(chatbot_html, unsafe_allow_html=True)
 if "toggle_chatbot" not in st.session_state:
     st.session_state.toggle_chatbot = False
 
-if "toggle" in st.experimental_get_query_params():
+if "toggle" in st.query_params:
     st.session_state.show_chatbot = not st.session_state.show_chatbot
     st.experimental_set_query_params()  # Reset
 
