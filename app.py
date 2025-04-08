@@ -118,7 +118,7 @@ else:
     ), unsafe_allow_html=True)
 #Title and Subtitle
 
-left_col, right_col = st.columns([2, 2])
+left_col, right_col = st.columns([1, 1], gap="large")
 
 with left_col:
 	st.title("Analysis Dashboard")
@@ -197,7 +197,7 @@ with left_col:
 	
 	    # Data preview
 	    st.subheader("Preview of the Data")
-	    st.dataframe(df.head(50))
+	    st.dataframe(df.head(50), use_container_width=True)
 	    st.write(f"Shape: {df.shape[0]} rows × {df.shape[1]} columns")
 	
 	
@@ -486,61 +486,74 @@ with left_col:
 
 # Only show chart builder if data is loaded
 with right_col:
-	if "df" in st.session_state:
-	    df = st.session_state.df
-	    numeric_cols = df.select_dtypes(include='number').columns.tolist()
-	
-	    st.subheader("Create Your Own Chart")
-	
-	    chart_type = st.selectbox("Choose chart type", [
-	        "Line", "Bar", "Scatter", "Histogram", "Box",
-	        "Pie", "Scatter with Regression", "Trendline", "Correlation Heatmap"
-	    ])
-	
-	    x_col = y_col = None
-	
-	    # Axis selectors only when needed
-	    if chart_type in ["Line", "Bar", "Scatter", "Box", "Histogram", "Scatter with Regression", "Trendline"]:
-	        x_col = st.selectbox("Select X-axis", df.columns)
-	
-	    if chart_type in ["Line", "Bar", "Scatter", "Box", "Scatter with Regression", "Trendline"]:
-	        y_col = st.selectbox(
-	            "Select Y-axis",
-	            [col for col in numeric_cols if col != x_col]
-	        )
-	
-	    # Pie needs only one column
-	    if chart_type == "Pie":
-	        x_col = st.selectbox("Select category column for pie chart", df.columns)
-	
-	    fig = None
-	    try:
-	        if chart_type == "Line":
-	            fig = px.line(df, x=x_col, y=y_col)
-	        elif chart_type == "Bar":
-	            fig = px.bar(df, x=x_col, y=y_col)
-	        elif chart_type == "Scatter":
-	            fig = px.scatter(df, x=x_col, y=y_col)
-	        elif chart_type == "Histogram":
-	            fig = px.histogram(df, x=x_col)
-	        elif chart_type == "Box":
-	            fig = px.box(df, x=x_col, y=y_col)
-	        elif chart_type == "Pie":
-	            pie_vals = df[x_col].dropna().value_counts()
-	            fig = px.pie(names=pie_vals.index, values=pie_vals.values)
-	        elif chart_type == "Scatter with Regression":
-	            import statsmodels.api as sm  # just in case
-	            df_clean = df[[x_col, y_col]].dropna()
-	            fig = px.scatter(df_clean, x=x_col, y=y_col, trendline="ols")
-	        elif chart_type == "Trendline":
-	            df_clean = df[[x_col, y_col]].dropna()
-	            fig = px.scatter(df_clean, x=x_col, y=y_col, trendline="lowess")
-	        elif chart_type == "Correlation Heatmap":
-	            corr = df[numeric_cols].corr()
-	            fig = px.imshow(corr, text_auto=True, aspect="auto", color_continuous_scale='RdBu_r')
-	
-	        if fig:
-	            st.plotly_chart(fig, use_container_width=True)
-	
-	    except Exception as e:
-	        st.error(f"Error generating chart: {e}")
+    if "df" in st.session_state:
+        df = st.session_state.df
+        numeric_cols = df.select_dtypes(include='number').columns.tolist()
+
+        with st.container():
+            st.markdown("""
+                <div style='
+                    background-color: #f7f7f9;
+                    border: 1px solid #ccc;
+                    border-radius: 8px;
+                    padding: 20px;
+                    box-shadow: 0 0 8px rgba(0,0,0,0.05);
+                '>
+            """, unsafe_allow_html=True)
+
+            st.subheader("Create Your Own Chart")
+
+            chart_type = st.selectbox("Choose chart type", [
+                "Line", "Bar", "Scatter", "Histogram", "Box",
+                "Pie", "Scatter with Regression", "Trendline", "Correlation Heatmap"
+            ])
+
+            x_col = y_col = None
+
+            # Axis selectors only when needed
+            if chart_type in ["Line", "Bar", "Scatter", "Box", "Histogram", "Scatter with Regression", "Trendline"]:
+                x_col = st.selectbox("Select X-axis", df.columns)
+
+            if chart_type in ["Line", "Bar", "Scatter", "Box", "Scatter with Regression", "Trendline"]:
+                y_col = st.selectbox(
+                    "Select Y-axis",
+                    [col for col in numeric_cols if col != x_col]
+                )
+
+            # Pie needs only one column
+            if chart_type == "Pie":
+                x_col = st.selectbox("Select category column for pie chart", df.columns)
+
+            fig = None
+            try:
+                if chart_type == "Line":
+                    fig = px.line(df, x=x_col, y=y_col)
+                elif chart_type == "Bar":
+                    fig = px.bar(df, x=x_col, y=y_col)
+                elif chart_type == "Scatter":
+                    fig = px.scatter(df, x=x_col, y=y_col)
+                elif chart_type == "Histogram":
+                    fig = px.histogram(df, x=x_col)
+                elif chart_type == "Box":
+                    fig = px.box(df, x=x_col, y=y_col)
+                elif chart_type == "Pie":
+                    pie_vals = df[x_col].dropna().value_counts()
+                    fig = px.pie(names=pie_vals.index, values=pie_vals.values)
+                elif chart_type == "Scatter with Regression":
+                    import statsmodels.api as sm  # just in case
+                    df_clean = df[[x_col, y_col]].dropna()
+                    fig = px.scatter(df_clean, x=x_col, y=y_col, trendline="ols")
+                elif chart_type == "Trendline":
+                    df_clean = df[[x_col, y_col]].dropna()
+                    fig = px.scatter(df_clean, x=x_col, y=y_col, trendline="lowess")
+                elif chart_type == "Correlation Heatmap":
+                    corr = df[numeric_cols].corr()
+                    fig = px.imshow(corr, text_auto=True, aspect="auto", color_continuous_scale='RdBu_r')
+
+                if fig:
+                    st.plotly_chart(fig, use_container_width=True)
+
+            except Exception as e:
+                st.error(f"Error generating chart: {e}")
+
+            st.markdown("</div>", unsafe_allow_html=True)
