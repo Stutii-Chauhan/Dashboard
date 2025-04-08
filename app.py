@@ -490,17 +490,17 @@ with right_col:
         df = st.session_state.df
         numeric_cols = df.select_dtypes(include='number').columns.tolist()
 
-        with st.container():
-            # Start of styled container
-            st.markdown("""
-                <div style='
-                    background-color: #f7f7f9;
-                    border: 1px solid #ccc;
-                    border-radius: 8px;
-                    padding: 20px;
-                    box-shadow: 0 0 8px rgba(0,0,0,0.05);
-                '>
-            """, unsafe_allow_html=True)
+        # with st.container():
+        #     # Start of styled container
+        #     st.markdown("""
+        #         <div style='
+        #             background-color: #f7f7f9;
+        #             border: 1px solid #ccc;
+        #             border-radius: 8px;
+        #             padding: 20px;
+        #             box-shadow: 0 0 8px rgba(0,0,0,0.05);
+        #         '>
+        #     """, unsafe_allow_html=True)
 
             st.subheader("Create Your Own Chart")
 
