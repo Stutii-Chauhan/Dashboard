@@ -491,6 +491,7 @@ with right_col:
         numeric_cols = df.select_dtypes(include='number').columns.tolist()
 
         with st.container():
+            # Start of styled box
             st.markdown("""
                 <div style='
                     background-color: #f7f7f9;
@@ -510,7 +511,7 @@ with right_col:
 
             x_col = y_col = None
 
-            # Axis selectors only when needed
+            # Axis selectors
             if chart_type in ["Line", "Bar", "Scatter", "Box", "Histogram", "Scatter with Regression", "Trendline"]:
                 x_col = st.selectbox("Select X-axis", df.columns)
 
@@ -520,7 +521,7 @@ with right_col:
                     [col for col in numeric_cols if col != x_col]
                 )
 
-            # Pie needs only one column
+            # Pie chart input
             if chart_type == "Pie":
                 x_col = st.selectbox("Select category column for pie chart", df.columns)
 
@@ -540,7 +541,7 @@ with right_col:
                     pie_vals = df[x_col].dropna().value_counts()
                     fig = px.pie(names=pie_vals.index, values=pie_vals.values)
                 elif chart_type == "Scatter with Regression":
-                    import statsmodels.api as sm  # just in case
+                    import statsmodels.api as sm
                     df_clean = df[[x_col, y_col]].dropna()
                     fig = px.scatter(df_clean, x=x_col, y=y_col, trendline="ols")
                 elif chart_type == "Trendline":
@@ -556,4 +557,5 @@ with right_col:
             except Exception as e:
                 st.error(f"Error generating chart: {e}")
 
+            # Close styled box
             st.markdown("</div>", unsafe_allow_html=True)
