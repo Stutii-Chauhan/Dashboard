@@ -593,7 +593,7 @@ chatbot_css = f"""
 </style>
 
 <div id="chatbot-container" class="{theme_class}">
-    <h4>💬 ChatBot</h4>
+    <h4>Boozoo🖤</h4>
     <div style="height: 200px; overflow-y: auto; border: 1px solid #eee; padding: 10px; border-radius: 6px; background-color: #f9f9f9;">
         <p><i>This is a placeholder. Functionality coming soon...</i></p>
     </div>
