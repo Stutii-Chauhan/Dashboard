@@ -573,7 +573,7 @@ toggle_button_html = f"""
 .chatbot-box {{
     position: fixed;
     bottom: 70px;
-    right: 20px;
+    left: 20px;
     width: 300px;
     background-color: {"#1f1f1f" if theme_mode == "Dark" else "#ffffff"};
     color: {"#ffffff" if theme_mode == "Dark" else "#000000"};
