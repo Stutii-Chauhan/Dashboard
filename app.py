@@ -116,7 +116,6 @@ else:
         button_bg="#e1e1e1",
         button_color="#111111"
     ), unsafe_allow_html=True)
-	
 #Title and Subtitle
 
 st.title("Analysis Dashboard")
@@ -139,34 +138,30 @@ def detect_datetime_columns(df):
                 continue
     return datetime_cols
 
-def read_csv_smart(uploaded_file):
-    content = uploaded_file.read().decode('utf-8', errors='ignore')
-    lines = content.splitlines()
-
-    for i, line in enumerate(lines[:10]):  # Check first 10 lines
-        if line.count(',') >= 2:  # Valid header likely has at least 2 columns
-            return pd.read_csv(io.StringIO('\n'.join(lines[i:])))
-    
-    raise ValueError("No valid header found in CSV")
-
 # Load data only once
 if uploaded_file is not None and "original_df" not in st.session_state:
+
     try:
         if uploaded_file.name.endswith(".csv"):
-            df = read_csv_smart(uploaded_file)
+            try:
+                df = pd.read_csv(uploaded_file, encoding='utf-8')
+            except UnicodeDecodeError:
+                try:
+                    df = pd.read_csv(uploaded_file, encoding='utf-8-sig')
+                except Exception:
+                    df = pd.read_csv(uploaded_file, encoding='ISO-8859-1')
         else:
-            df = read_excel_smart(uploaded_file)  # from previous code
+            df = pd.read_excel(uploaded_file)
 
         df = df.reset_index(drop=True)
-        st.session_state.original_df = df
-        st.session_state.df = df.copy()
+        st.session_state.original_df = df  #  Keep raw
+        st.session_state.df = df.copy()    #  Working version
         st.session_state.apply_header = False
         st.success(f"Successfully loaded `{uploaded_file.name}`")
-
     except Exception as e:
         st.error(f"Error loading file: {e}")
         st.stop()
-	    
+
 # CSV Tip
 if "df" in st.session_state:
     st.markdown(
