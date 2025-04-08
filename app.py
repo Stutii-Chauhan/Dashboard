@@ -118,7 +118,7 @@ else:
     ), unsafe_allow_html=True)
 #Title and Subtitle
 
-left_col, right_col = st.columns([2, 1.5])
+left_col, right_col = st.columns([2, 2])
 
 with left_col:
 	st.title("Analysis Dashboard")
