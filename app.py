@@ -28,9 +28,13 @@ def detect_datetime_columns(df):
 st.set_page_config(page_title="Data Analyzer", layout="wide")
 
 # Theme Toggle with Switch
-col1, _ = st.columns([1, 9])  # Adjust column width ratio
+# Dynamic Theme Toggle (top-left, changes label too)
+col1, _ = st.columns([1, 9])
 with col1:
-    dark_mode = st.toggle("🌙 Dark Mode", value=False)
+    dark_mode = st.toggle(
+        "🌙 Dark Mode" if not st.session_state.get("dark_mode") else "🌞 Light Mode",
+        key="dark_mode"
+    )
     theme_mode = "Dark" if dark_mode else "Light"
 
 # Inject custom CSS for themes with auto-contrast fonts
@@ -82,7 +86,6 @@ else:
         button_bg="#dddddd",
         button_color="#000000"
     ), unsafe_allow_html=True)
-
 
 #Title and Subtitle
 
