@@ -27,12 +27,11 @@ def detect_datetime_columns(df):
 
 st.set_page_config(page_title="Data Analyzer", layout="wide")
 
-#Theme Toggle
-
+# Theme Toggle with Switch
 with st.sidebar:
-    st.markdown("<div style='padding-left: 10px;'>", unsafe_allow_html=True)
-    theme_mode = st.radio("Choose Theme", ["Light", "Dark"], index=0)
-    st.markdown("</div>", unsafe_allow_html=True)
+    st.markdown("### 🌗 Theme")
+    dark_mode = st.toggle("Dark Mode", value=False)  # Default to Light mode
+    theme_mode = "Dark" if dark_mode else "Light"
 
 # Inject custom CSS for themes with auto-contrast fonts
 base_css = """
@@ -70,6 +69,7 @@ button, .stButton > button {{
 </style>
 """
 
+# Apply the chosen theme
 if theme_mode == "Dark":
     st.markdown(base_css.format(
         bg_color="#0e1117",
