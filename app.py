@@ -28,9 +28,9 @@ def detect_datetime_columns(df):
 st.set_page_config(page_title="Data Analyzer", layout="wide")
 
 # Theme Toggle with Switch
-with st.sidebar:
-    st.markdown("### 🌗 Theme")
-    dark_mode = st.toggle("Dark Mode", value=False)  # Default to Light mode
+col1, _ = st.columns([1, 9])  # Adjust column width ratio
+with col1:
+    dark_mode = st.toggle("🌙 Dark Mode", value=False)
     theme_mode = "Dark" if dark_mode else "Light"
 
 # Inject custom CSS for themes with auto-contrast fonts
@@ -39,10 +39,6 @@ base_css = """
 html, body, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {{
     background-color: {bg_color};
     color: {font_color};
-}}
-
-section[data-testid="stSidebar"] > div:first-child {{
-    width: 230px;
 }}
 
 input, textarea, .stTextInput > div > input {{
@@ -69,7 +65,7 @@ button, .stButton > button {{
 </style>
 """
 
-# Apply the chosen theme
+# Apply the selected theme
 if theme_mode == "Dark":
     st.markdown(base_css.format(
         bg_color="#0e1117",
