@@ -35,42 +35,30 @@ if "dark_mode" not in st.session_state:
 # Toggle
 col1, _ = st.columns([1, 9])
 with col1:
-    st.session_state.dark_mode = st.toggle(
-        "🌞 Light Mode" if not st.session_state.dark_mode else "🌙 Dark Mode",
-        value=st.session_state.dark_mode,
-        key="dark_mode_toggle"
-    )
+    dark_mode = st.toggle("🌓 Toggle Theme", value=st.session_state.get("dark_mode", False), key="dark_mode")
 
-# Theme values
-dark_mode = st.session_state.dark_mode
+# Show current mode label below (optional but pretty)
+mode_icon = "🌙" if dark_mode else "🌞"
+mode_text = "Dark Mode" if dark_mode else "Light Mode"
+st.markdown(f"<span style='font-size: 14px;'>{mode_icon} {mode_text}</span>", unsafe_allow_html=True)
+
+# Set the theme based on toggle
 theme_mode = "Dark" if dark_mode else "Light"
 
-# Auto-contrast color values
-if theme_mode == "Dark":
-    bg_color = "#0e1117"
-    font_color = "#ffffff"
-    input_bg = "#262730"
-    button_bg = "#444"
-    button_color = "#ffffff"
-else:
-    bg_color = "#ffffff"
-    font_color = "#000000"
-    input_bg = "#f0f2f6"
-    button_bg = "#dddddd"
-    button_color = "#000000"
-
-# CSS Injection
-base_css = f"""
+# Inject custom CSS for themes
+base_css = """
 <style>
 html, body, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {{
     background-color: {bg_color};
     color: {font_color};
 }}
+
 input, textarea, .stTextInput > div > input {{
     background-color: {input_bg};
     color: {font_color};
     border: 1px solid #ccc;
 }}
+
 button, .stButton > button {{
     background-color: {button_bg};
     color: {button_color};
@@ -78,15 +66,34 @@ button, .stButton > button {{
     padding: 0.4rem 1rem;
     border-radius: 4px;
 }}
+
 .stCheckbox > label, .stRadio > div, label, p, h1, h2, h3, h4, h5, h6, span, div {{
     color: {font_color} !important;
 }}
+
 [data-testid="stDataFrame"] td, [data-testid="stDataFrame"] th {{
     color: {font_color} !important;
 }}
 </style>
 """
-st.markdown(base_css, unsafe_allow_html=True)
+
+# Apply selected theme
+if theme_mode == "Dark":
+    st.markdown(base_css.format(
+        bg_color="#0e1117",
+        font_color="#ffffff",
+        input_bg="#262730",
+        button_bg="#444",
+        button_color="#ffffff"
+    ), unsafe_allow_html=True)
+else:
+    st.markdown(base_css.format(
+        bg_color="#ffffff",
+        font_color="#000000",
+        input_bg="#f0f2f6",
+        button_bg="#dddddd",
+        button_color="#000000"
+    ), unsafe_allow_html=True)
 
 
 #Title and Subtitle
