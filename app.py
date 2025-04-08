@@ -490,68 +490,66 @@ with right_col:
         df = st.session_state.df
         numeric_cols = df.select_dtypes(include='number').columns.tolist()
 
-        # with st.container():
-        #     # Start of styled container
-        #     st.markdown("""
-        #         <div style='
-        #             background-color: #f7f7f9;
-        #             border: 1px solid #ccc;
-        #             border-radius: 8px;
-        #             padding: 20px;
-        #             box-shadow: 0 0 8px rgba(0,0,0,0.05);
-        #         '>
-        #     """, unsafe_allow_html=True)
+        # Custom styled container (no st.container)
+        st.markdown("""
+            <div style='
+                background-color: #f7f7f9;
+                border: 1px solid #ccc;
+                border-radius: 8px;
+                padding: 20px;
+                box-shadow: 0 0 8px rgba(0,0,0,0.05);
+            '>
+        """, unsafe_allow_html=True)
 
-            st.subheader("Create Your Own Chart")
+        st.subheader("Create Your Own Chart")
 
-            chart_type = st.selectbox("Choose chart type", [
-                "Line", "Bar", "Scatter", "Histogram", "Box",
-                "Pie", "Scatter with Regression", "Trendline", "Correlation Heatmap"
-            ])
+        chart_type = st.selectbox("Choose chart type", [
+            "Line", "Bar", "Scatter", "Histogram", "Box",
+            "Pie", "Scatter with Regression", "Trendline", "Correlation Heatmap"
+        ])
 
-            x_col = y_col = None
+        x_col = y_col = None
 
-            if chart_type in ["Line", "Bar", "Scatter", "Box", "Histogram", "Scatter with Regression", "Trendline"]:
-                x_col = st.selectbox("Select X-axis", df.columns)
+        if chart_type in ["Line", "Bar", "Scatter", "Box", "Histogram", "Scatter with Regression", "Trendline"]:
+            x_col = st.selectbox("Select X-axis", df.columns)
 
-            if chart_type in ["Line", "Bar", "Scatter", "Box", "Scatter with Regression", "Trendline"]:
-                y_col = st.selectbox("Select Y-axis", [col for col in numeric_cols if col != x_col])
+        if chart_type in ["Line", "Bar", "Scatter", "Box", "Scatter with Regression", "Trendline"]:
+            y_col = st.selectbox("Select Y-axis", [col for col in numeric_cols if col != x_col])
 
-            if chart_type == "Pie":
-                x_col = st.selectbox("Select category column for pie chart", df.columns)
+        if chart_type == "Pie":
+            x_col = st.selectbox("Select category column for pie chart", df.columns)
 
-            fig = None
-            try:
-                if chart_type == "Line":
-                    fig = px.line(df, x=x_col, y=y_col)
-                elif chart_type == "Bar":
-                    fig = px.bar(df, x=x_col, y=y_col)
-                elif chart_type == "Scatter":
-                    fig = px.scatter(df, x=x_col, y=y_col)
-                elif chart_type == "Histogram":
-                    fig = px.histogram(df, x=x_col)
-                elif chart_type == "Box":
-                    fig = px.box(df, x=x_col, y=y_col)
-                elif chart_type == "Pie":
-                    pie_vals = df[x_col].dropna().value_counts()
-                    fig = px.pie(names=pie_vals.index, values=pie_vals.values)
-                elif chart_type == "Scatter with Regression":
-                    import statsmodels.api as sm
-                    df_clean = df[[x_col, y_col]].dropna()
-                    fig = px.scatter(df_clean, x=x_col, y=y_col, trendline="ols")
-                elif chart_type == "Trendline":
-                    df_clean = df[[x_col, y_col]].dropna()
-                    fig = px.scatter(df_clean, x=x_col, y=y_col, trendline="lowess")
-                elif chart_type == "Correlation Heatmap":
-                    corr = df[numeric_cols].corr()
-                    fig = px.imshow(corr, text_auto=True, aspect="auto", color_continuous_scale='RdBu_r')
+        fig = None
+        try:
+            if chart_type == "Line":
+                fig = px.line(df, x=x_col, y=y_col)
+            elif chart_type == "Bar":
+                fig = px.bar(df, x=x_col, y=y_col)
+            elif chart_type == "Scatter":
+                fig = px.scatter(df, x=x_col, y=y_col)
+            elif chart_type == "Histogram":
+                fig = px.histogram(df, x=x_col)
+            elif chart_type == "Box":
+                fig = px.box(df, x=x_col, y=y_col)
+            elif chart_type == "Pie":
+                pie_vals = df[x_col].dropna().value_counts()
+                fig = px.pie(names=pie_vals.index, values=pie_vals.values)
+            elif chart_type == "Scatter with Regression":
+                import statsmodels.api as sm
+                df_clean = df[[x_col, y_col]].dropna()
+                fig = px.scatter(df_clean, x=x_col, y=y_col, trendline="ols")
+            elif chart_type == "Trendline":
+                df_clean = df[[x_col, y_col]].dropna()
+                fig = px.scatter(df_clean, x=x_col, y=y_col, trendline="lowess")
+            elif chart_type == "Correlation Heatmap":
+                corr = df[numeric_cols].corr()
+                fig = px.imshow(corr, text_auto=True, aspect="auto", color_continuous_scale='RdBu_r')
 
-                if fig:
-                    st.plotly_chart(fig, use_container_width=True)
+            if fig:
+                st.plotly_chart(fig, use_container_width=True)
 
-            except Exception as e:
-                st.error(f"Error generating chart: {e}")
+        except Exception as e:
+            st.error(f"Error generating chart: {e}")
 
-            #Only render closing tag if content was shown
-            st.markdown("</div>", unsafe_allow_html=True)
-
+        # Close custom style container
+        st.markdown("</div>", unsafe_allow_html=True)
