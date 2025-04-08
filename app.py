@@ -116,6 +116,7 @@ else:
         button_bg="#e1e1e1",
         button_color="#111111"
     ), unsafe_allow_html=True)
+	
 #Title and Subtitle
 
 st.title("Analysis Dashboard")
@@ -138,34 +139,27 @@ def detect_datetime_columns(df):
                 continue
     return datetime_cols
 
-# Function to smartly read Excel files with possible junk rows
-def read_excel_smart(file):
-    preview = pd.read_excel(file, nrows=5, header=None)
+def read_csv_smart(uploaded_file):
+    content = uploaded_file.read().decode('utf-8', errors='ignore')
+    lines = content.splitlines()
 
-    for i, row in preview.iterrows():
-        str_count = sum(isinstance(x, str) and not str(x).startswith("Unnamed") for x in row)
-        if str_count >= len(row) // 2:
-            return pd.read_excel(file, skiprows=i)
-
-    return pd.read_excel(file)
+    for i, line in enumerate(lines[:10]):  # Check first 10 lines
+        if line.count(',') >= 2:  # Valid header likely has at least 2 columns
+            return pd.read_csv(io.StringIO('\n'.join(lines[i:])))
+    
+    raise ValueError("No valid header found in CSV")
 
 # Load data only once
 if uploaded_file is not None and "original_df" not in st.session_state:
     try:
         if uploaded_file.name.endswith(".csv"):
-            try:
-                df = pd.read_csv(uploaded_file, encoding='utf-8')
-            except UnicodeDecodeError:
-                try:
-                    df = pd.read_csv(uploaded_file, encoding='utf-8-sig')
-                except Exception:
-                    df = pd.read_csv(uploaded_file, encoding='ISO-8859-1')
+            df = read_csv_smart(uploaded_file)
         else:
-            df = read_excel_smart(uploaded_file)  # << use the smart loader for Excel
+            df = read_excel_smart(uploaded_file)  # from previous code
 
         df = df.reset_index(drop=True)
-        st.session_state.original_df = df  # Keep raw
-        st.session_state.df = df.copy()    # Working version
+        st.session_state.original_df = df
+        st.session_state.df = df.copy()
         st.session_state.apply_header = False
         st.success(f"Successfully loaded `{uploaded_file.name}`")
 
