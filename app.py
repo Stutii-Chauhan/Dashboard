@@ -557,48 +557,35 @@ with right_col:
 # Floating Chatbot UI (Bottom Right Corner)
 theme_class = "dark-mode" if theme_mode == "Dark" else ""
 
-chatbot_css = f"""
-<style>
-#chatbot-container {{
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    width: 300px;
-    max-height: 450px;
-    background-color: #ffffff;
-    border: 1px solid #ccc;
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    z-index: 9999;
-    padding: 15px;
-    font-family: sans-serif;
-}}
+if "show_chatbot" not in st.session_state:
+    st.session_state.show_chatbot = True
 
-#chatbot-container.dark-mode {{
-    background-color: #1f1f1f;
-    color: #ffffff;
-    border-color: #444;
-}}
+# Button to toggle chat visibility
+toggle_label = "➖" if st.session_state.show_chatbot else "➕"
+if st.button(toggle_label, key="toggle_chatbot", help="Minimize/Maximize Chatbot"):
+    st.session_state.show_chatbot = not st.session_state.show_chatbot
 
-#chatbot-container h4 {{
-    margin-top: 0;
-}}
-
-#chatbot-input {{
-    width: 100%;
-    padding: 8px;
-    border-radius: 6px;
-    border: 1px solid #ccc;
-}}
-</style>
-
-<div id="chatbot-container" class="{theme_class}">
-    <h4>Boozoo🖤</h4>
-    <div style="height: 200px; overflow-y: auto; border: 1px solid #eee; padding: 10px; border-radius: 6px; background-color: #f9f9f9;">
-        <p><i>This is a placeholder. Functionality coming soon...</i></p>
-    </div>
-    <input id="chatbot-input" type="text" placeholder="Type your question..." />
-</div>
-"""
-
-st.markdown(chatbot_css, unsafe_allow_html=True)
+# Chatbot UI (only shows when expanded)
+if st.session_state.show_chatbot:
+    with st.container():
+        st.markdown("""
+            <style>
+            #chatbot-container {
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                width: 300px;
+                background-color: #ffffff;
+                border: 1px solid #ccc;
+                border-radius: 12px;
+                padding: 10px;
+                box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+                z-index: 9999;
+            }
+            </style>
+            <div id="chatbot-container">
+                <h4>🤖 Boozoo</h4>
+                <div style='font-size: 14px; margin-top: 8px;'>Hi there! I'm Buzz. Ask me anything about your data.</div>
+                <input type='text' placeholder='Type a message...' style='width: 100%; margin-top: 10px; padding: 6px; border-radius: 5px; border: 1px solid #ddd;' disabled />
+            </div>
+        """, unsafe_allow_html=True)
