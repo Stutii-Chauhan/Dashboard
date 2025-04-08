@@ -29,25 +29,21 @@ st.set_page_config(page_title="Data Analyzer", layout="wide")
 
 # Theme Toggle with Switch
 # Toggle stays stable, label doesn't change inside the toggle
-col1, col2 = st.columns([1, 1])
+if "dark_mode" not in st.session_state:
+    st.session_state["dark_mode"] = False
+
+# Toggle
+col1, _ = st.columns([1, 9])
 with col1:
-    if st.button("🌞 Light"):
-        st.session_state["theme_mode"] = "Light"
-with col2:
-    if st.button("🌙 Dark"):
-        st.session_state["theme_mode"] = "Dark"
+    st.session_state.dark_mode = st.toggle(
+        "🌞 Light Mode" if not st.session_state.dark_mode else "🌙 Dark Mode",
+        value=st.session_state.dark_mode,
+        key="dark_mode_toggle"
+    )
 
-# Set default if not initialized
-if "theme_mode" not in st.session_state:
-    st.session_state["theme_mode"] = "Light"
-
-# Get current mode
-theme_mode = st.session_state["theme_mode"]
-
-# Show current mode label below
-mode_icon = "🌙" if theme_mode == "Dark" else "🌞"
-mode_text = "Dark Mode" if theme_mode == "Dark" else "Light Mode"
-st.markdown(f"<span style='font-size: 14px;'>{mode_icon} {mode_text}</span>", unsafe_allow_html=True)
+# Theme values
+dark_mode = st.session_state.dark_mode
+theme_mode = "Dark" if dark_mode else "Light"
 
 # Auto-contrast color values
 if theme_mode == "Dark":
@@ -63,20 +59,18 @@ else:
     button_bg = "#dddddd"
     button_color = "#000000"
 
-# Inject custom CSS with theme values
+# CSS Injection
 base_css = f"""
 <style>
 html, body, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {{
     background-color: {bg_color};
     color: {font_color};
 }}
-
 input, textarea, .stTextInput > div > input {{
     background-color: {input_bg};
     color: {font_color};
     border: 1px solid #ccc;
 }}
-
 button, .stButton > button {{
     background-color: {button_bg};
     color: {button_color};
@@ -84,18 +78,16 @@ button, .stButton > button {{
     padding: 0.4rem 1rem;
     border-radius: 4px;
 }}
-
 .stCheckbox > label, .stRadio > div, label, p, h1, h2, h3, h4, h5, h6, span, div {{
     color: {font_color} !important;
 }}
-
 [data-testid="stDataFrame"] td, [data-testid="stDataFrame"] th {{
     color: {font_color} !important;
 }}
 </style>
 """
-
 st.markdown(base_css, unsafe_allow_html=True)
+
 
 #Title and Subtitle
 
