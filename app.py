@@ -554,85 +554,71 @@ with right_col:
         # Close custom style container
         st.markdown("</div>", unsafe_allow_html=True)
 
-# Initialize chatbot toggle in session state
+theme_class = "dark-mode" if theme_mode == "Dark" else ""
+
+# Persistent toggle state
 if "show_chatbot" not in st.session_state:
     st.session_state.show_chatbot = True
 
-theme_class = "dark-mode" if theme_mode == "Dark" else ""
-
-# Floating chatbot toggle button
-toggle_button_html = f"""
+# HTML/CSS for chatbot toggle + chatbox
+chatbot_html = f"""
 <style>
 .chatbot-toggle {{
     position: fixed;
-    bottom: 20px;
-    right: 20px;
+    bottom: 100px;
+    left: 20px;
     z-index: 9999;
 }}
 
 .chatbot-box {{
     position: fixed;
-    bottom: 70px;
+    bottom: 20px;
     left: 20px;
     width: 300px;
-    background-color: {"#1f1f1f" if theme_mode == "Dark" else "#ffffff"};
-    color: {"#ffffff" if theme_mode == "Dark" else "#000000"};
+    background-color: #fff;
     border: 1px solid #ccc;
     border-radius: 12px;
-    padding: 15px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-    z-index: 9998;
-    font-family: sans-serif;
-}}
-
-.chatbot-box h4 {{
-    margin-top: 0;
+    padding: 12px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    z-index: 9999;
 }}
 
 .chatbot-box input {{
     width: 100%;
+    margin-top: 10px;
     padding: 8px;
     border-radius: 6px;
     border: 1px solid #ccc;
-    margin-top: 10px;
 }}
 </style>
 
+<!-- Toggle button -->
 <div class="chatbot-toggle">
     <form action="" method="post">
-        <button name="toggle_chatbot" type="submit" style="
-            background-color: {'#444' if theme_mode == 'Dark' else '#ddd'};
-            color: {'#fff' if theme_mode == 'Dark' else '#000'};
-            border: none;
-            padding: 8px 12px;
-            border-radius: 8px;
-            font-size: 16px;
-            cursor: pointer;
-        ">{'➖' if st.session_state.show_chatbot else '💬'}</button>
+        <button type="submit" name="toggle" style="padding:6px 10px; border-radius:6px; font-size:18px;">
+            {"➖" if st.session_state.show_chatbot else "➕"}
+        </button>
     </form>
 </div>
 """
 
-# Show chatbot box if toggled
-chatbot_box_html = """
-<div class="chatbot-box">
-    <h4>🤖 Buzz</h4>
-    <div style='font-size: 14px;'>Hi there! I'm Buzz. Ask me anything about your data. 📊</div>
-    <input type="text" placeholder="Type your message..." disabled />
-</div>
-"""
+# Inject HTML toggle
+st.markdown(chatbot_html, unsafe_allow_html=True)
 
-# Render toggle
-st.markdown(toggle_button_html, unsafe_allow_html=True)
+# Handle toggle with query param hack (Streamlit trick)
+if "toggle_chatbot" not in st.session_state:
+    st.session_state.toggle_chatbot = False
 
-# Handle toggle state from form POST
-import streamlit as stlit
-if st.session_state.get("toggle_chatbot_triggered"):
+if "toggle" in st.experimental_get_query_params():
     st.session_state.show_chatbot = not st.session_state.show_chatbot
-    st.session_state.toggle_chatbot_triggered = False
-elif stlit.experimental_get_query_params().get("toggle_chatbot"):
-    st.session_state.show_chatbot = not st.session_state.show_chatbot
+    st.experimental_set_query_params()  # Reset
 
-# Render chatbot if visible
+# Show chatbot
 if st.session_state.show_chatbot:
-    st.markdown(chatbot_box_html, unsafe_allow_html=True)
+    st.markdown("""
+    <div class="chatbot-box">
+        <h4>🤖 <strong>Buzz</strong></h4>
+        <p style='font-size: 14px; font-style: italic;'>Hi there! I'm Buzz. Ask me anything about your data. 📊</p>
+        <input type='text' placeholder='Type your message...' />
+    </div>
+    """, unsafe_allow_html=True)
