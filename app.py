@@ -14,11 +14,11 @@ from scipy import stats
 #gemini key
 genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
 GEMINI_API_KEY = "AIzaSyApXrK75ir-yYpZ-05g4Q-q8bNQDQ6eE_Q"
-model = genai.GenerativeModel("gemini-1.5-pro-latest")
+model = genai.GenerativeModel("gemini-2.0-flash")
 
 def query_gemini(prompt):
     try:
-        # model = genai.GenerativeModel("gemini-1.5-pro")
+        # model = genai.GenerativeModel("gemini-2.0-flash")
         response = model.generate_content(prompt)
         return response.text
     except Exception as e:
