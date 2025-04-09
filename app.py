@@ -42,6 +42,28 @@ def detect_datetime_columns(df):
 
 st.set_page_config(page_title="Data Analyzer", layout="wide")
 
+logo_url = "https://drive.google.com/file/d/1zHoODxowJmzIuB7ybWOH3PvDBhGFvcAS/view?usp=drive_link"
+
+logo_html = f"""
+<style>
+#company-logo {{
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+}}
+#company-logo img {{
+    max-height: 50px;
+    border-radius: 5px;
+}}
+</style>
+<div id="company-logo">
+    <img src="{logo_url}" alt="Company Logo">
+</div>
+"""
+
+st.markdown(logo_html, unsafe_allow_html=True)
+
 # Theme Toggle with Switch
 # Toggle stays stable, label doesn't change inside the toggle
 if "dark_mode" not in st.session_state:
