@@ -484,6 +484,25 @@ if "df" in st.session_state:
 #         st.subheader("Create Your Own Chart")
 
 # Only show chart builder if data is loaded
+def generate_gemini_insight(df_sample, chart_type, x_col=None, y_col=None):
+    prompt = f"""
+You are an expert data analyst. Based on the sample dataset and the chart being created, provide a 2–3 line insight followed by a recommendation.
+Chart Type: {chart_type}
+X-axis: {x_col}
+Y-axis: {y_col if y_col else 'N/A'}
+Data Sample:
+{df_sample.to_csv(index=False)}
+
+Start your response with: '📊 Insight:' and then add '✅ Recommendation:' on the next line.
+"""
+    try:
+        response = model.generate_content(prompt)
+        return response.text
+    except Exception as e:
+        return f"Gemini LLM failed: {e}"
+
+
+# Chart creation block
 with right_col:
     if "df" in st.session_state:
         df = st.session_state.df
@@ -502,7 +521,7 @@ with right_col:
         x_col = y_col = None
         fig = None
 
-        # Common axis selectors
+        # Axis selectors
         if chart_type in ["Bar", "Column", "Line", "Scatter", "Box", "Scatter with Regression", "Trendline (LOWESS)", "Histogram"]:
             x_col = st.selectbox("Select X-axis", all_cols)
 
@@ -518,24 +537,27 @@ with right_col:
             x_col = st.selectbox("Select category column for pie chart", all_cols)
 
         try:
-            # Bar / Column Charts (both modes)
+            chart_df = pd.DataFrame()
             if chart_type in ["Bar", "Column"] and x_col:
                 bar_mode = st.radio("How do you want to build this chart?", ["Auto Count", "Custom X and Y"], horizontal=True)
 
                 if bar_mode == "Auto Count":
                     value_counts = df[x_col].dropna().value_counts()
+                    chart_df = pd.DataFrame({x_col: value_counts.index, "Count": value_counts.values})
                     fig = px.bar(
-                        x=value_counts.index if chart_type == "Column" else value_counts.values,
-                        y=value_counts.values if chart_type == "Column" else value_counts.index,
+                        x=chart_df[x_col] if chart_type == "Column" else chart_df["Count"],
+                        y=chart_df["Count"] if chart_type == "Column" else chart_df[x_col],
                         orientation='v' if chart_type == "Column" else 'h',
                         labels={"x": x_col, "y": "Count"} if chart_type == "Column" else {"y": x_col, "x": "Count"}
                     )
+
                 elif bar_mode == "Custom X and Y":
                     y_options = [col for col in numeric_cols if col != x_col]
                     if y_options:
                         y_col = st.selectbox("Select Y-axis (numeric)", y_options)
+                        chart_df = df[[x_col, y_col]].dropna()
                         fig = px.bar(
-                            df,
+                            chart_df,
                             x=x_col if chart_type == "Column" else y_col,
                             y=y_col if chart_type == "Column" else x_col,
                             orientation='v' if chart_type == "Column" else 'h'
@@ -544,83 +566,47 @@ with right_col:
                         st.warning("No valid numeric column available for Y-axis.")
 
             elif chart_type == "Histogram" and x_col:
-                fig = px.histogram(df, x=x_col)
+                chart_df = df[[x_col]].dropna()
+                fig = px.histogram(chart_df, x=x_col)
 
             elif chart_type == "Pie" and x_col:
                 pie_vals = df[x_col].dropna().value_counts()
+                chart_df = pd.DataFrame({x_col: pie_vals.index, "Count": pie_vals.values})
                 fig = px.pie(names=pie_vals.index, values=pie_vals.values)
 
             elif chart_type == "Line" and x_col and y_col:
-                fig = px.line(df, x=x_col, y=y_col)
+                chart_df = df[[x_col, y_col]].dropna()
+                fig = px.line(chart_df, x=x_col, y=y_col)
 
             elif chart_type == "Scatter" and x_col and y_col:
-                fig = px.scatter(df, x=x_col, y=y_col)
+                chart_df = df[[x_col, y_col]].dropna()
+                fig = px.scatter(chart_df, x=x_col, y=y_col)
 
             elif chart_type == "Box" and x_col and y_col:
-                fig = px.box(df, x=x_col, y=y_col)
+                chart_df = df[[x_col, y_col]].dropna()
+                fig = px.box(chart_df, x=x_col, y=y_col)
 
             elif chart_type == "Scatter with Regression" and x_col and y_col:
-                df_clean = df[[x_col, y_col]].dropna()
-                fig = px.scatter(df_clean, x=x_col, y=y_col, trendline="ols")
+                chart_df = df[[x_col, y_col]].dropna()
+                fig = px.scatter(chart_df, x=x_col, y=y_col, trendline="ols")
 
             elif chart_type == "Trendline (LOWESS)" and x_col and y_col:
-                df_clean = df[[x_col, y_col]].dropna()
-                fig = px.scatter(df_clean, x=x_col, y=y_col, trendline="lowess")
+                chart_df = df[[x_col, y_col]].dropna()
+                fig = px.scatter(chart_df, x=x_col, y=y_col, trendline="lowess")
 
             elif chart_type == "Correlation Heatmap" and numeric_cols:
-                corr = df[numeric_cols].corr()
-                fig = px.imshow(corr, text_auto=True, aspect="auto", color_continuous_scale='RdBu_r')
+                chart_df = df[numeric_cols].corr()
+                fig = px.imshow(chart_df, text_auto=True, aspect="auto", color_continuous_scale='RdBu_r')
 
             if fig:
                 st.plotly_chart(fig, use_container_width=True)
 
-                # ✅ Gemini-Powered Insight
-                if chart_type not in ["Correlation Heatmap", "Pie"] and x_col and y_col:
-                    try:
-                        sample_df = df[[x_col, y_col]].dropna().head(15)
-                        prompt = f"""
-                        You are a data analyst. Provide insights for a {chart_type.lower()} chart between '{x_col}' and '{y_col}'.
-                        
-                        Here is a sample of the data:
-                        {sample_df.to_csv(index=False)}
-
-                        Give a short and useful insight about this chart.
-                        """
-                        insight = query_gemini(prompt)
-                        st.markdown("#### 🤖 Buzz’s Insight")
-                        st.success(insight)
-                    except Exception as e:
-                        st.warning(f"Buzz couldn’t generate an insight: {e}")
-
-                elif chart_type == "Pie" and x_col:
-                    try:
-                        sample = df[x_col].dropna().value_counts().head(15).reset_index()
-                        sample.columns = [x_col, "Count"]
-                        prompt = f"""
-                        You are a data analyst. Provide insights based on a pie chart generated from the following category frequency data:
-
-                        {sample.to_csv(index=False)}
-
-                        Mention any notable observations about the proportions.
-                        """
-                        insight = query_gemini(prompt)
-                        st.markdown("#### 🤖 Buzz’s Insight")
-                        st.success(insight)
-                    except Exception as e:
-                        st.warning(f"Buzz couldn’t generate an insight: {e}")
-
-                elif chart_type == "Correlation Heatmap":
-                    try:
-                        prompt = f"""
-                        You are a data analyst. Analyze the correlation matrix below and give 2–3 key insights about how the numeric variables relate to each other.
-
-                        {df[numeric_cols].corr().to_csv()}
-                        """
-                        insight = query_gemini(prompt)
-                        st.markdown("#### 🤖 Buzz’s Insight")
-                        st.success(insight)
-                    except Exception as e:
-                        st.warning(f"Buzz couldn’t generate an insight: {e}")
+                # Show Gemini insight below the chart
+                if chart_df is not None and not chart_df.empty:
+                    with st.spinner("Buzz is analyzing the chart..."):
+                        insight = generate_gemini_insight(chart_df.head(20), chart_type, x_col, y_col)
+                        st.markdown("#### 🤖 Buzz's Insight")
+                        st.info(insight)
 
             elif chart_type not in ["Correlation Heatmap"]:
                 st.info("Please select appropriate columns to generate the chart.")
