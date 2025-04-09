@@ -1,4 +1,4 @@
-import openai
+from openai import OpenAI
 import streamlit as st
 import pandas as pd
 import plotly.express as px
@@ -17,9 +17,11 @@ openai.api_key = st.secrets["OPENAI_API_KEY"]
 
 #defining open ai
 
+client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+
 def query_openai(prompt, model="gpt-3.5-turbo"):
     try:
-        response = openai.ChatCompletion.create(
+        response = client.chat.completions.create(
             model=model,
             messages=[
                 {"role": "system", "content": "You are a helpful data analyst assistant."},
@@ -28,7 +30,7 @@ def query_openai(prompt, model="gpt-3.5-turbo"):
             temperature=0.7,
             max_tokens=300
         )
-        return response.choices[0].message['content'].strip()
+        return response.choices[0].message.content.strip()
     except Exception as e:
         return f"LLM failed: {e}"
 
