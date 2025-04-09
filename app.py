@@ -63,13 +63,19 @@ theme_mode = "Dark" if dark_mode else "Light"
 # Inject custom CSS for themes
 base_css = """
 <style>
+/* App background and global font color */
 html, body, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {{
     background-color: {bg_color};
     color: {font_color};
 }}
 
-/* Inputs and Selectboxes */
-input, textarea, select, [data-baseweb="input"], [data-baseweb="select"] {{
+/* Input fields, select boxes, and textareas */
+input, textarea, select,
+[data-baseweb="input"] input,
+[data-baseweb="select"] div,
+[data-testid="stTextInput"] input,
+[data-testid="stSelectbox"] > div > div,
+[data-testid="stMultiselect"] > div > div {{
     background-color: {input_bg} !important;
     color: {font_color} !important;
     border: 1px solid #666 !important;
@@ -80,15 +86,11 @@ input::placeholder, textarea::placeholder {{
     color: {font_color}AA !important;
 }}
 
-div[data-baseweb="select"] > div {{
-    color: {font_color} !important;
-}}
-
-/* Dropdown indicator */
 svg {{
     fill: {font_color} !important;
 }}
 
+/* Buttons */
 button, .stButton > button {{
     background-color: {button_bg} !important;
     color: {button_color} !important;
@@ -97,6 +99,7 @@ button, .stButton > button {{
     border-radius: 5px;
 }}
 
+/* File uploader dropzone */
 [data-testid="stFileDropzone"] {{
     background-color: {input_bg} !important;
     border: 1px dashed #999 !important;
@@ -107,30 +110,17 @@ button, .stButton > button {{
     color: {font_color} !important;
 }}
 
-[data-testid="stDataFrame"] td, [data-testid="stDataFrame"] th,
-.stCheckbox > label, .stRadio > div, label, p, h1, h2, h3, h4, h5, h6, span, div {{
+/* DataFrame and text formatting */
+[data-testid="stDataFrame"] td,
+[data-testid="stDataFrame"] th,
+.stCheckbox > label,
+.stRadio > div,
+label, p, h1, h2, h3, h4, h5, h6,
+span, div {{
     color: {font_color} !important;
 }}
 </style>
 """
-
-# Apply updated theme styles
-if theme_mode == "Dark":
-    st.markdown(base_css.format(
-        bg_color="#0e1117",
-        font_color="#f1f1f1",
-        input_bg="#1e1e1e",
-        button_bg="#333333",
-        button_color="#ffffff"
-    ), unsafe_allow_html=True)
-else:
-    st.markdown(base_css.format(
-        bg_color="#ffffff",
-        font_color="#111111",
-        input_bg="#f9f9f9",
-        button_bg="#e1e1e1",
-        button_color="#111111"
-    ), unsafe_allow_html=True)
 #Title and Subtitle
 
 left_col, right_col = st.columns([1, 1])
