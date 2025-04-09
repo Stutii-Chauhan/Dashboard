@@ -363,51 +363,30 @@ with left_col:
 
 	
 	# --- Ask a Question Functionality (extended for missing values insight) ---
-# --- Ask a Question Functionality (extended for missing values insight + Q sales detection) ---
+# --- Ask a Question Functionality (extended for missing values insight) ---
 if "df" in st.session_state:
     df = st.session_state.df
 
     st.subheader("Ask a Question About Your Data")
     user_question = st.text_input("What do you want to know?")
 
-    def handle_quarter_sales_query(user_question, df):
-        df.columns = df.columns.str.lower()
-        quarter_match = re.search(r"(total|average|sum|mean)\s+sales\s+(in|of|for)\s+(Q[1-4])", user_question.lower())
-        if quarter_match:
-            operation = quarter_match.group(1)
-            quarter = quarter_match.group(3)
-            filtered_df = df[df['quarter'] == quarter]
-            if 'sales' in df.columns:
-                if operation in ["total", "sum"]:
-                    result = filtered_df['sales'].sum()
-                elif operation in ["average", "mean"]:
-                    result = filtered_df['sales'].mean()
-                else:
-                    return None
-                return f"The {operation} sales in {quarter} is {result:,.2f}."
-        return None
-
     if user_question:
-        result = handle_quarter_sales_query(user_question, df)
-        if result:
-            st.success(result)
-        else:
-            q = user_question.lower()
+        q = user_question.lower()
 
-            if "missing" in q:
-                if "which column" in q and ("most" in q or "maximum" in q):
-                    missing_per_column = df.isna().sum()
-                    most_missing_col = missing_per_column.idxmax()
-                    count = missing_per_column.max()
-                    st.success(f"Column with the most missing values is '{most_missing_col}' with {count} missing entries.")
-                elif "per column" in q or "column wise" in q or "each column" in q:
-                    missing_per_column = df.isna().sum()
-                    st.write("### Missing Values per Column")
-                    st.dataframe(missing_per_column[missing_per_column > 0])
-                else:
-                    total_missing = df.isna().sum().sum()
-                    st.success(f"Total missing values in the dataset: {total_missing}")
-                    st.stop()
+        if "missing" in q:
+            if "which column" in q and ("most" in q or "maximum" in q):
+                missing_per_column = df.isna().sum()
+                most_missing_col = missing_per_column.idxmax()
+                count = missing_per_column.max()
+                st.success(f"Column with the most missing values is '{most_missing_col}' with {count} missing entries.")
+            elif "per column" in q or "column wise" in q or "each column" in q:
+                missing_per_column = df.isna().sum()
+                st.write("### Missing Values per Column")
+                st.dataframe(missing_per_column[missing_per_column > 0])
+            else:
+                total_missing = df.isna().sum().sum()
+                st.success(f"Total missing values in the dataset: {total_missing}")
+                st.stop()
 
     if user_question:
         stat_keywords = {
@@ -441,6 +420,7 @@ if "df" in st.session_state:
                 return cleaned_cols[matches[0]]
             return None
 
+        # Handle correlation, regression, covariance
         if any(keyword in user_question.lower() for keyword in ['missing', 'null', 'nan', 'na', 'none', 'blank']):
             total_missing = df.isna().sum().sum()
             st.success(f"Total missing values in the dataset: {total_missing}")
@@ -464,6 +444,7 @@ if "df" in st.session_state:
             else:
                 st.warning("Please mention two valid numeric columns.")
 
+        # Handle percentile and generic stats
         else:
             percentile_match = re.match(r".*?(\d{1,3})%.*?(?:of)?\s*([a-zA-Z0-9 _%()\-]+)", user_question, re.IGNORECASE)
             if percentile_match:
@@ -526,6 +507,7 @@ if "df" in st.session_state:
                     else:
                         st.warning("Could not match the column for your question.")
                 else:
+                    #st.info("Couldn't match to a known operation. Let me ask OpenAI.")
                     with st.spinner("Analysing..."):
                         try:
                             sample = df.to_csv(index=False)
@@ -534,6 +516,7 @@ if "df" in st.session_state:
                             st.success(answer)
                         except Exception as e:
                             st.error(f"Something went wrong with Gemini: {e}")
+
 
 
 # --- CUSTOM VISUALIZATION SECTION ---
