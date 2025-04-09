@@ -54,7 +54,9 @@ logo_html = f"""
 }}
 #company-logo img {{
     max-height: 150px;
-    border-radius: 20px;
+    max-width: 200px;
+    border-radius: 5px;
+    object-fit: contain;
 }}
 </style>
 <div id="company-logo">
