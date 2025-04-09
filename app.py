@@ -486,14 +486,14 @@ if "df" in st.session_state:
 
 def generate_gemini_insight(df_sample, chart_type, x_col=None, y_col=None):
     prompt = f"""
-You are an expert data analyst. Based on the sample dataset and the chart being created, provide a 2–3 line business insight followed by a recommendation.
+You are an expert data analyst. Based on the sample dataset and the chart being created, provide a 2–3 line business insight with numbers, followed by a recommendation.
 Chart Type: {chart_type}
 X-axis: {x_col}
 Y-axis: {y_col if y_col else 'N/A'}
 Data Sample:
 {df_sample.to_csv(index=False)}
 
-Start your response with: ' Insight:' and then add ' Recommendation:' on the next line.
+Start your response with: ' Insights:' and then add ' Recommendations:' on the next line.
 """
     try:
         response = model.generate_content(prompt)
@@ -554,7 +554,10 @@ with right_col:
                     y_options = [col for col in numeric_cols if col != x_col]
                     if y_options:
                         y_col = st.selectbox("Select Y-axis (numeric)", y_options)
-                        chart_df = df[[x_col, y_col]].dropna()
+                        if not (pd.api.types.is_numeric_dtype(df[x_col]) or pd.api.types.is_datetime64_any_dtype(df[x_col])):
+                            chart_df = df[[x_col, y_col]].dropna().groupby(x_col)[y_col].mean().reset_index()
+                        else:
+                            chart_df = df[[x_col, y_col]].dropna()
                         fig = px.bar(
                             chart_df,
                             x=x_col if chart_type == "Column" else y_col,
@@ -574,7 +577,10 @@ with right_col:
                 fig = px.pie(names=pie_vals.index, values=pie_vals.values)
 
             elif chart_type == "Line" and x_col and y_col:
-                chart_df = df[[x_col, y_col]].dropna()
+                if not (pd.api.types.is_numeric_dtype(df[x_col]) or pd.api.types.is_datetime64_any_dtype(df[x_col])):
+                    chart_df = df[[x_col, y_col]].dropna().groupby(x_col)[y_col].mean().reset_index()
+                else:
+                    chart_df = df[[x_col, y_col]].dropna()
                 fig = px.line(chart_df, x=x_col, y=y_col)
 
             elif chart_type == "Scatter" and x_col and y_col:
@@ -604,7 +610,7 @@ with right_col:
                 if chart_df is not None and not chart_df.empty:
                     with st.spinner("Buzz is analyzing the chart..."):
                         insight = generate_gemini_insight(chart_df, chart_type, x_col, y_col)
-                        formatted = insight.replace("Recommendation:", "<br><br> <strong>Recommendation:</strong>")
+                        formatted = insight.replace("Recommendations:", "<br><br> Recommendations:")
                         st.markdown(f"""
                             <div style="background-color:#f1f5ff; padding: 20px; border-radius: 10px;">
                                 <h4 style="margin-bottom: 10px;">🤖 <strong>Buzz's Analysis</strong></h4>
