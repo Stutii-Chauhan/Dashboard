@@ -581,8 +581,8 @@ with right_col:
                     chart_df = df[[x_col, y_col]].dropna().groupby(x_col)[y_col].mean().reset_index()
                 else:
                     chart_df = df[[x_col, y_col]].dropna()
-                fig = px.line(chart_df, x=x_col, y=y_col, markers=True)
-                fig.update_traces(text=chart_df[y_col].round(2), textposition="top center")
+                fig = px.line(chart_df, x=x_col, y=y_col, markers=True, text=chart_df[y_col].round(2))
+                fig.update_traces(textposition="top center")
 
             elif chart_type == "Scatter" and x_col and y_col:
                 chart_df = df[[x_col, y_col]].dropna()
@@ -611,7 +611,7 @@ with right_col:
                 if chart_df is not None and not chart_df.empty:
                     with st.spinner("Buzz is analyzing the chart..."):
                         insight = generate_gemini_insight(chart_df, chart_type, x_col, y_col)
-                        formatted = insight.replace("Recommendations:", "<br><br> Recommendations:")
+                        formatted = insight.replace("Recommendations:", "<br> Recommendations:")
                         st.markdown(f"""
                             <div style="background-color:#f1f5ff; padding: 20px; border-radius: 10px;">
                                 <h4 style="margin-bottom: 10px;">🤖 <strong>Buzz's Analysis</strong></h4>
