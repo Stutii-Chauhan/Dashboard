@@ -4,5 +4,5 @@ openpyxl
 plotly
 scipy
 statsmodels
-openai>=0.27.0
+openai==1.72.0
 
