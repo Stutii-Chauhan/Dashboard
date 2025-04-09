@@ -408,44 +408,17 @@ with right_col:
 
 # ---------- Floating Buzz Assistant (Bottom-Left Functional Bot) ----------
 
-# 💬 Floating Buzz UI Only (Bottom-Left)
-st.markdown("""
-    <style>
-        .buzz-container {
-            position: fixed;
-            bottom: 20px;
-            left: 20px;
-            width: 320px;
-            background-color: #ffffff;
-            color: #000000;
-            padding: 16px;
-            border-radius: 16px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-            z-index: 9999;
-            font-family: 'Segoe UI', sans-serif;
-        }
-        .buzz-input {
-            margin-top: 10px;
-            width: 100%;
-            padding: 8px;
-            border-radius: 8px;
-            border: 1px solid #ccc;
-            font-size: 14px;
-        }
-    </style>
+if "messages" not in st.session_state:
+    st.session_state.messages = []
 
-    <div class="buzz-container">
-        <h4>🤖 Buzz</h4>
-        <div>Hi there! I'm Buzz. Ask me anything...</div>
-    </div>
-""", unsafe_allow_html=True)
+# Display messages in Streamlit-native chat layout (Streamlit 1.25+)
+for msg in st.session_state.messages:
+    with st.chat_message(msg["role"]):
+        st.markdown(msg["content"])
 
-# 🎯 Input field (visually attached)
-with st.container():
-    st.markdown("<div style='position: fixed; bottom: 85px; left: 20px; width: 320px; z-index: 9999;'>", unsafe_allow_html=True)
-    user_query = st.text_input("", placeholder="Ask Buzz...", key="buzz_input", label_visibility="collapsed")
-    st.markdown("</div>", unsafe_allow_html=True)
+# Input at bottom — this stays fixed & styled by Streamlit
+user_query = st.chat_input("Ask Buzz...")
 
-# ✅ Temporary echo (for test only)
 if user_query:
-    st.markdown(f"<div style='position: fixed; bottom: 130px; left: 20px; width: 320px; z-index:9999; color:green;'>You said: <b>{user_query}</b></div>", unsafe_allow_html=True)
+    st.session_state.messages.append({"role": "user", "content": user_query})
+    st.chat_message("assistant").markdown("Buzz here! I heard: **" + user_query + "**")
