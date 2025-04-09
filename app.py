@@ -6,8 +6,6 @@ import re
 import math
 import difflib
 import numpy as np
-import streamlit as st
-import streamlit.components.v1 as components
 from scipy import stats
 
 
@@ -28,9 +26,6 @@ def detect_datetime_columns(df):
 #Page name and layout
 
 st.set_page_config(page_title="Data Analyzer", layout="wide")
-
-# if "buzz_history" not in st.session_state:
-#     st.session_state.buzz_history = []
 
 # Theme Toggle with Switch
 # Toggle stays stable, label doesn't change inside the toggle
@@ -123,7 +118,7 @@ else:
     ), unsafe_allow_html=True)
 #Title and Subtitle
 
-left_col, right_col = st.columns([1, 1], gap="large")
+left_col, right_col = st.columns([2, 1.5])
 
 with left_col:
 	st.title("Analysis Dashboard")
@@ -202,7 +197,7 @@ with left_col:
 	
 	    # Data preview
 	    st.subheader("Preview of the Data")
-	    st.dataframe(df.head(50), use_container_width=True)
+	    st.dataframe(df.head(50))
 	    st.write(f"Shape: {df.shape[0]} rows × {df.shape[1]} columns")
 	
 	
@@ -326,7 +321,161 @@ with left_col:
 	    except:
 	        return "LLM failed to generate a response. Please try again."
 	
+	# --- Ask a Question Functionality (extended for missing values insight) ---
+	if "df" in st.session_state:
+	    df = st.session_state.df
 	
+					  
+	    st.subheader("Ask a Question About Your Data")
+	    user_question = st.text_input("What do you want to know?")
+																	   
+	
+	    if user_question:
+	        q = user_question.lower()
+	
+	        if "missing" in q:
+	            if "which column" in q and ("most" in q or "maximum" in q):
+	                missing_per_column = df.isna().sum()
+	                most_missing_col = missing_per_column.idxmax()
+	                count = missing_per_column.max()
+	                st.success(f"Column with the most missing values is '{most_missing_col}' with {count} missing entries.")
+											  
+																				   
+	
+	            elif "per column" in q or "column wise" in q or "each column" in q:
+	                missing_per_column = df.isna().sum()
+	                st.write("### Missing Values per Column")
+	                st.dataframe(missing_per_column[missing_per_column > 0])
+	            else:
+	                total_missing = df.isna().sum().sum()
+	                st.success(f"Total missing values in the dataset: {total_missing}")
+	                st.stop()
+												  
+																														  
+	
+										   
+	
+	    if user_question:
+	        stat_keywords = {
+	            'mean': 'mean', 'average': 'mean', 'avg': 'mean', 'avrg': 'mean', 'av': 'mean', 'meanvalue': 'mean',
+	            'median': 'median', 'med': 'median',
+	            'mode': 'mode',
+	            'std': 'std', 'stdev': 'std', 'standard deviation': 'std',
+	            'variance': 'var', 'var': 'var',
+	            'min': 'min', 'minimum': 'min', 'lowest': 'min',
+	            'max': 'max', 'maximum': 'max', 'highest': 'max',
+	            'range': 'range',
+	            'iqr': 'iqr',
+	            'skew': 'skew',
+	            'kurtosis': 'kurtosis',
+	            '75%': '75th', '25%': '25th',
+	            'nulls': 'missing', 'missing': 'missing', 'nan': 'missing', 'na': 'missing', 'none': 'missing', 'blank': 'missing',
+	            '25th percentile': '25th', '75th percentile': '75th',
+	            'correlation': 'correlation', 'covariance': 'covariance',
+	            'regression': 'regression'
+	        }
+	
+	        def get_column(col_candidate):
+	            col_candidate = col_candidate.strip().lower()
+	            col_candidate_clean = re.sub(r'[^a-z0-9 ]', '', col_candidate)
+	            cleaned_cols = {re.sub(r'[^a-z0-9 ]', '', col.lower()): col for col in df.columns}
+	            for cleaned, original in cleaned_cols.items():
+	                if col_candidate_clean in cleaned:
+	                    return original
+	            matches = difflib.get_close_matches(col_candidate_clean, cleaned_cols.keys(), n=1, cutoff=0.5)
+	            if matches:
+	                return cleaned_cols[matches[0]]
+	            return None
+	
+	        # Handle correlation, regression, covariance
+	        if any(keyword in user_question.lower() for keyword in ['missing', 'null', 'nan', 'na', 'none', 'blank']):
+	            total_missing = df.isna().sum().sum()
+	            st.success(f"Total missing values in the dataset: {total_missing}")
+	
+	        
+	        if any(keyword in user_question.lower() for keyword in ["correlation", "covariance", "regression"]):
+	            cols = re.findall(r"[a-zA-Z0-9 _%()\-]+", user_question)
+	            matched_cols = [get_column(c.lower()) for c in cols if get_column(c.lower()) in df.columns]
+	            if len(matched_cols) >= 2:
+	                col1, col2 = matched_cols[:2]
+	                if "correlation" in user_question.lower():
+	                    val = df[col1].corr(df[col2])
+	                    st.success(f"Correlation between {col1} and {col2} is {val:.4f}.")
+	                elif "covariance" in user_question.lower():
+	                    val = df[col1].cov(df[col2])
+	                    st.success(f"Covariance between {col1} and {col2} is {val:.4f}.")
+	                elif "regression" in user_question.lower():
+	                    result = stats.linregress(df[col1].dropna(), df[col2].dropna())
+	                    st.success(f"Regression between {col1} and {col2}: Slope = {result.slope:.4f}, Intercept = {result.intercept:.4f}, R = {result.rvalue:.4f}")
+	                else:
+	                    st.warning("Could not determine type of relationship analysis.")
+	            else:
+	                st.warning("Please mention two valid numeric columns.")
+	
+	        # Handle percentile queries
+	        else:
+	            percentile_match = re.match(r".*?(\d{1,3})%.*?(?:of)?\s*([a-zA-Z0-9 _%()\-]+)", user_question, re.IGNORECASE)
+	            if percentile_match:
+	                perc, col_candidate = percentile_match.groups()
+	                perc = float(perc)
+	                col = get_column(col_candidate.strip().lower())
+	                if col and col in df.select_dtypes(include='number').columns:
+	                    try:
+	                        result = np.percentile(df[col].dropna(), perc)
+	                        st.success(f"The {perc}th percentile of {col} is {result:.4f}.")
+	                    except Exception as e:
+	                        st.error(f"Error while computing percentile: {e}")
+	                else:
+	                    st.warning("Could not match the column for your question.")
+	            else:
+	                # Generic stat query match
+	                stat_match = re.match(r".*?(mean|average|avg|avrg|av|meanvalue|median|med|mode|std|stdev|standard deviation|variance|min|minimum|lowest|max|maximum|highest|range|iqr|skew|kurtosis).*?(?:of|for)?\s*([a-zA-Z0-9 _%()\-]+).*", user_question, re.IGNORECASE)
+	                if stat_match:
+	                    stat, col_candidate = stat_match.groups()
+	                    stat_key = stat_keywords.get(stat.lower(), None)
+	                    col = get_column(col_candidate.strip().lower())
+	                    if col and col in df.select_dtypes(include='number').columns:
+	                        try:
+	                            if stat_key == 'mean':
+	                                result = df[col].mean()
+	                            elif stat_key == 'median':
+	                                result = df[col].median()
+	                            elif stat_key == 'mode':
+	                                result = df[col].mode().iloc[0]
+	                            elif stat_key == 'std':
+	                                result = df[col].std()
+	                            elif stat_key == 'var':
+	                                result = df[col].var()
+	                            elif stat_key == 'min':
+	                                result = df[col].min()
+	                            elif stat_key == 'max':
+	                                result = df[col].max()
+	                            elif stat_key == 'range':
+	                                result = df[col].max() - df[col].min()
+	                            elif stat_key == 'iqr':
+	                                result = np.percentile(df[col].dropna(), 75) - np.percentile(df[col].dropna(), 25)
+	                            elif stat_key == 'skew':
+	                                result = df[col].skew()
+	                            elif stat_key == 'kurtosis':
+	                                result = df[col].kurtosis()
+	                            elif stat_key == '25th':
+	                                result = df[col].describe().loc['25%']
+	                            elif stat_key == '75th':
+	                                result = df[col].describe().loc['75%']
+	                            else:
+	                                result = None
+	
+	                            if result is not None:
+	                                st.success(f"The {stat} of {col} is {result:.4f}.")
+	                            else:
+	                                st.warning("This operation is not supported yet.")
+	                        except Exception as e:
+	                            st.error(f"Error while computing: {e}")
+	                    else:
+	                        st.warning("Could not match the column for your question.")
+	                else:
+	                    st.info("Couldn't match to a known operation. Please rephrase or check column names.")
+
 
 # --- CUSTOM VISUALIZATION SECTION ---
 
@@ -337,123 +486,61 @@ with left_col:
 
 # Only show chart builder if data is loaded
 with right_col:
-    if "df" in st.session_state:
-        df = st.session_state.df
-        numeric_cols = df.select_dtypes(include='number').columns.tolist()
-
-        # Custom styled container (no st.container)
-        st.markdown("""
-            <div style='
-                background-color: #f7f7f9;
-                border: 1px solid #ccc;
-                border-radius: 8px;
-                padding: 20px;
-                box-shadow: 0 0 8px rgba(0,0,0,0.05);
-            '>
-        """, unsafe_allow_html=True)
-
-        st.subheader("Create Your Own Chart")
-
-        chart_type = st.selectbox("Choose chart type", [
-            "Line", "Bar", "Scatter", "Histogram", "Box",
-            "Pie", "Scatter with Regression", "Trendline", "Correlation Heatmap"
-        ])
-
-        x_col = y_col = None
-
-        if chart_type in ["Line", "Bar", "Scatter", "Box", "Histogram", "Scatter with Regression", "Trendline"]:
-            x_col = st.selectbox("Select X-axis", df.columns)
-
-        if chart_type in ["Line", "Bar", "Scatter", "Box", "Scatter with Regression", "Trendline"]:
-            y_col = st.selectbox("Select Y-axis", [col for col in numeric_cols if col != x_col])
-
-        if chart_type == "Pie":
-            x_col = st.selectbox("Select category column for pie chart", df.columns)
-
-        fig = None
-        try:
-            if chart_type == "Line":
-                fig = px.line(df, x=x_col, y=y_col)
-            elif chart_type == "Bar":
-                fig = px.bar(df, x=x_col, y=y_col)
-            elif chart_type == "Scatter":
-                fig = px.scatter(df, x=x_col, y=y_col)
-            elif chart_type == "Histogram":
-                fig = px.histogram(df, x=x_col)
-            elif chart_type == "Box":
-                fig = px.box(df, x=x_col, y=y_col)
-            elif chart_type == "Pie":
-                pie_vals = df[x_col].dropna().value_counts()
-                fig = px.pie(names=pie_vals.index, values=pie_vals.values)
-            elif chart_type == "Scatter with Regression":
-                import statsmodels.api as sm
-                df_clean = df[[x_col, y_col]].dropna()
-                fig = px.scatter(df_clean, x=x_col, y=y_col, trendline="ols")
-            elif chart_type == "Trendline":
-                df_clean = df[[x_col, y_col]].dropna()
-                fig = px.scatter(df_clean, x=x_col, y=y_col, trendline="lowess")
-            elif chart_type == "Correlation Heatmap":
-                corr = df[numeric_cols].corr()
-                fig = px.imshow(corr, text_auto=True, aspect="auto", color_continuous_scale='RdBu_r')
-
-            if fig:
-                st.plotly_chart(fig, use_container_width=True)
-
-        except Exception as e:
-            st.error(f"Error generating chart: {e}")
-
-        # Close custom style container
-        st.markdown("</div>", unsafe_allow_html=True)
-
-
-# ---------- Floating Buzz Assistant (Bottom-Left Functional Bot) ----------
-
-# import streamlit as st
-
-# # 💬 Final Floating Buzz UI (Single Box + Input)
-# with st.container():
-#     st.markdown("""
-#         <style>
-#             .buzz-card {
-#                 position: fixed;
-#                 bottom: 20px;
-#                 left: 20px;
-#                 width: 320px;
-#                 background-color: #ffffff;
-#                 color: #000000;
-#                 padding: 16px;
-#                 border-radius: 16px;
-#                 box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-#                 z-index: 9999;
-#                 font-family: 'Segoe UI', sans-serif;
-#             }
-#             .buzz-card h4 {
-#                 margin-top: 0;
-#                 margin-bottom: 8px;
-#             }
-#             .buzz-input-box {
-#                 margin-top: 12px;
-#             }
-#             .buzz-input {
-#                 width: 100%;
-#                 padding: 10px;
-#                 font-size: 14px;
-#                 border: 1px solid #ccc;
-#                 border-radius: 10px;
-#             }
-#         </style>
-
-#         <div class="buzz-card">
-#             <h4>🤖 <strong>Buzz</strong></h4>
-#             <div>Ask me anything about your data</div>
-#         </div>
-#     """, unsafe_allow_html=True)
-
-#     # 👇 This one is the real input — placed right after the content inside the card
-#     st.markdown("<div class='buzz-card buzz-input-box'>", unsafe_allow_html=True)
-#     user_query = st.text_input(" ", placeholder="Ask Buzz...", key="buzz_input", label_visibility="collapsed")
-#     st.markdown("</div>", unsafe_allow_html=True)
-
-# # ✅ Optional Echo (test only)
-# if user_query:
-#     st.markdown(f"<div style='position: fixed; bottom: 120px; left: 20px; width: 320px; z-index:9999; color: green;'>You said: <b>{user_query}</b></div>", unsafe_allow_html=True)
+	if "df" in st.session_state:
+	    df = st.session_state.df
+	    numeric_cols = df.select_dtypes(include='number').columns.tolist()
+	
+	    st.subheader("Create Your Own Chart")
+	
+	    chart_type = st.selectbox("Choose chart type", [
+	        "Line", "Bar", "Scatter", "Histogram", "Box",
+	        "Pie", "Scatter with Regression", "Trendline (LOWESS)", "Correlation Heatmap"
+	    ])
+	
+	    x_col = y_col = None
+	
+	    # Axis selectors only when needed
+	    if chart_type in ["Line", "Bar", "Scatter", "Box", "Histogram", "Scatter with Regression", "Trendline (LOWESS)"]:
+	        x_col = st.selectbox("Select X-axis", df.columns)
+	
+	    if chart_type in ["Line", "Bar", "Scatter", "Box", "Scatter with Regression", "Trendline (LOWESS)"]:
+	        y_col = st.selectbox(
+	            "Select Y-axis",
+	            [col for col in numeric_cols if col != x_col]
+	        )
+	
+	    # Pie needs only one column
+	    if chart_type == "Pie":
+	        x_col = st.selectbox("Select category column for pie chart", df.columns)
+	
+	    fig = None
+	    try:
+	        if chart_type == "Line":
+	            fig = px.line(df, x=x_col, y=y_col)
+	        elif chart_type == "Bar":
+	            fig = px.bar(df, x=x_col, y=y_col)
+	        elif chart_type == "Scatter":
+	            fig = px.scatter(df, x=x_col, y=y_col)
+	        elif chart_type == "Histogram":
+	            fig = px.histogram(df, x=x_col)
+	        elif chart_type == "Box":
+	            fig = px.box(df, x=x_col, y=y_col)
+	        elif chart_type == "Pie":
+	            pie_vals = df[x_col].dropna().value_counts()
+	            fig = px.pie(names=pie_vals.index, values=pie_vals.values)
+	        elif chart_type == "Scatter with Regression":
+	            import statsmodels.api as sm  # just in case
+	            df_clean = df[[x_col, y_col]].dropna()
+	            fig = px.scatter(df_clean, x=x_col, y=y_col, trendline="ols")
+	        elif chart_type == "Trendline (LOWESS)":
+	            df_clean = df[[x_col, y_col]].dropna()
+	            fig = px.scatter(df_clean, x=x_col, y=y_col, trendline="lowess")
+	        elif chart_type == "Correlation Heatmap":
+	            corr = df[numeric_cols].corr()
+	            fig = px.imshow(corr, text_auto=True, aspect="auto", color_continuous_scale='RdBu_r')
+	
+	        if fig:
+	            st.plotly_chart(fig, use_container_width=True)
+	
+	    except Exception as e:
+	        st.error(f"Error generating chart: {e}")
