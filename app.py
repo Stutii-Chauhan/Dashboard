@@ -486,7 +486,7 @@ if "df" in st.session_state:
 
 def generate_gemini_insight(df_sample, chart_type, x_col=None, y_col=None):
     prompt = f"""
-You are an expert data analyst. Based on the sample dataset and the chart being created, provide a 2–3 line business insight followed by a recommendation.
+You are an expert data analyst. Based on the sample dataset and the chart being created, provide a 2–3 line business insight with numbers followed by a recommendation.
 Chart Type: {chart_type}
 X-axis: {x_col}
 Y-axis: {y_col if y_col else 'N/A'}
