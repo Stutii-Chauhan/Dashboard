@@ -407,19 +407,51 @@ theme_class = "dark-mode" if theme_mode == "Dark" else ""
 
 # Persistent toggle state
 # Show chatbot
+# Show chatbot
 if st.session_state.show_chatbot:
-    with st.container():
-        st.markdown("""
-        <div class="chatbot-box">
+    theme_bg = "#1e1e1e" if theme_mode == "Dark" else "#f9f9f9"
+    theme_text = "#ffffff" if theme_mode == "Dark" else "#000000"
+
+    st.markdown(f"""
+        <style>
+            .chatbot-float {{
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                width: 300px;
+                background-color: {theme_bg};
+                color: {theme_text};
+                padding: 16px;
+                border-radius: 12px;
+                box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+                z-index: 9999;
+                font-size: 14px;
+            }}
+            .chatbot-float h4 {{
+                margin: 0 0 10px 0;
+            }}
+            .chatbot-input input {{
+                width: 100% !important;
+                margin-top: 10px;
+                background-color: #ffffff;
+                color: #000000;
+                border: 1px solid #ccc;
+                border-radius: 6px;
+                padding: 8px;
+                font-size: 13px;
+            }}
+        </style>
+        <div class="chatbot-float">
             <h4>🤖 <strong>Buzz</strong></h4>
-            <p style='font-size: 14px; font-style: italic;'>Hi there! I'm Buzz. Ask me anything about your data. 📊</p>
+            <div>Hi there! I'm Buzz. Ask me anything about your data. 📊</div>
         </div>
-        """, unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
 
-# Real input box (functional!)
-    user_message = st.text_input("Type your message...", key="chat_input", label_visibility="collapsed")
+    # Functional input box (separate for Streamlit to detect)
+    user_message = st.text_input(
+        "", key="chat_input", placeholder="Ask Buzz about your data...", label_visibility="collapsed"
+    )
 
-    # Optional: show the user message for testing
     if user_message:
         st.markdown(f"**You:** {user_message}")
 
@@ -427,6 +459,8 @@ if st.session_state.show_chatbot:
             df = st.session_state.df
             q = user_message.lower()
 
+            # [Your existing logic remains unchanged here ↓↓↓]
+            # -- Missing value logic --
             if "missing" in q:
                 if "which column" in q and ("most" in q or "maximum" in q):
                     missing_per_column = df.isna().sum()
@@ -442,6 +476,7 @@ if st.session_state.show_chatbot:
                     st.success(f"Total missing values in the dataset: {total_missing}")
                     st.stop()
 
+            # -- Stat keywords and matching logic --
             stat_keywords = {
                 'mean': 'mean', 'average': 'mean', 'avg': 'mean', 'avrg': 'mean', 'av': 'mean', 'meanvalue': 'mean',
                 'median': 'median', 'med': 'median',
@@ -473,6 +508,7 @@ if st.session_state.show_chatbot:
                     return cleaned_cols[matches[0]]
                 return None
 
+            # -- Relationship/Correlation/Covariance/Regression Logic --
             if any(keyword in q for keyword in ["correlation", "covariance", "regression"]):
                 cols = re.findall(r"[a-zA-Z0-9 _%()\-]+", q)
                 matched_cols = [get_column(c.lower()) for c in cols if get_column(c.lower()) in df.columns]
@@ -491,8 +527,10 @@ if st.session_state.show_chatbot:
                         st.warning("Could not determine type of relationship analysis.")
                 else:
                     st.warning("Please mention two valid numeric columns.")
+
             else:
-                percentile_match = re.match(r".*?(\d{1,3})%.*?(?:of)?\s*([a-zA-Z0-9 _%()\-]+)", q, re.IGNORECASE)
+                # -- Percentile Logic --
+                percentile_match = re.match(r".*?(\d{{1,3}})%.*?(?:of)?\s*([a-zA-Z0-9 _%()\-]+)", q, re.IGNORECASE)
                 if percentile_match:
                     perc, col_candidate = percentile_match.groups()
                     perc = float(perc)
@@ -506,8 +544,9 @@ if st.session_state.show_chatbot:
                     else:
                         st.warning("Could not match the column for your question.")
                 else:
+                    # -- Generic stat logic --
                     stat_match = re.match(
-                        r".*?(mean|average|avg|avrg|av|meanvalue|median|med|mode|std|stdev|standard deviation|variance|min|minimum|lowest|max|maximum|highest|range|iqr|skew|kurtosis).*?(?:of|for)?\s*([a-zA-Z0-9 _%()\-]+).*",
+                        r".*?(mean|average|avg|avrg|av|meanvalue|median|med|mode|std|stdev|standard deviation|variance|min|minimum|lowest|max|maximum|highest|range|iqr|skew|kurtosis).*?(?:of|for)?\s*([a-zA-Z0-9 _%()\\-]+).*",
                         q, re.IGNORECASE)
                     if stat_match:
                         stat, col_candidate = stat_match.groups()
@@ -515,6 +554,7 @@ if st.session_state.show_chatbot:
                         col = get_column(col_candidate.strip().lower())
                         if col and col in df.select_dtypes(include='number').columns:
                             try:
+                                result = None
                                 if stat_key == 'mean':
                                     result = df[col].mean()
                                 elif stat_key == 'median':
@@ -541,8 +581,6 @@ if st.session_state.show_chatbot:
                                     result = df[col].describe().loc['25%']
                                 elif stat_key == '75th':
                                     result = df[col].describe().loc['75%']
-                                else:
-                                    result = None
 
                                 if result is not None:
                                     st.success(f"The {stat} of {col} is {result:.4f}.")
@@ -554,4 +592,3 @@ if st.session_state.show_chatbot:
                             st.warning("Could not match the column for your question.")
                     else:
                         st.info("Couldn't match to a known operation. Please rephrase or check column names.")
-
