@@ -16,11 +16,11 @@ from scipy import stats
 openai.api_key = st.secrets["OPENAI_API_KEY"]
 
 #defining open ai
-
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
 def query_openai(prompt, model="gpt-3.5-turbo"):
     try:
+        # Use the new client-based call
         response = client.chat.completions.create(
             model=model,
             messages=[
@@ -33,6 +33,7 @@ def query_openai(prompt, model="gpt-3.5-turbo"):
         return response.choices[0].message.content.strip()
     except Exception as e:
         return f"LLM failed: {e}"
+
 
 #detecting date time column
 
