@@ -9,10 +9,13 @@ import difflib
 import numpy as np
 from scipy import stats
 
-#GPT Code
+
+
+#open ai key
+
 openai.api_key = st.secrets["OPENAI_API_KEY"]
 
-#calling gpt
+#defining open ai
 
 def query_openai(prompt, model="gpt-3.5-turbo"):
     try:
@@ -322,13 +325,10 @@ with left_col:
 	
 	    st.markdown("---")
 	
-	        }
-	    }
-	    response = requests.post(API_URL, headers=headers, json=payload)
-	    try:
-	        return response.json()[0]["generated_text"]
-	    except:
-	        return "LLM failed to generate a response. Please try again."
+	
+
+	
+	# --- Ask a Question Functionality (extended for missing values insight) ---
 # --- Ask a Question Functionality (extended for missing values insight) ---
 if "df" in st.session_state:
     df = st.session_state.df
@@ -482,6 +482,7 @@ if "df" in st.session_state:
                             st.success(answer)
                         except Exception as e:
                             st.error(f"Something went wrong with OpenAI: {e}")
+
 
 
 # --- CUSTOM VISUALIZATION SECTION ---
