@@ -513,7 +513,7 @@ with right_col:
         chart_type = st.selectbox("Choose chart type", [
             "Bar", "Column", "Pie", "Histogram",
             "Line", "Scatter", "Box",
-            "Scatter with Regression", "Trendline (LOWESS)",
+            "Scatter with Regression", "Trendline",
             "Correlation Heatmap"
         ])
 
@@ -521,10 +521,10 @@ with right_col:
         fig = None
 
         # Axis selectors
-        if chart_type in ["Bar", "Column", "Line", "Scatter", "Box", "Scatter with Regression", "Trendline (LOWESS)", "Histogram"]:
+        if chart_type in ["Bar", "Column", "Line", "Scatter", "Box", "Scatter with Regression", "Trendline", "Histogram"]:
             x_col = st.selectbox("Select X-axis", all_cols)
 
-        if chart_type in ["Line", "Scatter", "Box", "Scatter with Regression", "Trendline (LOWESS)"]:
+        if chart_type in ["Line", "Scatter", "Box", "Scatter with Regression", "Trendline"]:
             y_options = [col for col in numeric_cols if col != x_col]
             if y_options:
                 y_col = st.selectbox("Select Y-axis", y_options)
@@ -589,7 +589,7 @@ with right_col:
                 chart_df = df[[x_col, y_col]].dropna()
                 fig = px.scatter(chart_df, x=x_col, y=y_col, trendline="ols")
 
-            elif chart_type == "Trendline (LOWESS)" and x_col and y_col:
+            elif chart_type == "Trendline" and x_col and y_col:
                 chart_df = df[[x_col, y_col]].dropna()
                 fig = px.scatter(chart_df, x=x_col, y=y_col, trendline="lowess")
 
@@ -607,7 +607,7 @@ with right_col:
                         formatted = insight.replace("Recommendation:", "<br><br> <strong>Recommendation:</strong>")
                         st.markdown(f"""
                             <div style="background-color:#f1f5ff; padding: 20px; border-radius: 10px;">
-                                <h4 style="margin-bottom: 10px;">🤖 <strong>Buzz's Insight</strong></h4>
+                                <h4 style="margin-bottom: 10px;">🤖 <strong>Buzz's Analysis</strong></h4>
                                 <p style="font-size: 16px; line-height: 1.6;">{formatted}</p>
                             </div>
                         """, unsafe_allow_html=True)
