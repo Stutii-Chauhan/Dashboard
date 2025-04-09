@@ -468,7 +468,7 @@ if "df" in st.session_state:
                     #st.info("Couldn't match to a known operation. Let me ask OpenAI.")
                     with st.spinner("Analysing..."):
                         try:
-                            sample = df.head(10).to_csv(index=False)
+                            sample = df.to_csv(index=False)
                             prompt = f"""The user asked: '{user_question}'\n\nHere is a sample of the dataset:\n{sample}\n\nPlease provide a helpful and relevant answer based on this data."""
                             answer = query_gemini(prompt)
                             st.success(answer)
@@ -603,7 +603,7 @@ with right_col:
                 # Show Gemini insight below the chart
                 if chart_df is not None and not chart_df.empty:
                     with st.spinner("Buzz is analyzing the chart..."):
-                        insight = generate_gemini_insight(chart_df.head(20), chart_type, x_col, y_col)
+                        insight = generate_gemini_insight(chart_df, chart_type, x_col, y_col)
                         formatted = insight.replace("Recommendation:", "<br><br> <strong>Recommendation:</strong>")
                         st.markdown(f"""
                             <div style="background-color:#f1f5ff; padding: 20px; border-radius: 10px;">
