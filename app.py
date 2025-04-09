@@ -408,52 +408,52 @@ with right_col:
 
 # ---------- Floating Buzz Assistant (Bottom-Left Functional Bot) ----------
 
-import streamlit as st
+# import streamlit as st
 
-# 💬 Final Floating Buzz UI (Single Box + Input)
-with st.container():
-    st.markdown("""
-        <style>
-            .buzz-card {
-                position: fixed;
-                bottom: 20px;
-                left: 20px;
-                width: 320px;
-                background-color: #ffffff;
-                color: #000000;
-                padding: 16px;
-                border-radius: 16px;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-                z-index: 9999;
-                font-family: 'Segoe UI', sans-serif;
-            }
-            .buzz-card h4 {
-                margin-top: 0;
-                margin-bottom: 8px;
-            }
-            .buzz-input-box {
-                margin-top: 12px;
-            }
-            .buzz-input {
-                width: 100%;
-                padding: 10px;
-                font-size: 14px;
-                border: 1px solid #ccc;
-                border-radius: 10px;
-            }
-        </style>
+# # 💬 Final Floating Buzz UI (Single Box + Input)
+# with st.container():
+#     st.markdown("""
+#         <style>
+#             .buzz-card {
+#                 position: fixed;
+#                 bottom: 20px;
+#                 left: 20px;
+#                 width: 320px;
+#                 background-color: #ffffff;
+#                 color: #000000;
+#                 padding: 16px;
+#                 border-radius: 16px;
+#                 box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+#                 z-index: 9999;
+#                 font-family: 'Segoe UI', sans-serif;
+#             }
+#             .buzz-card h4 {
+#                 margin-top: 0;
+#                 margin-bottom: 8px;
+#             }
+#             .buzz-input-box {
+#                 margin-top: 12px;
+#             }
+#             .buzz-input {
+#                 width: 100%;
+#                 padding: 10px;
+#                 font-size: 14px;
+#                 border: 1px solid #ccc;
+#                 border-radius: 10px;
+#             }
+#         </style>
 
-        <div class="buzz-card">
-            <h4>🤖 <strong>Buzz</strong></h4>
-            <div>Ask me anything about your data</div>
-        </div>
-    """, unsafe_allow_html=True)
+#         <div class="buzz-card">
+#             <h4>🤖 <strong>Buzz</strong></h4>
+#             <div>Ask me anything about your data</div>
+#         </div>
+#     """, unsafe_allow_html=True)
 
-    # 👇 This one is the real input — placed right after the content inside the card
-    st.markdown("<div class='buzz-card buzz-input-box'>", unsafe_allow_html=True)
-    user_query = st.text_input(" ", placeholder="Ask Buzz...", key="buzz_input", label_visibility="collapsed")
-    st.markdown("</div>", unsafe_allow_html=True)
+#     # 👇 This one is the real input — placed right after the content inside the card
+#     st.markdown("<div class='buzz-card buzz-input-box'>", unsafe_allow_html=True)
+#     user_query = st.text_input(" ", placeholder="Ask Buzz...", key="buzz_input", label_visibility="collapsed")
+#     st.markdown("</div>", unsafe_allow_html=True)
 
-# ✅ Optional Echo (test only)
-if user_query:
-    st.markdown(f"<div style='position: fixed; bottom: 120px; left: 20px; width: 320px; z-index:9999; color: green;'>You said: <b>{user_query}</b></div>", unsafe_allow_html=True)
+# # ✅ Optional Echo (test only)
+# if user_query:
+#     st.markdown(f"<div style='position: fixed; bottom: 120px; left: 20px; width: 320px; z-index:9999; color: green;'>You said: <b>{user_query}</b></div>", unsafe_allow_html=True)
