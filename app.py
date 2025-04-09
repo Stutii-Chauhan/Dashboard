@@ -408,17 +408,63 @@ with right_col:
 
 # ---------- Floating Buzz Assistant (Bottom-Left Functional Bot) ----------
 
-if "messages" not in st.session_state:
-    st.session_state.messages = []
+import streamlit as st
 
-# Display messages in Streamlit-native chat layout (Streamlit 1.25+)
-for msg in st.session_state.messages:
-    with st.chat_message(msg["role"]):
-        st.markdown(msg["content"])
+# Floating Buzz Assistant UI (no logic yet)
+st.markdown("""
+    <style>
+        .buzz-box {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            width: 320px;
+            background-color: #ffffff;
+            color: #000000;
+            padding: 16px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            z-index: 9999;
+            font-family: 'Segoe UI', sans-serif;
+        }
+        .buzz-input-box {
+            margin-top: 10px;
+        }
+        input[type="text"].buzz-input {
+            width: 100%;
+            padding: 8px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            font-size: 14px;
+        }
+    </style>
 
-# Input at bottom — this stays fixed & styled by Streamlit
-user_query = st.chat_input("Ask Buzz...")
+    <div class="buzz-box">
+        <h4>🤖 Buzz</h4>
+        <div>Hi there! I'm Buzz. Ask me anything...</div>
+        <div class="buzz-input-box">
+            <form action="" method="post">
+                <input class="buzz-input" name="buzz_question" type="text" placeholder="Ask Buzz..."/>
+            </form>
+        </div>
+    </div>
+""", unsafe_allow_html=True)
 
+# Visual card
+st.markdown("""
+    <div style="position: fixed; bottom: 80px; left: 20px; width: 320px;
+                background-color: white; padding: 16px; border-radius: 16px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 9999;">
+        <h4>🤖 Buzz</h4>
+        <div>Ask me anything about your data</div>
+    </div>
+""", unsafe_allow_html=True)
+
+# Functional input (positioned below it)
+with st.container():
+    st.markdown("<div style='position: fixed; bottom: 20px; left: 20px; width: 320px; z-index:9999;'>", unsafe_allow_html=True)
+    user_query = st.text_input("", placeholder="Ask Buzz...", key="buzz_input", label_visibility="collapsed")
+    st.markdown("</div>", unsafe_allow_html=True)
+
+# Optional echo for testing
 if user_query:
-    st.session_state.messages.append({"role": "user", "content": user_query})
-    st.chat_message("assistant").markdown("Buzz here! I heard: **" + user_query + "**")
+    st.markdown(f"**You said:** {user_query}")
