@@ -29,8 +29,8 @@ def detect_datetime_columns(df):
 
 st.set_page_config(page_title="Data Analyzer", layout="wide")
 
-if "buzz_history" not in st.session_state:
-    st.session_state.buzz_history = []
+# if "buzz_history" not in st.session_state:
+#     st.session_state.buzz_history = []
 
 # Theme Toggle with Switch
 # Toggle stays stable, label doesn't change inside the toggle
