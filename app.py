@@ -408,101 +408,44 @@ with right_col:
 
 # ---------- Floating Buzz Assistant (Bottom-Left Functional Bot) ----------
 
-import streamlit as st
-import numpy as np
-import re
-import difflib
-from scipy import stats
-
-# 💬 Floating Buzz Assistant (bottom-left)
-if "df" in st.session_state:
-    theme_mode = st.session_state.get("theme", "Light")
-    theme_bg = "#ffffff"
-    theme_text = "#000000"
-
-    # Styling for floating bot
-    st.markdown(f"""
-        <style>
-            .buzz-box {{
-                position: fixed;
-                bottom: 20px;
-                left: 20px;
-                width: 320px;
-                background-color: {theme_bg};
-                color: {theme_text};
-                padding: 16px;
-                border-radius: 16px;
-                box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-                z-index: 9999;
-                font-family: 'Segoe UI', sans-serif;
-            }}
-            .buzz-input {{
-                margin-top: 10px;
-                width: 100%;
-                padding: 8px;
-                border-radius: 8px;
-                border: 1px solid #ccc;
-                font-size: 14px;
-            }}
-        </style>
-        <div class="buzz-box">
-            <h4>🤖 Buzz</h4>
-            <div>Ask me anything about your uploaded data</div>
-        </div>
-    """, unsafe_allow_html=True)
-
-    # Invisible container for logic
-    with st.container():
-        st.markdown(
-            """<div style='position: fixed; bottom: 85px; left: 20px; width: 320px; z-index:9999;'>""",
-            unsafe_allow_html=True
-        )
-        user_query = st.text_input("", placeholder="Ask Buzz about your data...", key="buzz_input", label_visibility="collapsed")
-        st.markdown("</div>", unsafe_allow_html=True)
-
-    # ✅ Buzz's response logic
-    if user_query:
-        df = st.session_state.df
-        st.markdown(f"<div style='position: fixed; bottom: 140px; left: 20px; width: 320px; z-index:9999; color:green;'>🧠 You: {user_query}</div>", unsafe_allow_html=True)
-
-        stat_keywords = {
-            'mean': 'mean', 'average': 'mean', 'median': 'median', 'mode': 'mode',
-            'std': 'std', 'variance': 'var', 'min': 'min', 'max': 'max', 'range': 'range',
-            'iqr': 'iqr', 'skew': 'skew', 'kurtosis': 'kurtosis',
-            'correlation': 'correlation', 'covariance': 'covariance', 'regression': 'regression',
-            'missing': 'missing', 'null': 'missing', 'na': 'missing'
+# 💬 Floating Buzz UI Only (Bottom-Left)
+st.markdown("""
+    <style>
+        .buzz-container {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            width: 320px;
+            background-color: #ffffff;
+            color: #000000;
+            padding: 16px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            z-index: 9999;
+            font-family: 'Segoe UI', sans-serif;
         }
+        .buzz-input {
+            margin-top: 10px;
+            width: 100%;
+            padding: 8px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            font-size: 14px;
+        }
+    </style>
 
-        def get_column(col_candidate):
-            col_candidate_clean = re.sub(r'[^a-z0-9 ]', '', col_candidate.lower())
-            cleaned_cols = {re.sub(r'[^a-z0-9 ]', '', col.lower()): col for col in df.columns}
-            if col_candidate_clean in cleaned_cols:
-                return cleaned_cols[col_candidate_clean]
-            matches = difflib.get_close_matches(col_candidate_clean, cleaned_cols.keys(), n=1, cutoff=0.5)
-            return cleaned_cols[matches[0]] if matches else None
+    <div class="buzz-container">
+        <h4>🤖 Buzz</h4>
+        <div>Hi there! I'm Buzz. Ask me anything...</div>
+    </div>
+""", unsafe_allow_html=True)
 
-        stat_match = re.match(r".*?(mean|median|mode|std|variance|min|max|range|iqr|skew|kurtosis).*?(?:of|for)?\s*([a-zA-Z0-9 _%()\\-]+).*", user_query, re.IGNORECASE)
-        if stat_match:
-            stat, col_raw = stat_match.groups()
-            col = get_column(col_raw)
-            if col and col in df.select_dtypes(include='number').columns:
-                result = None
-                if stat == 'mean': result = df[col].mean()
-                elif stat == 'median': result = df[col].median()
-                elif stat == 'mode': result = df[col].mode().iloc[0]
-                elif stat == 'std': result = df[col].std()
-                elif stat == 'variance': result = df[col].var()
-                elif stat == 'min': result = df[col].min()
-                elif stat == 'max': result = df[col].max()
-                elif stat == 'range': result = df[col].max() - df[col].min()
-                elif stat == 'iqr': result = np.percentile(df[col].dropna(), 75) - np.percentile(df[col].dropna(), 25)
-                elif stat == 'skew': result = df[col].skew()
-                elif stat == 'kurtosis': result = df[col].kurtosis()
-                if result is not None:
-                    st.markdown(f"<div style='position: fixed; bottom: 180px; left: 20px; width: 320px; z-index:9999; color:#333;'>🔍 {stat.title()} of {col}: <b>{result:.2f}</b></div>", unsafe_allow_html=True)
-                else:
-                    st.warning("Sorry, I couldn't compute that.")
-            else:
-                st.warning("Couldn't identify a valid numeric column.")
-        else:
-            st.info("Try something like 'mean of price' or 'max of rating'")
+# 🎯 Input field (visually attached)
+with st.container():
+    st.markdown("<div style='position: fixed; bottom: 85px; left: 20px; width: 320px; z-index: 9999;'>", unsafe_allow_html=True)
+    user_query = st.text_input("", placeholder="Ask Buzz...", key="buzz_input", label_visibility="collapsed")
+    st.markdown("</div>", unsafe_allow_html=True)
+
+# ✅ Temporary echo (for test only)
+if user_query:
+    st.markdown(f"<div style='position: fixed; bottom: 130px; left: 20px; width: 320px; z-index:9999; color:green;'>You said: <b>{user_query}</b></div>", unsafe_allow_html=True)
