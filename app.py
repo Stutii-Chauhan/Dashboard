@@ -464,8 +464,8 @@ if "df" in st.session_state:
                     else:
                         st.warning("Could not match the column for your question.")
                 else:
-                    st.info("Couldn't match to a known operation. Let me ask OpenAI.")
-                    with st.spinner("Thinking..."):
+                    #st.info("Couldn't match to a known operation. Let me ask OpenAI.")
+                    with st.spinner("Analysing..."):
                         try:
                             sample = df.head(10).to_csv(index=False)
                             prompt = f"""The user asked: '{user_question}'\n\nHere is a sample of the dataset:\n{sample}\n\nPlease provide a helpful and relevant answer based on this data."""
@@ -573,6 +573,55 @@ with right_col:
 
             if fig:
                 st.plotly_chart(fig, use_container_width=True)
+
+                # ✅ Gemini-Powered Insight
+                if chart_type not in ["Correlation Heatmap", "Pie"] and x_col and y_col:
+                    try:
+                        sample_df = df[[x_col, y_col]].dropna().head(15)
+                        prompt = f"""
+                        You are a data analyst. Provide insights for a {chart_type.lower()} chart between '{x_col}' and '{y_col}'.
+                        
+                        Here is a sample of the data:
+                        {sample_df.to_csv(index=False)}
+
+                        Give a short and useful insight about this chart.
+                        """
+                        insight = query_gemini(prompt)
+                        st.markdown("#### 🤖 Buzz’s Insight")
+                        st.success(insight)
+                    except Exception as e:
+                        st.warning(f"Buzz couldn’t generate an insight: {e}")
+
+                elif chart_type == "Pie" and x_col:
+                    try:
+                        sample = df[x_col].dropna().value_counts().head(15).reset_index()
+                        sample.columns = [x_col, "Count"]
+                        prompt = f"""
+                        You are a data analyst. Provide insights based on a pie chart generated from the following category frequency data:
+
+                        {sample.to_csv(index=False)}
+
+                        Mention any notable observations about the proportions.
+                        """
+                        insight = query_gemini(prompt)
+                        st.markdown("#### 🤖 Buzz’s Insight")
+                        st.success(insight)
+                    except Exception as e:
+                        st.warning(f"Buzz couldn’t generate an insight: {e}")
+
+                elif chart_type == "Correlation Heatmap":
+                    try:
+                        prompt = f"""
+                        You are a data analyst. Analyze the correlation matrix below and give 2–3 key insights about how the numeric variables relate to each other.
+
+                        {df[numeric_cols].corr().to_csv()}
+                        """
+                        insight = query_gemini(prompt)
+                        st.markdown("#### 🤖 Buzz’s Insight")
+                        st.success(insight)
+                    except Exception as e:
+                        st.warning(f"Buzz couldn’t generate an insight: {e}")
+
             elif chart_type not in ["Correlation Heatmap"]:
                 st.info("Please select appropriate columns to generate the chart.")
 
