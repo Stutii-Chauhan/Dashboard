@@ -486,7 +486,7 @@ if "df" in st.session_state:
 
 def generate_gemini_insight(df_sample, chart_type, x_col=None, y_col=None):
     prompt = f"""
-You are an expert data analyst. Based on the sample dataset and the chart being created, provide a 2–3 line business insight with numbers followed by a recommendation.
+You are an expert data analyst. Based on the sample dataset and the chart being created, provide a 2–3 line business insight followed by a recommendation.
 Chart Type: {chart_type}
 X-axis: {x_col}
 Y-axis: {y_col if y_col else 'N/A'}
@@ -574,10 +574,7 @@ with right_col:
                 fig = px.pie(names=pie_vals.index, values=pie_vals.values)
 
             elif chart_type == "Line" and x_col and y_col:
-                if pd.api.types.is_numeric_dtype(df[x_col]) or pd.api.types.is_datetime64_any_dtype(df[x_col]):
-                    chart_df = df[[x_col, y_col]].dropna()
-                else:
-                    chart_df = df[[x_col, y_col]].dropna().groupby(x_col)[y_col].mean().reset_index()
+                chart_df = df[[x_col, y_col]].dropna()
                 fig = px.line(chart_df, x=x_col, y=y_col)
 
             elif chart_type == "Scatter" and x_col and y_col:
@@ -607,22 +604,19 @@ with right_col:
                 if chart_df is not None and not chart_df.empty:
                     with st.spinner("Buzz is analyzing the chart..."):
                         insight = generate_gemini_insight(chart_df, chart_type, x_col, y_col)
+                        formatted = insight.replace("Recommendation:", "<br><br> <strong>Recommendation:</strong>")
                         st.markdown(f"""
                             <div style="background-color:#f1f5ff; padding: 20px; border-radius: 10px;">
-                                <h4 style="margin-bottom: 15px; font-size: 20px;">🤖 <strong>Buzz's Analysis</strong></h4>
+                                <h4 style="margin-bottom: 15px;">🤖 <strong>Buzz's Analysis</strong></h4>
                                 <p style="font-size: 18px; line-height: 1.8;">
-                                    <strong>Insight:</strong> {insight.split('Recommendation:')[0].strip()}<br><br>
-                                    <strong>Recommendation:</strong> {insight.split('Recommendation:')[1].strip()}
-                                </p>
+					<strong> Insights: </strong> {insight.split('Recommendations:')[0].strip()}<br><br>
+     					<strong> Recommendations: </strong> {insight.split('Recommendations:')[1].strip()} 
+	  			</p>
                             </div>
                         """, unsafe_allow_html=True)
 
             elif chart_type not in ["Correlation Heatmap"]:
                 st.info("Please select appropriate columns to generate the chart.")
-
-        except Exception as e:
-            st.error(f"Error generating chart: {e}")
-
 
         except Exception as e:
             st.error(f"Error generating chart: {e}")
