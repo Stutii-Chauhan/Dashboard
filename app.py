@@ -604,22 +604,11 @@ with right_col:
                 if chart_df is not None and not chart_df.empty:
                     with st.spinner("Buzz is analyzing the chart..."):
                         insight = generate_gemini_insight(chart_df, chart_type, x_col, y_col)
-
-                        # Safe parsing
-                        insight_part = insight
-                        recommendation_part = ""
-                        if "Recommendation:" in insight:
-                            parts = insight.split("Recommendation:")
-                            insight_part = parts[0].strip()
-                            recommendation_part = parts[1].strip()
-
+                        formatted = insight.replace("Recommendation:", "<br><br> <strong>Recommendation:</strong>")
                         st.markdown(f"""
                             <div style="background-color:#f1f5ff; padding: 20px; border-radius: 10px;">
-                                <h4 style="margin-bottom: 15px; font-size: 20px;">🤖 <strong>Buzz's Analysis</strong></h4>
-                                <p style="font-size: 18px; line-height: 1.8;">
-                                    <strong>Insight:</strong> {insight_part}<br><br>
-                                    <strong>Recommendation:</strong> {recommendation_part}
-                                </p>
+                                <h4 style="margin-bottom: 10px;">🤖 <strong>Buzz's Analysis</strong></h4>
+                                <p style="font-size: 16px; line-height: 1.6;">{formatted}</p>
                             </div>
                         """, unsafe_allow_html=True)
 
