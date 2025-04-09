@@ -1,4 +1,4 @@
-from openai import OpenAI
+import google.generativeai as genai
 import streamlit as st
 import pandas as pd
 import plotly.express as px
@@ -11,29 +11,16 @@ from scipy import stats
 
 
 
-#open ai key
+#gemini key
+genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
 
-openai.api_key = st.secrets["OPENAI_API_KEY"]
-
-#defining open ai
-client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
-
-def query_openai(prompt, model="gpt-3.5-turbo"):
+def query_gemini(prompt):
     try:
-        # Use the new client-based call
-        response = client.chat.completions.create(
-            model=model,
-            messages=[
-                {"role": "system", "content": "You are a helpful data analyst assistant."},
-                {"role": "user", "content": prompt}
-            ],
-            temperature=0.7,
-            max_tokens=300
-        )
-        return response.choices[0].message.content.strip()
+        model = genai.GenerativeModel("gemini-pro")
+        response = model.generate_content(prompt)
+        return response.text
     except Exception as e:
-        return f"LLM failed: {e}"
-
+        return f"Gemini LLM failed: {e}"
 
 #detecting date time column
 
@@ -481,10 +468,10 @@ if "df" in st.session_state:
                         try:
                             sample = df.head(10).to_csv(index=False)
                             prompt = f"""The user asked: '{user_question}'\n\nHere is a sample of the dataset:\n{sample}\n\nPlease provide a helpful and relevant answer based on this data."""
-                            answer = query_openai(prompt)
+                            answer = query_gemini(prompt)
                             st.success(answer)
                         except Exception as e:
-                            st.error(f"Something went wrong with OpenAI: {e}")
+                            st.error(f"Something went wrong with Gemini: {e}")
 
 
 
