@@ -410,51 +410,50 @@ with right_col:
 
 
 # ----------------- FLOATING BUZZ ASSISTANT (BOTTOM-LEFT) -----------------
-import re, difflib
-import numpy as np
-from scipy import stats
+# Inject custom CSS
+st.markdown("""
+    <style>
+        #buzz-box {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            width: 320px;
+            background-color: white;
+            color: black;
+            padding: 16px;
+            border-radius: 12px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+            z-index: 9999;
+            font-size: 14px;
+        }
+        #buzz-input {
+            position: fixed;
+            bottom: 80px;
+            left: 20px;
+            width: 320px;
+            z-index: 9999;
+        }
+    </style>
+""", unsafe_allow_html=True)
 
-# Set theme styling
-if "show_chatbot" not in st.session_state:
-    st.session_state.show_chatbot = True
+# Render Buzz card (no input here)
+st.markdown("""
+    <div id="buzz-box">
+        <h4>🤖 <strong>Buzz</strong></h4>
+        <div>Hi there! I'm Buzz. Ask me anything about your data. 📊</div>
+    </div>
+""", unsafe_allow_html=True)
 
-if st.session_state.show_chatbot:
-    theme_mode = st.session_state.get("theme", "Light")
-    theme_bg = "#1e1e1e" if theme_mode == "Dark" else "#ffffff"
-    theme_text = "#ffffff" if theme_mode == "Dark" else "#000000"
+# Actual input rendered separately in same corner
+user_message = st.text_input("", key="buzz_input", placeholder="Ask Buzz about your data...", label_visibility="collapsed")
 
-    # Layout container with visual chatbot
-    with st.container():
-        st.markdown(f"""
-            <style>
-                .buzz-box {{
-                    position: fixed;
-                    bottom: 20px;
-                    left: 20px;
-                    width: 320px;
-                    background-color: {theme_bg};
-                    color: {theme_text};
-                    padding: 16px;
-                    border-radius: 12px;
-                    box-shadow: 0 6px 20px rgba(0,0,0,0.3);
-                    z-index: 9999;
-                    font-size: 14px;
-                }}
-                .buzz-box h4 {{
-                    margin: 0 0 10px 0;
-                }}
-            </style>
-            <div class="buzz-box">
-                <h4>🤖 <strong>Buzz</strong></h4>
-                <div>Hi there! I'm Buzz. Ask me anything about your data. 📊</div>
-            </div>
-        """, unsafe_allow_html=True)
+# Handle input
+if user_message:
+    st.markdown(f"**You:** {user_message}")
 
-        # Input placed after Buzz visually, but still logically connected
-        user_message = st.text_input("", key="chat_input", placeholder="Ask Buzz about your data...", label_visibility="collapsed")
-
-    if user_message:
-        st.markdown(f"**You:** {user_message}")
+    if "df" in st.session_state:
+        df = st.session_state.df
+        q = user_message.lower()
 
         if "df" in st.session_state:
             df = st.session_state.df
