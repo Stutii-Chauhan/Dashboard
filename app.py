@@ -581,7 +581,8 @@ with right_col:
                     chart_df = df[[x_col, y_col]].dropna().groupby(x_col)[y_col].mean().reset_index()
                 else:
                     chart_df = df[[x_col, y_col]].dropna()
-                fig = px.line(chart_df, x=x_col, y=y_col)
+                fig = px.line(chart_df, x=x_col, y=y_col, markers=True)
+		fig.update_traces(text=chart_df[y_col].round(2), textposition="top center")
 
             elif chart_type == "Scatter" and x_col and y_col:
                 chart_df = df[[x_col, y_col]].dropna()
