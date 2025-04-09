@@ -60,7 +60,7 @@ mode_icon = "🌙" if dark_mode else "🌞"
 # Set the theme based on toggle
 theme_mode = "Dark" if dark_mode else "Light"
 
-# Inject custom CSS for themes
+# Inject custom CSS for themes with contrasting input text
 base_css = """
 <style>
 html, body, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {{
@@ -71,22 +71,26 @@ html, body, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {{
 /* Inputs and Selectboxes */
 input, textarea, select, [data-baseweb="input"], [data-baseweb="select"] {{
     background-color: {input_bg} !important;
-    color: {font_color} !important;
+    color: {input_font_color} !important;
     border: 1px solid #666 !important;
     border-radius: 5px !important;
 }}
 
 input::placeholder, textarea::placeholder {{
-    color: {font_color}AA !important;
+    color: {input_font_color}AA !important;
 }}
 
 div[data-baseweb="select"] > div {{
-    color: {font_color} !important;
+    color: {input_font_color} !important;
+}}
+
+.css-1wa3eu0-placeholder, .css-1uccc91-singleValue {{
+    color: {input_font_color} !important;
 }}
 
 /* Dropdown indicator */
 svg {{
-    fill: {font_color} !important;
+    fill: {input_font_color} !important;
 }}
 
 button, .stButton > button {{
@@ -100,26 +104,37 @@ button, .stButton > button {{
 [data-testid="stFileDropzone"] {{
     background-color: {input_bg} !important;
     border: 1px dashed #999 !important;
-    color: {font_color} !important;
+    color: {input_font_color} !important;
 }}
 
-[data-testid="stFileDropzone"] * {{
-    color: {font_color} !important;
+[data-testid="stFileDropzone"] *,
+[data-testid="stFileDropzone"] span,
+[data-testid="stFileDropzone"] svg,
+[data-testid="stFileDropzone"] div {{
+    color: {input_font_color} !important;
+    fill: {input_font_color} !important;
 }}
 
 [data-testid="stDataFrame"] td, [data-testid="stDataFrame"] th,
 .stCheckbox > label, .stRadio > div, label, p, h1, h2, h3, h4, h5, h6, span, div {{
     color: {font_color} !important;
 }}
+
+/* Plotly modebar */
+.js-plotly-plot .modebar-btn, .js-plotly-plot .modebar {{
+    color: {font_color} !important;
+    fill: {font_color} !important;
+}}
 </style>
 """
 
-# Apply updated theme styles
+# Apply updated theme styles with contrasting input font color
 if theme_mode == "Dark":
     st.markdown(base_css.format(
         bg_color="#0e1117",
         font_color="#f1f1f1",
         input_bg="#1e1e1e",
+        input_font_color="#ffffff",
         button_bg="#333333",
         button_color="#ffffff"
     ), unsafe_allow_html=True)
@@ -128,9 +143,11 @@ else:
         bg_color="#ffffff",
         font_color="#111111",
         input_bg="#f9f9f9",
+        input_font_color="#000000",
         button_bg="#e1e1e1",
         button_color="#111111"
     ), unsafe_allow_html=True)
+	
 #Title and Subtitle
 
 left_col, right_col = st.columns([1, 1])
