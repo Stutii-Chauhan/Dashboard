@@ -209,12 +209,12 @@ with left_col:
 	        st.subheader("Dataset Overview")
 	
 	        if numeric_cols:
-	            st.markdown("**Numeric columns:**")
+	            st.markdown("**Quantitative columns:**")
 	            for col in numeric_cols:
 	                st.write(f"- {col}")
 	
 	        if categorical_cols:
-	            st.markdown("**Categorical columns:**")
+	            st.markdown("**Qualitative columns:**")
 	            for col in categorical_cols:
 	                st.write(f"- {col}")
 	
@@ -489,57 +489,74 @@ with right_col:
     if "df" in st.session_state:
         df = st.session_state.df
         numeric_cols = df.select_dtypes(include='number').columns.tolist()
+        all_cols = df.columns.tolist()
 
-        if numeric_cols:
-            st.subheader("Create Your Own Chart")
+        st.subheader("Create Your Own Chart")
 
-            chart_type = st.selectbox("Choose chart type", [
-                "Line", "Bar", "Scatter", "Histogram", "Box",
-                "Pie", "Scatter with Regression", "Trendline (LOWESS)", "Correlation Heatmap"
-            ])
+        chart_type = st.selectbox("Choose chart type", [
+            "Bar", "Pie", "Histogram",
+            "Line", "Scatter", "Box", 
+            "Scatter with Regression", "Trendline (LOWESS)", 
+            "Correlation Heatmap"
+        ])
 
-            x_col = y_col = None
+        x_col = y_col = None
+        fig = None
 
-            if chart_type in ["Line", "Bar", "Scatter", "Box", "Histogram", "Scatter with Regression", "Trendline (LOWESS)"]:
-                x_col = st.selectbox("Select X-axis", df.columns)
+        # Axis selection
+        if chart_type in ["Bar", "Line", "Scatter", "Box", "Scatter with Regression", "Trendline (LOWESS)", "Histogram"]:
+            x_col = st.selectbox("Select X-axis", all_cols)
 
-            if chart_type in ["Line", "Bar", "Scatter", "Box", "Scatter with Regression", "Trendline (LOWESS)"]:
-                y_options = [col for col in numeric_cols if col != x_col]
-                y_col = st.selectbox("Select Y-axis", y_options) if y_options else None
+        if chart_type in ["Line", "Scatter", "Box", "Scatter with Regression", "Trendline (LOWESS)"]:
+            y_options = [col for col in numeric_cols if col != x_col]
+            if y_options:
+                y_col = st.selectbox("Select Y-axis", y_options)
+            else:
+                y_col = None
+                st.warning("No available numeric column for Y-axis.")
 
-            if chart_type == "Pie":
-                x_col = st.selectbox("Select category column for pie chart", df.columns)
+        if chart_type == "Pie":
+            x_col = st.selectbox("Select category column for pie chart", all_cols)
 
-            fig = None
-            try:
-                if chart_type == "Line" and x_col and y_col:
-                    fig = px.line(df, x=x_col, y=y_col)
-                elif chart_type == "Bar" and x_col and y_col:
-                    fig = px.bar(df, x=x_col, y=y_col)
-                elif chart_type == "Scatter" and x_col and y_col:
-                    fig = px.scatter(df, x=x_col, y=y_col)
-                elif chart_type == "Histogram" and x_col:
-                    fig = px.histogram(df, x=x_col)
-                elif chart_type == "Box" and x_col and y_col:
-                    fig = px.box(df, x=x_col, y=y_col)
-                elif chart_type == "Pie" and x_col:
-                    pie_vals = df[x_col].dropna().value_counts()
-                    fig = px.pie(names=pie_vals.index, values=pie_vals.values)
-                elif chart_type == "Scatter with Regression" and x_col and y_col:
-                    df_clean = df[[x_col, y_col]].dropna()
-                    fig = px.scatter(df_clean, x=x_col, y=y_col, trendline="ols")
-                elif chart_type == "Trendline (LOWESS)" and x_col and y_col:
-                    df_clean = df[[x_col, y_col]].dropna()
-                    fig = px.scatter(df_clean, x=x_col, y=y_col, trendline="lowess")
-                elif chart_type == "Correlation Heatmap" and numeric_cols:
-                    corr = df[numeric_cols].corr()
-                    fig = px.imshow(corr, text_auto=True, aspect="auto", color_continuous_scale='RdBu_r')
+        # Chart rendering logic
+        try:
+            if chart_type == "Bar" and x_col:
+                value_counts = df[x_col].dropna().value_counts()
+                fig = px.bar(x=value_counts.index, y=value_counts.values, labels={"x": x_col, "y": "Count"})
 
-                if fig:
-                    st.plotly_chart(fig, use_container_width=True)
-                elif chart_type not in ["Correlation Heatmap"]:
-                    st.warning("Please select valid columns for this chart type.")
-            except Exception as e:
-                st.error(f"Error generating chart: {e}")
-        else:
-            st.warning("Your dataset has no numeric columns. Please upload a dataset with at least one numeric column to build charts.")
+            elif chart_type == "Pie" and x_col:
+                pie_vals = df[x_col].dropna().value_counts()
+                fig = px.pie(names=pie_vals.index, values=pie_vals.values)
+
+            elif chart_type == "Histogram" and x_col:
+                fig = px.histogram(df, x=x_col)
+
+            elif chart_type == "Line" and x_col and y_col:
+                fig = px.line(df, x=x_col, y=y_col)
+
+            elif chart_type == "Scatter" and x_col and y_col:
+                fig = px.scatter(df, x=x_col, y=y_col)
+
+            elif chart_type == "Box" and x_col and y_col:
+                fig = px.box(df, x=x_col, y=y_col)
+
+            elif chart_type == "Scatter with Regression" and x_col and y_col:
+                df_clean = df[[x_col, y_col]].dropna()
+                fig = px.scatter(df_clean, x=x_col, y=y_col, trendline="ols")
+
+            elif chart_type == "Trendline (LOWESS)" and x_col and y_col:
+                df_clean = df[[x_col, y_col]].dropna()
+                fig = px.scatter(df_clean, x=x_col, y=y_col, trendline="lowess")
+
+            elif chart_type == "Correlation Heatmap" and numeric_cols:
+                corr = df[numeric_cols].corr()
+                fig = px.imshow(corr, text_auto=True, aspect="auto", color_continuous_scale='RdBu_r')
+
+            if fig:
+                st.plotly_chart(fig, use_container_width=True)
+            elif chart_type not in ["Correlation Heatmap"]:
+                st.info("Please select appropriate columns to generate the chart.")
+
+        except Exception as e:
+            st.error(f"Error generating chart: {e}")
+
