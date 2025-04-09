@@ -596,50 +596,190 @@ with right_col:
 #                     else:
 #                         st.info("Couldn't match to a known operation. Please rephrase or check column names.")
 
-# Sidebar for Buzz Chatbot
-st.sidebar.title("🤖 Buzz - Your AI Assistant")
-st.sidebar.markdown("Ask **Buzz** anything about your data!")
+# # Sidebar for Buzz Chatbot
+# st.sidebar.title("🤖 Buzz AI")
+# st.sidebar.markdown("Ask **Buzz** anything about your data!")
 
-# Display chat history
-for msg in st.session_state.buzz_history:
-    with st.sidebar.chat_message(msg["role"]):
-        st.markdown(msg["message"])
+# # Display chat history
+# for msg in st.session_state.buzz_history:
+#     with st.sidebar.chat_message(msg["role"]):
+#         st.markdown(msg["message"])
 
-# Chat input
-user_query = st.sidebar.chat_input("Ask Buzz...")
+# # Chat input
+# user_query = st.sidebar.chat_input("Ask Buzz...")
 
-if user_query:
-    st.session_state.buzz_history.append({"role": "user", "message": user_query})
+# if user_query:
+#     st.session_state.buzz_history.append({"role": "user", "message": user_query})
 
-    # Placeholder reply — you can replace this with LLM or pandas logic later
-    if "buzz" in user_query.lower():
-        reply = f"Hi, I'm Buzz! You asked: **{user_query}**"
-    else:
-        reply = "Try mentioning me by name (e.g., 'Buzz, show summary')."
+#     # Placeholder reply — you can replace this with LLM or pandas logic later
+#     if "buzz" in user_query.lower():
+#         reply = f"Hi, I'm Buzz! You asked: **{user_query}**"
+#     else:
+#         reply = "Try mentioning me by name (e.g., 'Buzz, show summary')."
 
-    st.session_state.buzz_history.append({"role": "assistant", "message": reply})
+#     st.session_state.buzz_history.append({"role": "assistant", "message": reply})
 
-    with st.sidebar.chat_message("assistant"):
-        st.markdown(reply)
+#     with st.sidebar.chat_message("assistant"):
+#         st.markdown(reply)
 
-# components.html(
-#     """
-#     <div style="
-#         position: fixed;
-#         bottom: 20px;
-#         right: 20px;
-#         background-color: white;
-#         border: 2px solid #e0e0e0;
-#         border-radius: 16px;
-#         padding: 12px;
-#         box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-#         z-index: 9999;
-#         width: 320px;
-#         font-family: Arial, sans-serif;
-#     ">
-#         <strong>🤖 Buzz</strong><br/>
-#         <input type='text' placeholder='Ask me anything...' style='width: 100%; padding: 8px; margin-top: 8px; border-radius: 8px; border: 1px solid #ccc;'/>
-#     </div>
-#     """,
-#     height=120
-# )
+
+# ---------- Floating Buzz Assistant (Bottom-Left Functional Bot) ----------
+
+
+# Toggle state (can be made user-controllable later)
+if "show_chatbot" not in st.session_state:
+    st.session_state.show_chatbot = True
+
+# Show Buzz if active
+if st.session_state.show_chatbot:
+    theme_mode = st.session_state.get("theme", "Light")
+    theme_bg = "#1e1e1e" if theme_mode == "Dark" else "#f9f9f9"
+    theme_text = "#ffffff" if theme_mode == "Dark" else "#000000"
+
+    # Buzz UI
+    st.markdown(f"""
+        <style>
+            .chatbot-float {{
+                position: fixed;
+                bottom: 20px;
+                left: 20px;
+                width: 300px;
+                background-color: {theme_bg};
+                color: {theme_text};
+                padding: 16px;
+                border-radius: 12px;
+                box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+                z-index: 9999;
+                font-size: 14px;
+            }}
+            .chatbot-float h4 {{
+                margin: 0 0 10px 0;
+            }}
+            .chatbot-input input {{
+                width: 100% !important;
+                margin-top: 10px;
+                background-color: #ffffff;
+                color: #000000;
+                border: 1px solid #ccc;
+                border-radius: 6px;
+                padding: 8px;
+                font-size: 13px;
+            }}
+        </style>
+        <div class="chatbot-float">
+            <h4>🤖 <strong>Buzz</strong></h4>
+            <div>Hi there! I'm Buzz. Ask me anything about your data. 📊</div>
+        </div>
+    """, unsafe_allow_html=True)
+
+    # Buzz input field
+    user_message = st.text_input(
+        "", key="chat_input", placeholder="Ask Buzz about your data...", label_visibility="collapsed"
+    )
+
+    # When user submits a query
+    if user_message:
+        st.markdown(f"**You:** {user_message}")
+        if "df" in st.session_state:
+            df = st.session_state.df
+            q = user_message.lower()
+
+            # ---- Stat keywords ----
+            stat_keywords = {
+                'mean': 'mean', 'average': 'mean', 'avg': 'mean', 'avrg': 'mean', 'av': 'mean', 'meanvalue': 'mean',
+                'median': 'median', 'med': 'median',
+                'mode': 'mode',
+                'std': 'std', 'stdev': 'std', 'standard deviation': 'std',
+                'variance': 'var', 'var': 'var',
+                'min': 'min', 'minimum': 'min', 'lowest': 'min',
+                'max': 'max', 'maximum': 'max', 'highest': 'max',
+                'range': 'range',
+                'iqr': 'iqr',
+                'skew': 'skew',
+                'kurtosis': 'kurtosis',
+                '25th': '25th percentile', '75th': '75th percentile',
+                'correlation': 'correlation', 'covariance': 'covariance',
+                'regression': 'regression',
+                'missing': 'missing', 'nulls': 'missing', 'na': 'missing', 'nan': 'missing'
+            }
+
+            # ---- Column matcher ----
+            def get_column(col_candidate):
+                col_candidate_clean = re.sub(r'[^a-z0-9 ]', '', col_candidate.lower())
+                cleaned_cols = {re.sub(r'[^a-z0-9 ]', '', col.lower()): col for col in df.columns}
+                if col_candidate_clean in cleaned_cols:
+                    return cleaned_cols[col_candidate_clean]
+                matches = difflib.get_close_matches(col_candidate_clean, cleaned_cols.keys(), n=1, cutoff=0.5)
+                return cleaned_cols[matches[0]] if matches else None
+
+            # ---- Correlation / Covariance / Regression ----
+            if any(k in q for k in ["correlation", "covariance", "regression"]):
+                cols = re.findall(r"[a-zA-Z0-9 _%()\-]+", q)
+                matched = [get_column(c) for c in cols if get_column(c) in df.columns]
+                if len(matched) >= 2:
+                    col1, col2 = matched[:2]
+                    if "correlation" in q:
+                        st.success(f"Correlation between {col1} and {col2} is {df[col1].corr(df[col2]):.4f}")
+                    elif "covariance" in q:
+                        st.success(f"Covariance between {col1} and {col2} is {df[col1].cov(df[col2]):.4f}")
+                    elif "regression" in q:
+                        result = stats.linregress(df[col1].dropna(), df[col2].dropna())
+                        st.success(f"Slope: {result.slope:.4f}, Intercept: {result.intercept:.4f}, R: {result.rvalue:.4f}")
+                else:
+                    st.warning("Please specify two valid columns for this operation.")
+
+            # ---- Missing Values ----
+            elif "missing" in q:
+                if "which column" in q and ("most" in q or "maximum" in q):
+                    missing_counts = df.isna().sum()
+                    col = missing_counts.idxmax()
+                    st.success(f"Column with most missing values: {col} ({missing_counts[col]} missing)")
+                elif "per column" in q or "each column" in q:
+                    st.write("### Missing Values per Column")
+                    st.dataframe(df.isna().sum()[df.isna().sum() > 0])
+                else:
+                    total_missing = df.isna().sum().sum()
+                    st.success(f"Total missing values in the dataset: {total_missing}")
+
+            # ---- Percentile ----
+            elif re.match(r".*?(\d{1,3})%.*of\s+([a-zA-Z0-9 _%()\\-]+)", q):
+                match = re.match(r".*?(\d{1,3})%.*of\s+([a-zA-Z0-9 _%()\\-]+)", q)
+                perc, col_raw = match.groups()
+                col = get_column(col_raw)
+                if col and col in df.select_dtypes(include='number').columns:
+                    val = np.percentile(df[col].dropna(), float(perc))
+                    st.success(f"{perc}th percentile of {col} is {val:.2f}")
+                else:
+                    st.warning("Could not match a valid numeric column.")
+
+            # ---- Generic Stats (mean, median, etc.) ----
+            else:
+                stat_match = re.match(r".*?(mean|median|mode|std|variance|min|max|range|iqr|skew|kurtosis).*?(?:of|for)?\s*([a-zA-Z0-9 _%()\\-]+).*", q, re.IGNORECASE)
+                if stat_match:
+                    stat, col_raw = stat_match.groups()
+                    stat_key = stat_keywords.get(stat.lower(), None)
+                    col = get_column(col_raw)
+                    if col and col in df.select_dtypes(include='number').columns:
+                        result = None
+                        if stat_key == 'mean': result = df[col].mean()
+                        elif stat_key == 'median': result = df[col].median()
+                        elif stat_key == 'mode': result = df[col].mode().iloc[0]
+                        elif stat_key == 'std': result = df[col].std()
+                        elif stat_key == 'var': result = df[col].var()
+                        elif stat_key == 'min': result = df[col].min()
+                        elif stat_key == 'max': result = df[col].max()
+                        elif stat_key == 'range': result = df[col].max() - df[col].min()
+                        elif stat_key == 'iqr': result = np.percentile(df[col].dropna(), 75) - np.percentile(df[col].dropna(), 25)
+                        elif stat_key == 'skew': result = df[col].skew()
+                        elif stat_key == 'kurtosis': result = df[col].kurtosis()
+
+                        if result is not None:
+                            st.success(f"{stat.title()} of {col} is {result:.2f}")
+                        else:
+                            st.warning("Couldn't compute the requested stat.")
+                    else:
+                        st.warning("Couldn't match the column for your question.")
+                else:
+                    st.info("Sorry, I couldn't understand the question. Try rephrasing.")
+
+
