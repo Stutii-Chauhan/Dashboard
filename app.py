@@ -604,7 +604,7 @@ with right_col:
                 if chart_df is not None and not chart_df.empty:
                     with st.spinner("Buzz is analyzing the chart..."):
                         insight = generate_gemini_insight(chart_df.head(20), chart_type, x_col, y_col)
-                        formatted = insight.replace("✅ Recommendation:", "<br><br>✅ <strong>Recommendation:</strong>")
+                        formatted = insight.replace("Recommendation:", "<br><br> <strong>Recommendation:</strong>")
                         st.markdown(f"""
                             <div style="background-color:#f1f5ff; padding: 20px; border-radius: 10px;">
                                 <h4 style="margin-bottom: 10px;">🤖 <strong>Buzz's Insight</strong></h4>
