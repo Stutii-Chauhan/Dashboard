@@ -1,3 +1,4 @@
+import openai
 import streamlit as st
 import pandas as pd
 import plotly.express as px
@@ -8,6 +9,28 @@ import difflib
 import numpy as np
 from scipy import stats
 
+
+
+#open ai key
+
+openai.api_key = st.secrets["OPENAI_API_KEY"]
+
+#defining open ai
+
+def query_openai(prompt, model="gpt-3.5-turbo"):
+    try:
+        response = openai.ChatCompletion.create(
+            model=model,
+            messages=[
+                {"role": "system", "content": "You are a helpful data analyst assistant."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.7,
+            max_tokens=300
+        )
+        return response.choices[0].message['content'].strip()
+    except Exception as e:
+        return f"LLM failed: {e}"
 
 #detecting date time column
 
@@ -303,23 +326,7 @@ with left_col:
 	    st.markdown("---")
 	
 	
-	def query_huggingface(prompt, api_token, model="tiiuae/falcon-7b-instruct"):
-	    API_URL = f"https://api-inference.huggingface.co/models/{model}"
-	    headers = {"Authorization": f"Bearer {api_token}"}
-	    payload = {
-	        "inputs": prompt,
-	        "parameters": {
-	            "max_new_tokens": 150,
-	            "temperature": 0.7,
-	            "top_p": 0.9,
-	            "repetition_penalty": 1.1,
-	        }
-	    }
-	    response = requests.post(API_URL, headers=headers, json=payload)
-	    try:
-	        return response.json()[0]["generated_text"]
-	    except:
-	        return "LLM failed to generate a response. Please try again."
+
 	
 	# --- Ask a Question Functionality (extended for missing values insight) ---
 	if "df" in st.session_state:
@@ -349,12 +356,8 @@ with left_col:
 	            else:
 	                total_missing = df.isna().sum().sum()
 	                st.success(f"Total missing values in the dataset: {total_missing}")
-	                st.stop()
-												  
-																														  
-	
-										   
-	
+	                st.stop()																							
+
 	    if user_question:
 	        stat_keywords = {
 	            'mean': 'mean', 'average': 'mean', 'avg': 'mean', 'avrg': 'mean', 'av': 'mean', 'meanvalue': 'mean',
@@ -474,7 +477,15 @@ with left_col:
 	                    else:
 	                        st.warning("Could not match the column for your question.")
 	                else:
-	                    st.info("Couldn't match to a known operation. Please rephrase or check column names.")
+	                    st.info("Hmm, I didn’t find a match. Let me ask GPT")
+			    with st.spinner("Thinking..."):
+			        try:
+			            sample = df.head(10).to_csv(index=False)
+			            prompt = f"""The user asked: '{user_message}'\n\nHere is a sample of the dataset:\n{sample}\n\nPlease provide a helpful and relevant answer based on this data."""
+			            answer = query_openai(prompt)
+			            st.success(answer)
+			        except Exception as e:
+			            st.error(f"Something went wrong with OpenAI: {e}")
 
 
 # --- CUSTOM VISUALIZATION SECTION ---
