@@ -48,13 +48,13 @@ logo_html = f"""
 <style>
 #company-logo {{
     position: absolute;
-    top: 5px;
+    top: 1px;
     right: 20px;
     z-index: 9999;
 }}
 #company-logo img {{
-    max-height: 250px;
-    border-radius: 5px;
+    max-height: 150px;
+    border-radius: 20px;
 }}
 </style>
 <div id="company-logo">
