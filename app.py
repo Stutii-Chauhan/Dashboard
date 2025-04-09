@@ -612,18 +612,19 @@ with right_col:
                     with st.spinner("Buzz is analyzing the chart..."):
                         insight = generate_gemini_insight(chart_df, chart_type, x_col, y_col)
                         insight_part = insight
-			recommendation_part = ""
-			if "Recommendations:" in insight:
-				parts = insight.split("Recommendations:")
-				insight_part = parts[0].strip()
-				recommendation_part = parts[1].strip()
+                        recommendation_part = ""
+                        if "Recommendations:" in insight:
+                            parts = insight.split("Recommendations:")
+                            insight_part = parts[0].strip()
+                            recommendation_part = parts[1].strip()
+
                         st.markdown(f"""
                             <div style="background-color:#f1f5ff; padding: 20px; border-radius: 10px;">
                                 <h4 style="margin-bottom: 10px;">🤖 <strong>Buzz's Analysis</strong></h4>
                                 <p style="font-size: 16px; line-height: 1.6;">
-					<strong>Insights:</strong> {insight_part} <br><br>
-     					<strong>Recommendations:</strong> {recommendation_part}
-	  			</p>
+                                    <strong>Insights:</strong> {insight_part} <br><br>
+                                    <strong>Recommendations:</strong> {recommendation_part}
+                                </p>
                             </div>
                         """, unsafe_allow_html=True)
 
@@ -632,4 +633,5 @@ with right_col:
 
         except Exception as e:
             st.error(f"Error generating chart: {e}")
+
 
