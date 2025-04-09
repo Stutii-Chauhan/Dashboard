@@ -503,7 +503,6 @@ Start your response with: '📊 Insight:' and then add '✅ Recommendation:' on 
         return f"Gemini LLM failed: {e}"
 
 
-# Chart creation block
 with right_col:
     if "df" in st.session_state:
         df = st.session_state.df
@@ -606,8 +605,12 @@ with right_col:
                 if chart_df is not None and not chart_df.empty:
                     with st.spinner("Buzz is analyzing the chart..."):
                         insight = generate_gemini_insight(chart_df.head(20), chart_type, x_col, y_col)
-                        st.markdown("#### 🤖 Buzz's Insight")
-                        st.info(insight)
+                        st.markdown("""
+                            <div style="background-color:#f1f5ff; padding: 20px; border-radius: 10px;">
+                                <h4 style="margin-bottom: 10px;">🤖 <strong>Buzz's Insight</strong></h4>
+                                <p style="font-size: 16px; line-height: 1.6;">{}</p>
+                            </div>
+                        """.format(insight), unsafe_allow_html=True)
 
             elif chart_type not in ["Correlation Heatmap"]:
                 st.info("Please select appropriate columns to generate the chart.")
