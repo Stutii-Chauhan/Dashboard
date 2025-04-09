@@ -4,5 +4,4 @@ openpyxl
 plotly
 scipy
 statsmodels
-openai>1.0
-
+google-generativeai==0.4.1
