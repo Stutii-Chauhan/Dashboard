@@ -622,24 +622,24 @@ if user_query:
     with st.sidebar.chat_message("assistant"):
         st.markdown(reply)
 
-components.html(
-    """
-    <div style="
-        position: fixed;
-        bottom: 20px;
-        right: 20px;
-        background-color: white;
-        border: 2px solid #e0e0e0;
-        border-radius: 16px;
-        padding: 12px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        z-index: 9999;
-        width: 320px;
-        font-family: Arial, sans-serif;
-    ">
-        <strong>🤖 Buzz</strong><br/>
-        <input type='text' placeholder='Ask me anything...' style='width: 100%; padding: 8px; margin-top: 8px; border-radius: 8px; border: 1px solid #ccc;'/>
-    </div>
-    """,
-    height=120
-)
+# components.html(
+#     """
+#     <div style="
+#         position: fixed;
+#         bottom: 20px;
+#         right: 20px;
+#         background-color: white;
+#         border: 2px solid #e0e0e0;
+#         border-radius: 16px;
+#         padding: 12px;
+#         box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+#         z-index: 9999;
+#         width: 320px;
+#         font-family: Arial, sans-serif;
+#     ">
+#         <strong>🤖 Buzz</strong><br/>
+#         <input type='text' placeholder='Ask me anything...' style='width: 100%; padding: 8px; margin-top: 8px; border-radius: 8px; border: 1px solid #ccc;'/>
+#     </div>
+#     """,
+#     height=120
+# )
