@@ -132,7 +132,7 @@ button, .stButton > button {{
 if theme_mode == "Dark":
     st.markdown(base_css.format(
         bg_color="#0e1117",
-        font_color="#f1f1f1",
+        font_color="#111111",
         input_bg="#1e1e1e",
         input_font_color="#ffffff",
         button_bg="#333333",
