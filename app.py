@@ -96,6 +96,7 @@ html, body, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {{
 input, textarea, select, [data-baseweb="input"], [data-baseweb="select"] {{
     background-color: {input_bg} !important;
     color: {input_font_color} !important;
+    caret-color: {font_color} !important;
     border: 1px solid #666 !important;
     border-radius: 5px !important;
 }}
