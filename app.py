@@ -494,17 +494,17 @@ with right_col:
         st.subheader("Create Your Own Chart")
 
         chart_type = st.selectbox("Choose chart type", [
-            "Bar", "Pie", "Histogram",
-            "Line", "Scatter", "Box", 
-            "Scatter with Regression", "Trendline (LOWESS)", 
+            "Bar", "Column", "Pie", "Histogram",
+            "Line", "Scatter", "Box",
+            "Scatter with Regression", "Trendline (LOWESS)",
             "Correlation Heatmap"
         ])
 
         x_col = y_col = None
         fig = None
 
-        # Axis selection
-        if chart_type in ["Bar", "Line", "Scatter", "Box", "Scatter with Regression", "Trendline (LOWESS)", "Histogram"]:
+        # Common axis selectors
+        if chart_type in ["Bar", "Column", "Line", "Scatter", "Box", "Scatter with Regression", "Trendline (LOWESS)", "Histogram"]:
             x_col = st.selectbox("Select X-axis", all_cols)
 
         if chart_type in ["Line", "Scatter", "Box", "Scatter with Regression", "Trendline (LOWESS)"]:
@@ -518,18 +518,38 @@ with right_col:
         if chart_type == "Pie":
             x_col = st.selectbox("Select category column for pie chart", all_cols)
 
-        # Chart rendering logic
         try:
-            if chart_type == "Bar" and x_col:
-                value_counts = df[x_col].dropna().value_counts()
-                fig = px.bar(x=value_counts.index, y=value_counts.values, labels={"x": x_col, "y": "Count"})
+            # Bar / Column Charts (both modes)
+            if chart_type in ["Bar", "Column"] and x_col:
+                bar_mode = st.radio("How do you want to build this chart?", ["Auto Count", "Custom X and Y"], horizontal=True)
+
+                if bar_mode == "Auto Count":
+                    value_counts = df[x_col].dropna().value_counts()
+                    fig = px.bar(
+                        x=value_counts.index if chart_type == "Column" else value_counts.values,
+                        y=value_counts.values if chart_type == "Column" else value_counts.index,
+                        orientation='v' if chart_type == "Column" else 'h',
+                        labels={"x": x_col, "y": "Count"} if chart_type == "Column" else {"y": x_col, "x": "Count"}
+                    )
+                elif bar_mode == "Custom X and Y":
+                    y_options = [col for col in numeric_cols if col != x_col]
+                    if y_options:
+                        y_col = st.selectbox("Select Y-axis (numeric)", y_options)
+                        fig = px.bar(
+                            df,
+                            x=x_col if chart_type == "Column" else y_col,
+                            y=y_col if chart_type == "Column" else x_col,
+                            orientation='v' if chart_type == "Column" else 'h'
+                        )
+                    else:
+                        st.warning("No valid numeric column available for Y-axis.")
+
+            elif chart_type == "Histogram" and x_col:
+                fig = px.histogram(df, x=x_col)
 
             elif chart_type == "Pie" and x_col:
                 pie_vals = df[x_col].dropna().value_counts()
                 fig = px.pie(names=pie_vals.index, values=pie_vals.values)
-
-            elif chart_type == "Histogram" and x_col:
-                fig = px.histogram(df, x=x_col)
 
             elif chart_type == "Line" and x_col and y_col:
                 fig = px.line(df, x=x_col, y=y_col)
