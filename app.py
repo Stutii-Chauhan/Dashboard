@@ -476,8 +476,8 @@ with left_col:
 	                            st.error(f"Error while computing: {e}")
 	                    else:
 	                        st.warning("Could not match the column for your question.")
-	                else:
-	                    st.info("Hmm, I didn’t find a match. Let me ask GPT")
+			else:
+			    st.info("Hmm, I didn’t find a match. Let me ask GPT...")
 			    with st.spinner("Thinking..."):
 			        try:
 			            sample = df.head(10).to_csv(index=False)
