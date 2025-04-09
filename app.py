@@ -6,6 +6,8 @@ import re
 import math
 import difflib
 import numpy as np
+import streamlit as st
+import streamlit.components.v1 as components
 from scipy import stats
 
 
@@ -26,8 +28,9 @@ def detect_datetime_columns(df):
 #Page name and layout
 
 st.set_page_config(page_title="Data Analyzer", layout="wide")
-if "show_chatbot" not in st.session_state:
-    st.session_state.show_chatbot = True
+
+if "buzz_history" not in st.session_state:
+    st.session_state.buzz_history = []
 
 # Theme Toggle with Switch
 # Toggle stays stable, label doesn't change inside the toggle
@@ -403,192 +406,240 @@ with right_col:
         st.markdown("</div>", unsafe_allow_html=True)
 
 
-theme_class = "dark-mode" if theme_mode == "Dark" else ""
+# theme_class = "dark-mode" if theme_mode == "Dark" else ""
 
-# Persistent toggle state
-# Show chatbot
-# Show chatbot
-if st.session_state.show_chatbot:
-    theme_bg = "#1e1e1e" if theme_mode == "Dark" else "#f9f9f9"
-    theme_text = "#ffffff" if theme_mode == "Dark" else "#000000"
+# # Persistent toggle state
+# # Show chatbot
+# # Show chatbot
+# if st.session_state.show_chatbot:
+#     theme_bg = "#1e1e1e" if theme_mode == "Dark" else "#f9f9f9"
+#     theme_text = "#ffffff" if theme_mode == "Dark" else "#000000"
 
-    st.markdown(f"""
-        <style>
-            .chatbot-float {{
-                position: fixed;
-                bottom: 20px;
-                right: 20px;
-                width: 300px;
-                background-color: {theme_bg};
-                color: {theme_text};
-                padding: 16px;
-                border-radius: 12px;
-                box-shadow: 0 6px 20px rgba(0,0,0,0.3);
-                z-index: 9999;
-                font-size: 14px;
-            }}
-            .chatbot-float h4 {{
-                margin: 0 0 10px 0;
-            }}
-            .chatbot-input input {{
-                width: 100% !important;
-                margin-top: 10px;
-                background-color: #ffffff;
-                color: #000000;
-                border: 1px solid #ccc;
-                border-radius: 6px;
-                padding: 8px;
-                font-size: 13px;
-            }}
-        </style>
-        <div class="chatbot-float">
-            <h4>🤖 <strong>Buzz</strong></h4>
-            <div>Hi there! I'm Buzz. Ask me anything about your data. 📊</div>
-        </div>
-    """, unsafe_allow_html=True)
+#     st.markdown(f"""
+#         <style>
+#             .chatbot-float {{
+#                 position: fixed;
+#                 bottom: 20px;
+#                 right: 20px;
+#                 width: 300px;
+#                 background-color: {theme_bg};
+#                 color: {theme_text};
+#                 padding: 16px;
+#                 border-radius: 12px;
+#                 box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+#                 z-index: 9999;
+#                 font-size: 14px;
+#             }}
+#             .chatbot-float h4 {{
+#                 margin: 0 0 10px 0;
+#             }}
+#             .chatbot-input input {{
+#                 width: 100% !important;
+#                 margin-top: 10px;
+#                 background-color: #ffffff;
+#                 color: #000000;
+#                 border: 1px solid #ccc;
+#                 border-radius: 6px;
+#                 padding: 8px;
+#                 font-size: 13px;
+#             }}
+#         </style>
+#         <div class="chatbot-float">
+#             <h4>🤖 <strong>Buzz</strong></h4>
+#             <div>Hi there! I'm Buzz. Ask me anything about your data. 📊</div>
+#         </div>
+#     """, unsafe_allow_html=True)
 
-    # Functional input box (separate for Streamlit to detect)
-    user_message = st.text_input(
-        "", key="chat_input", placeholder="Ask Buzz about your data...", label_visibility="collapsed"
-    )
+#     # Functional input box (separate for Streamlit to detect)
+#     user_message = st.text_input(
+#         "", key="chat_input", placeholder="Ask Buzz about your data...", label_visibility="collapsed"
+#     )
 
-    if user_message:
-        st.markdown(f"**You:** {user_message}")
+#     if user_message:
+#         st.markdown(f"**You:** {user_message}")
 
-        if "df" in st.session_state:
-            df = st.session_state.df
-            q = user_message.lower()
+#         if "df" in st.session_state:
+#             df = st.session_state.df
+#             q = user_message.lower()
 
-            # [Your existing logic remains unchanged here ↓↓↓]
-            # -- Missing value logic --
-            if "missing" in q:
-                if "which column" in q and ("most" in q or "maximum" in q):
-                    missing_per_column = df.isna().sum()
-                    most_missing_col = missing_per_column.idxmax()
-                    count = missing_per_column.max()
-                    st.success(f"Column with the most missing values is '{most_missing_col}' with {count} missing entries.")
-                elif "per column" in q or "column wise" in q or "each column" in q:
-                    missing_per_column = df.isna().sum()
-                    st.write("### Missing Values per Column")
-                    st.dataframe(missing_per_column[missing_per_column > 0])
-                else:
-                    total_missing = df.isna().sum().sum()
-                    st.success(f"Total missing values in the dataset: {total_missing}")
-                    st.stop()
+#             # [Your existing logic remains unchanged here ↓↓↓]
+#             # -- Missing value logic --
+#             if "missing" in q:
+#                 if "which column" in q and ("most" in q or "maximum" in q):
+#                     missing_per_column = df.isna().sum()
+#                     most_missing_col = missing_per_column.idxmax()
+#                     count = missing_per_column.max()
+#                     st.success(f"Column with the most missing values is '{most_missing_col}' with {count} missing entries.")
+#                 elif "per column" in q or "column wise" in q or "each column" in q:
+#                     missing_per_column = df.isna().sum()
+#                     st.write("### Missing Values per Column")
+#                     st.dataframe(missing_per_column[missing_per_column > 0])
+#                 else:
+#                     total_missing = df.isna().sum().sum()
+#                     st.success(f"Total missing values in the dataset: {total_missing}")
+#                     st.stop()
 
-            # -- Stat keywords and matching logic --
-            stat_keywords = {
-                'mean': 'mean', 'average': 'mean', 'avg': 'mean', 'avrg': 'mean', 'av': 'mean', 'meanvalue': 'mean',
-                'median': 'median', 'med': 'median',
-                'mode': 'mode',
-                'std': 'std', 'stdev': 'std', 'standard deviation': 'std',
-                'variance': 'var', 'var': 'var',
-                'min': 'min', 'minimum': 'min', 'lowest': 'min',
-                'max': 'max', 'maximum': 'max', 'highest': 'max',
-                'range': 'range',
-                'iqr': 'iqr',
-                'skew': 'skew',
-                'kurtosis': 'kurtosis',
-                '75%': '75th', '25%': '25th',
-                'nulls': 'missing', 'missing': 'missing', 'nan': 'missing', 'na': 'missing', 'none': 'missing', 'blank': 'missing',
-                '25th percentile': '25th', '75th percentile': '75th',
-                'correlation': 'correlation', 'covariance': 'covariance',
-                'regression': 'regression'
-            }
+#             # -- Stat keywords and matching logic --
+#             stat_keywords = {
+#                 'mean': 'mean', 'average': 'mean', 'avg': 'mean', 'avrg': 'mean', 'av': 'mean', 'meanvalue': 'mean',
+#                 'median': 'median', 'med': 'median',
+#                 'mode': 'mode',
+#                 'std': 'std', 'stdev': 'std', 'standard deviation': 'std',
+#                 'variance': 'var', 'var': 'var',
+#                 'min': 'min', 'minimum': 'min', 'lowest': 'min',
+#                 'max': 'max', 'maximum': 'max', 'highest': 'max',
+#                 'range': 'range',
+#                 'iqr': 'iqr',
+#                 'skew': 'skew',
+#                 'kurtosis': 'kurtosis',
+#                 '75%': '75th', '25%': '25th',
+#                 'nulls': 'missing', 'missing': 'missing', 'nan': 'missing', 'na': 'missing', 'none': 'missing', 'blank': 'missing',
+#                 '25th percentile': '25th', '75th percentile': '75th',
+#                 'correlation': 'correlation', 'covariance': 'covariance',
+#                 'regression': 'regression'
+#             }
 
-            def get_column(col_candidate):
-                col_candidate = col_candidate.strip().lower()
-                col_candidate_clean = re.sub(r'[^a-z0-9 ]', '', col_candidate)
-                cleaned_cols = {re.sub(r'[^a-z0-9 ]', '', col.lower()): col for col in df.columns}
-                for cleaned, original in cleaned_cols.items():
-                    if col_candidate_clean in cleaned:
-                        return original
-                matches = difflib.get_close_matches(col_candidate_clean, cleaned_cols.keys(), n=1, cutoff=0.5)
-                if matches:
-                    return cleaned_cols[matches[0]]
-                return None
+#             def get_column(col_candidate):
+#                 col_candidate = col_candidate.strip().lower()
+#                 col_candidate_clean = re.sub(r'[^a-z0-9 ]', '', col_candidate)
+#                 cleaned_cols = {re.sub(r'[^a-z0-9 ]', '', col.lower()): col for col in df.columns}
+#                 for cleaned, original in cleaned_cols.items():
+#                     if col_candidate_clean in cleaned:
+#                         return original
+#                 matches = difflib.get_close_matches(col_candidate_clean, cleaned_cols.keys(), n=1, cutoff=0.5)
+#                 if matches:
+#                     return cleaned_cols[matches[0]]
+#                 return None
 
-            # -- Relationship/Correlation/Covariance/Regression Logic --
-            if any(keyword in q for keyword in ["correlation", "covariance", "regression"]):
-                cols = re.findall(r"[a-zA-Z0-9 _%()\-]+", q)
-                matched_cols = [get_column(c.lower()) for c in cols if get_column(c.lower()) in df.columns]
-                if len(matched_cols) >= 2:
-                    col1, col2 = matched_cols[:2]
-                    if "correlation" in q:
-                        val = df[col1].corr(df[col2])
-                        st.success(f"Correlation between {col1} and {col2} is {val:.4f}.")
-                    elif "covariance" in q:
-                        val = df[col1].cov(df[col2])
-                        st.success(f"Covariance between {col1} and {col2} is {val:.4f}.")
-                    elif "regression" in q:
-                        result = stats.linregress(df[col1].dropna(), df[col2].dropna())
-                        st.success(f"Regression between {col1} and {col2}: Slope = {result.slope:.4f}, Intercept = {result.intercept:.4f}, R = {result.rvalue:.4f}")
-                    else:
-                        st.warning("Could not determine type of relationship analysis.")
-                else:
-                    st.warning("Please mention two valid numeric columns.")
+#             # -- Relationship/Correlation/Covariance/Regression Logic --
+#             if any(keyword in q for keyword in ["correlation", "covariance", "regression"]):
+#                 cols = re.findall(r"[a-zA-Z0-9 _%()\-]+", q)
+#                 matched_cols = [get_column(c.lower()) for c in cols if get_column(c.lower()) in df.columns]
+#                 if len(matched_cols) >= 2:
+#                     col1, col2 = matched_cols[:2]
+#                     if "correlation" in q:
+#                         val = df[col1].corr(df[col2])
+#                         st.success(f"Correlation between {col1} and {col2} is {val:.4f}.")
+#                     elif "covariance" in q:
+#                         val = df[col1].cov(df[col2])
+#                         st.success(f"Covariance between {col1} and {col2} is {val:.4f}.")
+#                     elif "regression" in q:
+#                         result = stats.linregress(df[col1].dropna(), df[col2].dropna())
+#                         st.success(f"Regression between {col1} and {col2}: Slope = {result.slope:.4f}, Intercept = {result.intercept:.4f}, R = {result.rvalue:.4f}")
+#                     else:
+#                         st.warning("Could not determine type of relationship analysis.")
+#                 else:
+#                     st.warning("Please mention two valid numeric columns.")
 
-            else:
-                # -- Percentile Logic --
-                percentile_match = re.match(r".*?(\d{{1,3}})%.*?(?:of)?\s*([a-zA-Z0-9 _%()\-]+)", q, re.IGNORECASE)
-                if percentile_match:
-                    perc, col_candidate = percentile_match.groups()
-                    perc = float(perc)
-                    col = get_column(col_candidate.strip().lower())
-                    if col and col in df.select_dtypes(include='number').columns:
-                        try:
-                            result = np.percentile(df[col].dropna(), perc)
-                            st.success(f"The {perc}th percentile of {col} is {result:.4f}.")
-                        except Exception as e:
-                            st.error(f"Error while computing percentile: {e}")
-                    else:
-                        st.warning("Could not match the column for your question.")
-                else:
-                    # -- Generic stat logic --
-                    stat_match = re.match(
-                        r".*?(mean|average|avg|avrg|av|meanvalue|median|med|mode|std|stdev|standard deviation|variance|min|minimum|lowest|max|maximum|highest|range|iqr|skew|kurtosis).*?(?:of|for)?\s*([a-zA-Z0-9 _%()\\-]+).*",
-                        q, re.IGNORECASE)
-                    if stat_match:
-                        stat, col_candidate = stat_match.groups()
-                        stat_key = stat_keywords.get(stat.lower(), None)
-                        col = get_column(col_candidate.strip().lower())
-                        if col and col in df.select_dtypes(include='number').columns:
-                            try:
-                                result = None
-                                if stat_key == 'mean':
-                                    result = df[col].mean()
-                                elif stat_key == 'median':
-                                    result = df[col].median()
-                                elif stat_key == 'mode':
-                                    result = df[col].mode().iloc[0]
-                                elif stat_key == 'std':
-                                    result = df[col].std()
-                                elif stat_key == 'var':
-                                    result = df[col].var()
-                                elif stat_key == 'min':
-                                    result = df[col].min()
-                                elif stat_key == 'max':
-                                    result = df[col].max()
-                                elif stat_key == 'range':
-                                    result = df[col].max() - df[col].min()
-                                elif stat_key == 'iqr':
-                                    result = np.percentile(df[col].dropna(), 75) - np.percentile(df[col].dropna(), 25)
-                                elif stat_key == 'skew':
-                                    result = df[col].skew()
-                                elif stat_key == 'kurtosis':
-                                    result = df[col].kurtosis()
-                                elif stat_key == '25th':
-                                    result = df[col].describe().loc['25%']
-                                elif stat_key == '75th':
-                                    result = df[col].describe().loc['75%']
+#             else:
+#                 # -- Percentile Logic --
+#                 percentile_match = re.match(r".*?(\d{{1,3}})%.*?(?:of)?\s*([a-zA-Z0-9 _%()\-]+)", q, re.IGNORECASE)
+#                 if percentile_match:
+#                     perc, col_candidate = percentile_match.groups()
+#                     perc = float(perc)
+#                     col = get_column(col_candidate.strip().lower())
+#                     if col and col in df.select_dtypes(include='number').columns:
+#                         try:
+#                             result = np.percentile(df[col].dropna(), perc)
+#                             st.success(f"The {perc}th percentile of {col} is {result:.4f}.")
+#                         except Exception as e:
+#                             st.error(f"Error while computing percentile: {e}")
+#                     else:
+#                         st.warning("Could not match the column for your question.")
+#                 else:
+#                     # -- Generic stat logic --
+#                     stat_match = re.match(
+#                         r".*?(mean|average|avg|avrg|av|meanvalue|median|med|mode|std|stdev|standard deviation|variance|min|minimum|lowest|max|maximum|highest|range|iqr|skew|kurtosis).*?(?:of|for)?\s*([a-zA-Z0-9 _%()\\-]+).*",
+#                         q, re.IGNORECASE)
+#                     if stat_match:
+#                         stat, col_candidate = stat_match.groups()
+#                         stat_key = stat_keywords.get(stat.lower(), None)
+#                         col = get_column(col_candidate.strip().lower())
+#                         if col and col in df.select_dtypes(include='number').columns:
+#                             try:
+#                                 result = None
+#                                 if stat_key == 'mean':
+#                                     result = df[col].mean()
+#                                 elif stat_key == 'median':
+#                                     result = df[col].median()
+#                                 elif stat_key == 'mode':
+#                                     result = df[col].mode().iloc[0]
+#                                 elif stat_key == 'std':
+#                                     result = df[col].std()
+#                                 elif stat_key == 'var':
+#                                     result = df[col].var()
+#                                 elif stat_key == 'min':
+#                                     result = df[col].min()
+#                                 elif stat_key == 'max':
+#                                     result = df[col].max()
+#                                 elif stat_key == 'range':
+#                                     result = df[col].max() - df[col].min()
+#                                 elif stat_key == 'iqr':
+#                                     result = np.percentile(df[col].dropna(), 75) - np.percentile(df[col].dropna(), 25)
+#                                 elif stat_key == 'skew':
+#                                     result = df[col].skew()
+#                                 elif stat_key == 'kurtosis':
+#                                     result = df[col].kurtosis()
+#                                 elif stat_key == '25th':
+#                                     result = df[col].describe().loc['25%']
+#                                 elif stat_key == '75th':
+#                                     result = df[col].describe().loc['75%']
 
-                                if result is not None:
-                                    st.success(f"The {stat} of {col} is {result:.4f}.")
-                                else:
-                                    st.warning("This operation is not supported yet.")
-                            except Exception as e:
-                                st.error(f"Error while computing: {e}")
-                        else:
-                            st.warning("Could not match the column for your question.")
-                    else:
-                        st.info("Couldn't match to a known operation. Please rephrase or check column names.")
+#                                 if result is not None:
+#                                     st.success(f"The {stat} of {col} is {result:.4f}.")
+#                                 else:
+#                                     st.warning("This operation is not supported yet.")
+#                             except Exception as e:
+#                                 st.error(f"Error while computing: {e}")
+#                         else:
+#                             st.warning("Could not match the column for your question.")
+#                     else:
+#                         st.info("Couldn't match to a known operation. Please rephrase or check column names.")
+
+# Sidebar for Buzz Chatbot
+st.sidebar.title("🤖 Buzz - Your AI Assistant")
+st.sidebar.markdown("Ask **Buzz** anything about your data!")
+
+# Display chat history
+for msg in st.session_state.buzz_history:
+    with st.sidebar.chat_message(msg["role"]):
+        st.markdown(msg["message"])
+
+# Chat input
+user_query = st.sidebar.chat_input("Ask Buzz...")
+
+if user_query:
+    st.session_state.buzz_history.append({"role": "user", "message": user_query})
+
+    # Placeholder reply — you can replace this with LLM or pandas logic later
+    if "buzz" in user_query.lower():
+        reply = f"Hi, I'm Buzz! You asked: **{user_query}**"
+    else:
+        reply = "Try mentioning me by name (e.g., 'Buzz, show summary')."
+
+    st.session_state.buzz_history.append({"role": "assistant", "message": reply})
+
+    with st.sidebar.chat_message("assistant"):
+        st.markdown(reply)
+
+components.html(
+    """
+    <div style="
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background-color: white;
+        border: 2px solid #e0e0e0;
+        border-radius: 16px;
+        padding: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        z-index: 9999;
+        width: 320px;
+        font-family: Arial, sans-serif;
+    ">
+        <strong>🤖 Buzz</strong><br/>
+        <input type='text' placeholder='Ask me anything...' style='width: 100%; padding: 8px; margin-top: 8px; border-radius: 8px; border: 1px solid #ccc;'/>
+    </div>
+    """,
+    height=120
+)
