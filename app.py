@@ -408,54 +408,61 @@ with right_col:
 
 # ---------- Floating Buzz Assistant (Bottom-Left Functional Bot) ----------
 
-user_query = None  # placeholder
-
+# Floating Buzz Assistant UI (no logic yet)
 st.markdown("""
     <style>
-        .buzz-wrapper {
+        .buzz-box {
             position: fixed;
             bottom: 20px;
             left: 20px;
             width: 320px;
+            background-color: #ffffff;
+            color: #000000;
+            padding: 16px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
             z-index: 9999;
             font-family: 'Segoe UI', sans-serif;
         }
-        .buzz-box {
-            background-color: #ffffff;
-            color: #000000;
-            padding: 16px 16px 8px 16px;
-            border-radius: 20px 20px 0 0;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        .buzz-input-box {
+            margin-top: 10px;
         }
-        .buzz-input {
-            border-radius: 0 0 20px 20px;
-            border: 1px solid #ccc;
-            border-top: none;
-            padding: 10px 14px;
-            font-size: 14px;
+        input[type="text"].buzz-input {
             width: 100%;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.10);
+            padding: 8px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            font-size: 14px;
         }
-        .buzz-input:focus {{
-            outline: none;
-            border: 1px solid #007bff;
-        }}
     </style>
 
-    <div class="buzz-wrapper">
-        <div class="buzz-box">
-            <h4>🤖 <strong>Buzz</strong></h4>
-            <div>Ask me anything about your data</div>
+    <div class="buzz-box">
+        <h4>🤖 Buzz</h4>
+        <div>Hi there! I'm Buzz. Ask me anything...</div>
+        <div class="buzz-input-box">
+            <form action="" method="post">
+                <input class="buzz-input" name="buzz_question" type="text" placeholder="Ask Buzz..."/>
+            </form>
         </div>
     </div>
 """, unsafe_allow_html=True)
 
-# Attach text input directly below the visual block
+# Visual card
+st.markdown("""
+    <div style="position: fixed; bottom: 80px; left: 20px; width: 320px;
+                background-color: white; padding: 16px; border-radius: 16px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 9999;">
+        <h4>🤖 Buzz</h4>
+        <div>Ask me anything about your data</div>
+    </div>
+""", unsafe_allow_html=True)
+
+# Functional input (positioned below it)
 with st.container():
-    st.markdown("<div class='buzz-wrapper'>", unsafe_allow_html=True)
+    st.markdown("<div style='position: fixed; bottom: 20px; left: 20px; width: 320px; z-index:9999;'>", unsafe_allow_html=True)
     user_query = st.text_input("", placeholder="Ask Buzz...", key="buzz_input", label_visibility="collapsed")
     st.markdown("</div>", unsafe_allow_html=True)
 
-# Test echo (you can remove this)
+# Optional echo for testing
 if user_query:
-    st.markdown(f"<div style='position: fixed; bottom: 120px; left: 20px; width: 320px; color: green;'>You said: <b>{user_query}</b></div>", unsafe_allow_html=True)
+    st.markdown(f"**You said:** {user_query}")
