@@ -14,7 +14,7 @@ from scipy import stats
 #gemini key
 genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
 GEMINI_API_KEY = "AIzaSyApXrK75ir-yYpZ-05g4Q-q8bNQDQ6eE_Q"
-model = genai.GenerativeModel("gemini-1.5-pro")
+model = genai.GenerativeModel("gemini-1.5-pro-latest")
 
 def query_gemini(prompt):
     try:
