@@ -607,8 +607,10 @@ with right_col:
                         formatted = insight.replace("Recommendation:", "<br><br> <strong>Recommendation:</strong>")
                         st.markdown(f"""
                             <div style="background-color:#f1f5ff; padding: 20px; border-radius: 10px;">
-                                <h4 style="margin-bottom: 10px;">🤖 <strong>Buzz's Analysis</strong></h4>
-                                <p style="font-size: 16px; line-height: 1.6;">{formatted}</p>
+                                <h4 style="margin-bottom: 15px;">🤖 <strong>Buzz's Analysis</strong></h4>
+                                <p style="font-size: 18px; line-height: 1.8;">
+					<strong> Insights: </strong> {insight.split('Recommendations:')[0].strip()}<br><br>
+     					<strong> Recommendations: </strong> {insight.split('Recommendation:')[1].strip()} </p>
                             </div>
                         """, unsafe_allow_html=True)
 
