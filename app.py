@@ -493,7 +493,7 @@ Y-axis: {y_col if y_col else 'N/A'}
 Data Sample:
 {df_sample.to_csv(index=False)}
 
-Start your response with: '📊 Insight:' and then add '✅ Recommendation:' on the next line.
+Start your response with: ' Insight:' and then add ' Recommendation:' on the next line.
 """
     try:
         response = model.generate_content(prompt)
