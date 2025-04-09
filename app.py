@@ -42,7 +42,7 @@ def detect_datetime_columns(df):
 
 st.set_page_config(page_title="Data Analyzer", layout="wide")
 
-logo_url = "https://drive.google.com/file/d/1zHoODxowJmzIuB7ybWOH3PvDBhGFvcAS/view?usp=drive_link"
+logo_url = "https://drive.google.com/uc?export=view&id=1zHoODxowJmzIuB7ybWOH3PvDBhGFvcAS"
 
 logo_html = f"""
 <style>
