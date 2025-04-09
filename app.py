@@ -408,24 +408,22 @@ with right_col:
 
 # ---------- Floating Buzz Assistant (Bottom-Left Functional Bot) ----------
 
-
-# ----------------- FLOATING BUZZ ASSISTANT (BOTTOM-LEFT) -----------------
 import streamlit as st
 import numpy as np
-import difflib
 import re
+import difflib
 from scipy import stats
 
-# 💬 Buzz: Floating Assistant with Inline Input Box
+# 💬 Floating Buzz Assistant (bottom-left)
 if "df" in st.session_state:
-
     theme_mode = st.session_state.get("theme", "Light")
-    theme_bg = "#1e1e1e" if theme_mode == "Dark" else "#ffffff"
-    theme_text = "#ffffff" if theme_mode == "Dark" else "#000000"
+    theme_bg = "#ffffff"
+    theme_text = "#000000"
 
+    # Styling for floating bot
     st.markdown(f"""
         <style>
-            .buzz-container {{
+            .buzz-box {{
                 position: fixed;
                 bottom: 20px;
                 left: 20px;
@@ -436,7 +434,7 @@ if "df" in st.session_state:
                 border-radius: 16px;
                 box-shadow: 0 4px 20px rgba(0,0,0,0.2);
                 z-index: 9999;
-                font-family: Arial, sans-serif;
+                font-family: 'Segoe UI', sans-serif;
             }}
             .buzz-input {{
                 margin-top: 10px;
@@ -447,32 +445,25 @@ if "df" in st.session_state:
                 font-size: 14px;
             }}
         </style>
-        <div class="buzz-container">
+        <div class="buzz-box">
             <h4>🤖 Buzz</h4>
-            <div>Hi there! Ask me anything about your data 📊</div>
+            <div>Ask me anything about your uploaded data</div>
         </div>
     """, unsafe_allow_html=True)
 
-    # 📥 Input just below Buzz box (visually belongs to it)
+    # Invisible container for logic
     with st.container():
         st.markdown(
-            """
-            <div style="position: fixed; bottom: 85px; left: 20px; width: 320px; z-index:9999;">
-            """,
+            """<div style='position: fixed; bottom: 85px; left: 20px; width: 320px; z-index:9999;'>""",
             unsafe_allow_html=True
         )
-
-        user_query = st.text_input(
-            "", placeholder="Ask Buzz about your data...", key="buzz_query", label_visibility="collapsed"
-        )
-
+        user_query = st.text_input("", placeholder="Ask Buzz about your data...", key="buzz_input", label_visibility="collapsed")
         st.markdown("</div>", unsafe_allow_html=True)
 
-    # 🧠 Buzz's brain
+    # ✅ Buzz's response logic
     if user_query:
-        st.markdown(f"**You:** {user_query}")
         df = st.session_state.df
-        q = user_query.lower()
+        st.markdown(f"<div style='position: fixed; bottom: 140px; left: 20px; width: 320px; z-index:9999; color:green;'>🧠 You: {user_query}</div>", unsafe_allow_html=True)
 
         stat_keywords = {
             'mean': 'mean', 'average': 'mean', 'median': 'median', 'mode': 'mode',
@@ -490,35 +481,28 @@ if "df" in st.session_state:
             matches = difflib.get_close_matches(col_candidate_clean, cleaned_cols.keys(), n=1, cutoff=0.5)
             return cleaned_cols[matches[0]] if matches else None
 
-        # Basic stat example
-        stat_match = re.match(
-            r".*?(mean|median|mode|std|variance|min|max|range|iqr|skew|kurtosis).*?(?:of|for)?\s*([a-zA-Z0-9 _%()\\-]+).*",
-            q, re.IGNORECASE)
+        stat_match = re.match(r".*?(mean|median|mode|std|variance|min|max|range|iqr|skew|kurtosis).*?(?:of|for)?\s*([a-zA-Z0-9 _%()\\-]+).*", user_query, re.IGNORECASE)
         if stat_match:
             stat, col_raw = stat_match.groups()
-            stat_key = stat_keywords.get(stat.lower(), None)
             col = get_column(col_raw)
             if col and col in df.select_dtypes(include='number').columns:
                 result = None
-                if stat_key == 'mean': result = df[col].mean()
-                elif stat_key == 'median': result = df[col].median()
-                elif stat_key == 'mode': result = df[col].mode().iloc[0]
-                elif stat_key == 'std': result = df[col].std()
-                elif stat_key == 'var': result = df[col].var()
-                elif stat_key == 'min': result = df[col].min()
-                elif stat_key == 'max': result = df[col].max()
-                elif stat_key == 'range': result = df[col].max() - df[col].min()
-                elif stat_key == 'iqr': result = np.percentile(df[col].dropna(), 75) - np.percentile(df[col].dropna(), 25)
-                elif stat_key == 'skew': result = df[col].skew()
-                elif stat_key == 'kurtosis': result = df[col].kurtosis()
-
+                if stat == 'mean': result = df[col].mean()
+                elif stat == 'median': result = df[col].median()
+                elif stat == 'mode': result = df[col].mode().iloc[0]
+                elif stat == 'std': result = df[col].std()
+                elif stat == 'variance': result = df[col].var()
+                elif stat == 'min': result = df[col].min()
+                elif stat == 'max': result = df[col].max()
+                elif stat == 'range': result = df[col].max() - df[col].min()
+                elif stat == 'iqr': result = np.percentile(df[col].dropna(), 75) - np.percentile(df[col].dropna(), 25)
+                elif stat == 'skew': result = df[col].skew()
+                elif stat == 'kurtosis': result = df[col].kurtosis()
                 if result is not None:
-                    st.success(f"{stat.title()} of {col} is {result:.2f}")
+                    st.markdown(f"<div style='position: fixed; bottom: 180px; left: 20px; width: 320px; z-index:9999; color:#333;'>🔍 {stat.title()} of {col}: <b>{result:.2f}</b></div>", unsafe_allow_html=True)
                 else:
-                    st.warning("That operation isn't supported.")
+                    st.warning("Sorry, I couldn't compute that.")
             else:
-                st.warning("Couldn’t match column or it’s not numeric.")
+                st.warning("Couldn't identify a valid numeric column.")
         else:
-            st.info("Try something like 'mean of price' or 'max of ratings'.")
-
-
+            st.info("Try something like 'mean of price' or 'max of rating'")
