@@ -17,7 +17,7 @@ GEMINI_API_KEY = "AIzaSyApXrK75ir-yYpZ-05g4Q-q8bNQDQ6eE_Q"
 
 def query_gemini(prompt):
     try:
-        model = genai.GenerativeModel("models/gemini-pro")
+        model = genai.GenerativeModel("gemini-1.5-pro")
         response = model.generate_content(prompt)
         return response.text
     except Exception as e:
