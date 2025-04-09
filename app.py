@@ -26,6 +26,8 @@ def detect_datetime_columns(df):
 #Page name and layout
 
 st.set_page_config(page_title="Data Analyzer", layout="wide")
+if "show_chatbot" not in st.session_state:
+    st.session_state.show_chatbot = True
 
 # Theme Toggle with Switch
 # Toggle stays stable, label doesn't change inside the toggle
