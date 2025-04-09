@@ -484,10 +484,9 @@ if "df" in st.session_state:
 #         df = st.session_state.df
 #         st.subheader("Create Your Own Chart")
 
-# Only show chart builder if data is loaded
 def generate_gemini_insight(df_sample, chart_type, x_col=None, y_col=None):
     prompt = f"""
-You are an expert data analyst. Based on the sample dataset and the chart being created, provide a 2–3 line insight followed by a recommendation.
+You are an expert data analyst. Based on the sample dataset and the chart being created, provide a 2–3 line business insight followed by a recommendation.
 Chart Type: {chart_type}
 X-axis: {x_col}
 Y-axis: {y_col if y_col else 'N/A'}
@@ -605,12 +604,13 @@ with right_col:
                 if chart_df is not None and not chart_df.empty:
                     with st.spinner("Buzz is analyzing the chart..."):
                         insight = generate_gemini_insight(chart_df.head(20), chart_type, x_col, y_col)
-                        st.markdown("""
+                        formatted = insight.replace("✅ Recommendation:", "<br><br>✅ <strong>Recommendation:</strong>")
+                        st.markdown(f"""
                             <div style="background-color:#f1f5ff; padding: 20px; border-radius: 10px;">
                                 <h4 style="margin-bottom: 10px;">🤖 <strong>Buzz's Insight</strong></h4>
-                                <p style="font-size: 16px; line-height: 1.6;">{}</p>
+                                <p style="font-size: 16px; line-height: 1.6;">{formatted}</p>
                             </div>
-                        """.format(insight), unsafe_allow_html=True)
+                        """, unsafe_allow_html=True)
 
             elif chart_type not in ["Correlation Heatmap"]:
                 st.info("Please select appropriate columns to generate the chart.")
