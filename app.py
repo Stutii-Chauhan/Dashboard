@@ -410,143 +410,115 @@ with right_col:
 
 
 # ----------------- FLOATING BUZZ ASSISTANT (BOTTOM-LEFT) -----------------
-# Inject custom CSS
-st.markdown("""
-    <style>
-        #buzz-box {
-            position: fixed;
-            bottom: 20px;
-            left: 20px;
-            width: 320px;
-            background-color: white;
-            color: black;
-            padding: 16px;
-            border-radius: 12px;
-            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
-            z-index: 9999;
-            font-size: 14px;
-        }
-        #buzz-input {
-            position: fixed;
-            bottom: 80px;
-            left: 20px;
-            width: 320px;
-            z-index: 9999;
-        }
-    </style>
-""", unsafe_allow_html=True)
+import streamlit as st
+import numpy as np
+import difflib
+import re
+from scipy import stats
 
-# Render Buzz card (no input here)
-st.markdown("""
-    <div id="buzz-box">
-        <h4>🤖 <strong>Buzz</strong></h4>
-        <div>Hi there! I'm Buzz. Ask me anything about your data. 📊</div>
-    </div>
-""", unsafe_allow_html=True)
+# 💬 Buzz: Floating Assistant with Inline Input Box
+if "df" in st.session_state:
 
-# Actual input rendered separately in same corner
-user_message = st.text_input("", key="buzz_input", placeholder="Ask Buzz about your data...", label_visibility="collapsed")
+    theme_mode = st.session_state.get("theme", "Light")
+    theme_bg = "#1e1e1e" if theme_mode == "Dark" else "#ffffff"
+    theme_text = "#ffffff" if theme_mode == "Dark" else "#000000"
 
-# Handle input
-if user_message:
-    st.markdown(f"**You:** {user_message}")
+    st.markdown(f"""
+        <style>
+            .buzz-container {{
+                position: fixed;
+                bottom: 20px;
+                left: 20px;
+                width: 320px;
+                background-color: {theme_bg};
+                color: {theme_text};
+                padding: 16px;
+                border-radius: 16px;
+                box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+                z-index: 9999;
+                font-family: Arial, sans-serif;
+            }}
+            .buzz-input {{
+                margin-top: 10px;
+                width: 100%;
+                padding: 8px;
+                border-radius: 8px;
+                border: 1px solid #ccc;
+                font-size: 14px;
+            }}
+        </style>
+        <div class="buzz-container">
+            <h4>🤖 Buzz</h4>
+            <div>Hi there! Ask me anything about your data 📊</div>
+        </div>
+    """, unsafe_allow_html=True)
 
-    if "df" in st.session_state:
+    # 📥 Input just below Buzz box (visually belongs to it)
+    with st.container():
+        st.markdown(
+            """
+            <div style="position: fixed; bottom: 85px; left: 20px; width: 320px; z-index:9999;">
+            """,
+            unsafe_allow_html=True
+        )
+
+        user_query = st.text_input(
+            "", placeholder="Ask Buzz about your data...", key="buzz_query", label_visibility="collapsed"
+        )
+
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    # 🧠 Buzz's brain
+    if user_query:
+        st.markdown(f"**You:** {user_query}")
         df = st.session_state.df
-        q = user_message.lower()
+        q = user_query.lower()
 
-        if "df" in st.session_state:
-            df = st.session_state.df
-            q = user_message.lower()
+        stat_keywords = {
+            'mean': 'mean', 'average': 'mean', 'median': 'median', 'mode': 'mode',
+            'std': 'std', 'variance': 'var', 'min': 'min', 'max': 'max', 'range': 'range',
+            'iqr': 'iqr', 'skew': 'skew', 'kurtosis': 'kurtosis',
+            'correlation': 'correlation', 'covariance': 'covariance', 'regression': 'regression',
+            'missing': 'missing', 'null': 'missing', 'na': 'missing'
+        }
 
-            # Stat keywords
-            stat_keywords = {
-                'mean': 'mean', 'average': 'mean', 'avg': 'mean',
-                'median': 'median', 'mode': 'mode',
-                'std': 'std', 'stdev': 'std', 'variance': 'var',
-                'min': 'min', 'max': 'max', 'range': 'range',
-                'iqr': 'iqr', 'skew': 'skew', 'kurtosis': 'kurtosis',
-                'correlation': 'correlation', 'covariance': 'covariance', 'regression': 'regression',
-                'missing': 'missing', 'nulls': 'missing', 'na': 'missing', 'nan': 'missing'
-            }
+        def get_column(col_candidate):
+            col_candidate_clean = re.sub(r'[^a-z0-9 ]', '', col_candidate.lower())
+            cleaned_cols = {re.sub(r'[^a-z0-9 ]', '', col.lower()): col for col in df.columns}
+            if col_candidate_clean in cleaned_cols:
+                return cleaned_cols[col_candidate_clean]
+            matches = difflib.get_close_matches(col_candidate_clean, cleaned_cols.keys(), n=1, cutoff=0.5)
+            return cleaned_cols[matches[0]] if matches else None
 
-            def get_column(col_candidate):
-                col_candidate_clean = re.sub(r'[^a-z0-9 ]', '', col_candidate.lower())
-                cleaned_cols = {re.sub(r'[^a-z0-9 ]', '', col.lower()): col for col in df.columns}
-                if col_candidate_clean in cleaned_cols:
-                    return cleaned_cols[col_candidate_clean]
-                matches = difflib.get_close_matches(col_candidate_clean, cleaned_cols.keys(), n=1, cutoff=0.5)
-                return cleaned_cols[matches[0]] if matches else None
+        # Basic stat example
+        stat_match = re.match(
+            r".*?(mean|median|mode|std|variance|min|max|range|iqr|skew|kurtosis).*?(?:of|for)?\s*([a-zA-Z0-9 _%()\\-]+).*",
+            q, re.IGNORECASE)
+        if stat_match:
+            stat, col_raw = stat_match.groups()
+            stat_key = stat_keywords.get(stat.lower(), None)
+            col = get_column(col_raw)
+            if col and col in df.select_dtypes(include='number').columns:
+                result = None
+                if stat_key == 'mean': result = df[col].mean()
+                elif stat_key == 'median': result = df[col].median()
+                elif stat_key == 'mode': result = df[col].mode().iloc[0]
+                elif stat_key == 'std': result = df[col].std()
+                elif stat_key == 'var': result = df[col].var()
+                elif stat_key == 'min': result = df[col].min()
+                elif stat_key == 'max': result = df[col].max()
+                elif stat_key == 'range': result = df[col].max() - df[col].min()
+                elif stat_key == 'iqr': result = np.percentile(df[col].dropna(), 75) - np.percentile(df[col].dropna(), 25)
+                elif stat_key == 'skew': result = df[col].skew()
+                elif stat_key == 'kurtosis': result = df[col].kurtosis()
 
-            # Correlation, covariance, regression
-            if any(k in q for k in ["correlation", "covariance", "regression"]):
-                cols = re.findall(r"[a-zA-Z0-9 _%()\-]+", q)
-                matched = [get_column(c) for c in cols if get_column(c) in df.columns]
-                if len(matched) >= 2:
-                    col1, col2 = matched[:2]
-                    if "correlation" in q:
-                        val = df[col1].corr(df[col2])
-                        st.success(f"Correlation between {col1} and {col2}: {val:.4f}")
-                    elif "covariance" in q:
-                        val = df[col1].cov(df[col2])
-                        st.success(f"Covariance between {col1} and {col2}: {val:.4f}")
-                    elif "regression" in q:
-                        result = stats.linregress(df[col1].dropna(), df[col2].dropna())
-                        st.success(f"Regression: Slope = {result.slope:.4f}, Intercept = {result.intercept:.4f}, R = {result.rvalue:.4f}")
+                if result is not None:
+                    st.success(f"{stat.title()} of {col} is {result:.2f}")
                 else:
-                    st.warning("Please mention two valid columns.")
-
-            # Missing values
-            elif "missing" in q:
-                if "which column" in q and ("most" in q or "maximum" in q):
-                    missing_counts = df.isna().sum()
-                    col = missing_counts.idxmax()
-                    st.success(f"Most missing values in '{col}' ({missing_counts[col]})")
-                elif "per column" in q or "each column" in q:
-                    st.write("### Missing Values per Column")
-                    st.dataframe(df.isna().sum()[df.isna().sum() > 0])
-                else:
-                    total_missing = df.isna().sum().sum()
-                    st.success(f"Total missing values: {total_missing}")
-
-            # Percentile
-            elif re.match(r".*?(\d{1,3})%.*of\s+([a-zA-Z0-9 _%()\\-]+)", q):
-                match = re.match(r".*?(\d{1,3})%.*of\s+([a-zA-Z0-9 _%()\\-]+)", q)
-                perc, col_raw = match.groups()
-                col = get_column(col_raw)
-                if col and col in df.select_dtypes(include='number').columns:
-                    val = np.percentile(df[col].dropna(), float(perc))
-                    st.success(f"{perc}th percentile of {col}: {val:.2f}")
-                else:
-                    st.warning("Couldn’t match a numeric column.")
-
-            # Basic stats
+                    st.warning("That operation isn't supported.")
             else:
-                stat_match = re.match(r".*?(mean|median|mode|std|variance|min|max|range|iqr|skew|kurtosis).*?(?:of|for)?\s*([a-zA-Z0-9 _%()\\-]+).*", q, re.IGNORECASE)
-                if stat_match:
-                    stat, col_raw = stat_match.groups()
-                    stat_key = stat_keywords.get(stat.lower(), None)
-                    col = get_column(col_raw)
-                    if col and col in df.select_dtypes(include='number').columns:
-                        result = None
-                        if stat_key == 'mean': result = df[col].mean()
-                        elif stat_key == 'median': result = df[col].median()
-                        elif stat_key == 'mode': result = df[col].mode().iloc[0]
-                        elif stat_key == 'std': result = df[col].std()
-                        elif stat_key == 'var': result = df[col].var()
-                        elif stat_key == 'min': result = df[col].min()
-                        elif stat_key == 'max': result = df[col].max()
-                        elif stat_key == 'range': result = df[col].max() - df[col].min()
-                        elif stat_key == 'iqr': result = np.percentile(df[col].dropna(), 75) - np.percentile(df[col].dropna(), 25)
-                        elif stat_key == 'skew': result = df[col].skew()
-                        elif stat_key == 'kurtosis': result = df[col].kurtosis()
+                st.warning("Couldn’t match column or it’s not numeric.")
+        else:
+            st.info("Try something like 'mean of price' or 'max of ratings'.")
 
-                        if result is not None:
-                            st.success(f"{stat.title()} of {col}: {result:.2f}")
-                        else:
-                            st.warning("Unsupported operation.")
-                    else:
-                        st.warning("Couldn't match the column.")
-                else:
-                    st.info("Sorry, I couldn't understand. Try asking like 'mean of price'.")
 
