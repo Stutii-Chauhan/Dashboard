@@ -483,7 +483,6 @@ if "df" in st.session_state:
 #     if "df" in st.session_state:
 #         df = st.session_state.df
 #         st.subheader("Create Your Own Chart")
-
 def generate_gemini_insight(df_sample, chart_type, x_col=None, y_col=None):
     prompt = f"""
 You are an expert data analyst. Based on the sample dataset and the chart being created, provide a 2–3 line business insight with numbers, followed by a recommendation.
@@ -554,8 +553,14 @@ with right_col:
                     y_options = [col for col in numeric_cols if col != x_col]
                     if y_options:
                         y_col = st.selectbox("Select Y-axis (numeric)", y_options)
+                        agg_method = st.radio("Aggregation method:", ["Sum", "Mean", "Median"], horizontal=True)
+                        agg_func = {
+                            "Sum": "sum",
+                            "Mean": "mean",
+                            "Median": "median"
+                        }[agg_method]
                         if not (pd.api.types.is_numeric_dtype(df[x_col]) or pd.api.types.is_datetime64_any_dtype(df[x_col])):
-                            chart_df = df[[x_col, y_col]].dropna().groupby(x_col)[y_col].mean().reset_index()
+                            chart_df = df[[x_col, y_col]].dropna().groupby(x_col)[y_col].agg(agg_func).reset_index()
                         else:
                             chart_df = df[[x_col, y_col]].dropna()
                         fig = px.bar(
@@ -577,8 +582,14 @@ with right_col:
                 fig = px.pie(names=pie_vals.index, values=pie_vals.values)
 
             elif chart_type == "Line" and x_col and y_col:
+                agg_method = st.radio("Aggregation method:", ["Sum", "Mean", "Median"], horizontal=True)
+                agg_func = {
+                    "Sum": "sum",
+                    "Mean": "mean",
+                    "Median": "median"
+                }[agg_method]
                 if not (pd.api.types.is_numeric_dtype(df[x_col]) or pd.api.types.is_datetime64_any_dtype(df[x_col])):
-                    chart_df = df[[x_col, y_col]].dropna().groupby(x_col)[y_col].mean().reset_index()
+                    chart_df = df[[x_col, y_col]].dropna().groupby(x_col)[y_col].agg(agg_func).reset_index()
                 else:
                     chart_df = df[[x_col, y_col]].dropna()
                 fig = px.line(chart_df, x=x_col, y=y_col, markers=True, text=chart_df[y_col].round(2))
@@ -617,7 +628,6 @@ with right_col:
                             parts = insight.split("Recommendations:")
                             insight_part = parts[0].strip()
                             recommendation_part = parts[1].strip()
-
                         st.markdown(f"""
                             <div style="background-color:#f1f5ff; padding: 20px; border-radius: 10px;">
                                 <h4 style="margin-bottom: 10px;">🤖 <strong>Buzz's Analysis</strong></h4>
@@ -633,5 +643,6 @@ with right_col:
 
         except Exception as e:
             st.error(f"Error generating chart: {e}")
+
 
 
