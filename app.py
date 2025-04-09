@@ -610,7 +610,8 @@ with right_col:
                                 <h4 style="margin-bottom: 15px;">🤖 <strong>Buzz's Analysis</strong></h4>
                                 <p style="font-size: 18px; line-height: 1.8;">
 					<strong> Insights: </strong> {insight.split('Recommendations:')[0].strip()}<br><br>
-     					<strong> Recommendations: </strong> {insight.split('Recommendation:')[1].strip()} </p>
+     					<strong> Recommendations: </strong> {insight.split('Recommendations:')[1].strip()} 
+	  			</p>
                             </div>
                         """, unsafe_allow_html=True)
 
