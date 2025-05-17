@@ -16,44 +16,6 @@ genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
 GEMINI_API_KEY = "AIzaSyBFyEAHugwBJ-yIVE3bWy7vDdomGeaY-Ss"
 model = genai.GenerativeModel("gemini-2.0-flash")
 
-def run_buzz_query(user_question, df):
-    import re
-    result_df = None
-    summary = ""
-
-    # --- Top N Category Counts ---
-    top_match = re.match(r"top\s*(\d+)?\s*(\w+)?s?\s*(?:by|with)?\s*(count|frequency)?", user_question.lower())
-    if top_match:
-        n = int(top_match.group(1) or 5)
-        col_guess = top_match.group(2)
-        if col_guess:
-            matches = [col for col in df.columns if col_guess.lower() in col.lower()]
-            if matches:
-                target_col = matches[0]
-                result_df = df[target_col].value_counts().head(n).reset_index()
-                result_df.columns = [target_col, "Count"]
-                summary = f"Top {n} values in **{target_col}** by count:"
-                return result_df, summary
-
-    # --- Filter Expressions ---
-    filter_match = re.match(r"(show|get|filter|display).*?([a-zA-Z0-9_ ]+)\s*(>=|<=|==|!=|>|<|=)\s*([a-zA-Z0-9_.\"']+)", user_question.lower())
-    if filter_match:
-        col_raw = filter_match.group(2).strip()
-        op = filter_match.group(3)
-        val_raw = filter_match.group(4).strip().strip("\"'")
-        col = next((c for c in df.columns if col_raw.lower() in c.lower()), None)
-        if col:
-            try:
-                val = float(val_raw) if '.' in val_raw or val_raw.isdigit() else val_raw
-                query = f"df[df['{col}'] {op} {repr(val)}]"
-                result_df = eval(query)
-                summary = f"Filtered rows where **{col} {op} {val}**."
-                return result_df.head(10), summary
-            except:
-                pass
-
-    return None, ""
-
 def query_gemini_with_context(user_question, df):
     try:
         # 1. Build schema string
@@ -628,138 +590,137 @@ with right_col:
         numeric_cols = df.select_dtypes(include='number').columns.tolist()
         all_cols = df.columns.tolist()
 
-        with st.expander("📊 Create Your Own Chart", expanded=False):
-            st.subheader("Create Your Own Chart")
+        st.subheader("Create Your Own Chart")
 
-            chart_type = st.selectbox("Choose chart type", [
-                "Bar", "Column", "Pie", "Histogram",
-                "Line", "Scatter", "Box",
-                "Scatter with Regression", "Trendline",
-                "Correlation Heatmap"
-            ])
+        chart_type = st.selectbox("Choose chart type", [
+            "Bar", "Column", "Pie", "Histogram",
+            "Line", "Scatter", "Box",
+            "Scatter with Regression", "Trendline",
+            "Correlation Heatmap"
+        ])
 
-            x_col = y_col = None
-            fig = None
+        x_col = y_col = None
+        fig = None
 
-            if chart_type in ["Bar", "Column", "Line", "Scatter", "Box", "Scatter with Regression", "Trendline", "Histogram"]:
-                x_col = st.selectbox("Select X-axis", all_cols)
+        if chart_type in ["Bar", "Column", "Line", "Scatter", "Box", "Scatter with Regression", "Trendline", "Histogram"]:
+            x_col = st.selectbox("Select X-axis", all_cols)
 
-            if chart_type in ["Line", "Scatter", "Box", "Scatter with Regression", "Trendline"]:
-                y_options = [col for col in numeric_cols if col != x_col]
-                if y_options:
-                    y_col = st.selectbox("Select Y-axis", y_options)
-                else:
-                    y_col = None
-                    st.warning("No available numeric column for Y-axis.")
+        if chart_type in ["Line", "Scatter", "Box", "Scatter with Regression", "Trendline"]:
+            y_options = [col for col in numeric_cols if col != x_col]
+            if y_options:
+                y_col = st.selectbox("Select Y-axis", y_options)
+            else:
+                y_col = None
+                st.warning("No available numeric column for Y-axis.")
 
-            if chart_type == "Pie":
-                x_col = st.selectbox("Select category column for pie chart", all_cols)
+        if chart_type == "Pie":
+            x_col = st.selectbox("Select category column for pie chart", all_cols)
 
-            try:
-                chart_df = pd.DataFrame()
-                if chart_type in ["Bar", "Column"] and x_col:
-                    bar_mode = st.radio("How do you want to build this chart?", ["Auto Count", "Custom X and Y"], horizontal=True)
+        try:
+            chart_df = pd.DataFrame()
+            if chart_type in ["Bar", "Column"] and x_col:
+                bar_mode = st.radio("How do you want to build this chart?", ["Auto Count", "Custom X and Y"], horizontal=True)
 
-                    if bar_mode == "Auto Count":
-                        value_counts = df[x_col].dropna().value_counts()
-                        chart_df = pd.DataFrame({x_col: value_counts.index, "Count": value_counts.values})
-                        fig = px.bar(
-                            x=chart_df[x_col] if chart_type == "Column" else chart_df["Count"],
-                            y=chart_df["Count"] if chart_type == "Column" else chart_df[x_col],
-                            orientation='v' if chart_type == "Column" else 'h',
-                            labels={"x": x_col, "y": "Count"} if chart_type == "Column" else {"y": x_col, "x": "Count"}
-                        )
+                if bar_mode == "Auto Count":
+                    value_counts = df[x_col].dropna().value_counts()
+                    chart_df = pd.DataFrame({x_col: value_counts.index, "Count": value_counts.values})
+                    fig = px.bar(
+                        x=chart_df[x_col] if chart_type == "Column" else chart_df["Count"],
+                        y=chart_df["Count"] if chart_type == "Column" else chart_df[x_col],
+                        orientation='v' if chart_type == "Column" else 'h',
+                        labels={"x": x_col, "y": "Count"} if chart_type == "Column" else {"y": x_col, "x": "Count"}
+                    )
 
-                    elif bar_mode == "Custom X and Y":
-                        y_options = [col for col in numeric_cols if col != x_col]
-                        if y_options:
-                            y_col = st.selectbox("Select Y-axis (numeric)", y_options)
-                            agg_method = st.radio("Aggregation method:", ["Sum", "Mean", "Median"], horizontal=True)
-                            agg_func = {
-                                "Sum": "sum",
-                                "Mean": "mean",
-                                "Median": "median"
-                            }[agg_method]
-                            if not (pd.api.types.is_numeric_dtype(df[x_col]) or pd.api.types.is_datetime64_any_dtype(df[x_col])):
-                                chart_df = df[[x_col, y_col]].dropna().groupby(x_col)[y_col].agg(agg_func).reset_index()
-                            else:
-                                chart_df = df[[x_col, y_col]].dropna()
-                            fig = px.bar(
-                                chart_df,
-                                x=x_col if chart_type == "Column" else y_col,
-                                y=y_col if chart_type == "Column" else x_col,
-                                orientation='v' if chart_type == "Column" else 'h'
-                            )
+                elif bar_mode == "Custom X and Y":
+                    y_options = [col for col in numeric_cols if col != x_col]
+                    if y_options:
+                        y_col = st.selectbox("Select Y-axis (numeric)", y_options)
+                        agg_method = st.radio("Aggregation method:", ["Sum", "Mean", "Median"], horizontal=True)
+                        agg_func = {
+                            "Sum": "sum",
+                            "Mean": "mean",
+                            "Median": "median"
+                        }[agg_method]
+                        if not (pd.api.types.is_numeric_dtype(df[x_col]) or pd.api.types.is_datetime64_any_dtype(df[x_col])):
+                            chart_df = df[[x_col, y_col]].dropna().groupby(x_col)[y_col].agg(agg_func).reset_index()
                         else:
-                            st.warning("No valid numeric column available for Y-axis.")
-
-                elif chart_type == "Histogram" and x_col:
-                    chart_df = df[[x_col]].dropna()
-                    fig = px.histogram(chart_df, x=x_col)
-
-                elif chart_type == "Pie" and x_col:
-                    pie_vals = df[x_col].dropna().value_counts()
-                    chart_df = pd.DataFrame({x_col: pie_vals.index, "Count": pie_vals.values})
-                    fig = px.pie(names=pie_vals.index, values=pie_vals.values)
-
-                elif chart_type == "Line" and x_col and y_col:
-                    agg_method = st.radio("Aggregation method:", ["Sum", "Mean", "Median"], horizontal=True)
-                    agg_func = {
-                        "Sum": "sum",
-                        "Mean": "mean",
-                        "Median": "median"
-                    }[agg_method]
-                    if not (pd.api.types.is_numeric_dtype(df[x_col]) or pd.api.types.is_datetime64_any_dtype(df[x_col])):
-                        chart_df = df[[x_col, y_col]].dropna().groupby(x_col)[y_col].agg(agg_func).reset_index()
+                            chart_df = df[[x_col, y_col]].dropna()
+                        fig = px.bar(
+                            chart_df,
+                            x=x_col if chart_type == "Column" else y_col,
+                            y=y_col if chart_type == "Column" else x_col,
+                            orientation='v' if chart_type == "Column" else 'h'
+                        )
                     else:
-                        chart_df = df[[x_col, y_col]].dropna()
-                    fig = px.line(chart_df, x=x_col, y=y_col, markers=True, text=chart_df[y_col].round(2))
-                    fig.update_traces(textposition="top center")
+                        st.warning("No valid numeric column available for Y-axis.")
 
-                elif chart_type == "Scatter" and x_col and y_col:
+            elif chart_type == "Histogram" and x_col:
+                chart_df = df[[x_col]].dropna()
+                fig = px.histogram(chart_df, x=x_col)
+
+            elif chart_type == "Pie" and x_col:
+                pie_vals = df[x_col].dropna().value_counts()
+                chart_df = pd.DataFrame({x_col: pie_vals.index, "Count": pie_vals.values})
+                fig = px.pie(names=pie_vals.index, values=pie_vals.values)
+
+            elif chart_type == "Line" and x_col and y_col:
+                agg_method = st.radio("Aggregation method:", ["Sum", "Mean", "Median"], horizontal=True)
+                agg_func = {
+                    "Sum": "sum",
+                    "Mean": "mean",
+                    "Median": "median"
+                }[agg_method]
+                if not (pd.api.types.is_numeric_dtype(df[x_col]) or pd.api.types.is_datetime64_any_dtype(df[x_col])):
+                    chart_df = df[[x_col, y_col]].dropna().groupby(x_col)[y_col].agg(agg_func).reset_index()
+                else:
                     chart_df = df[[x_col, y_col]].dropna()
-                    fig = px.scatter(chart_df, x=x_col, y=y_col)
+                fig = px.line(chart_df, x=x_col, y=y_col, markers=True, text=chart_df[y_col].round(2))
+                fig.update_traces(textposition="top center")
 
-                elif chart_type == "Box" and x_col and y_col:
-                    chart_df = df[[x_col, y_col]].dropna()
-                    fig = px.box(chart_df, x=x_col, y=y_col)
+            elif chart_type == "Scatter" and x_col and y_col:
+                chart_df = df[[x_col, y_col]].dropna()
+                fig = px.scatter(chart_df, x=x_col, y=y_col)
 
-                elif chart_type == "Scatter with Regression" and x_col and y_col:
-                    chart_df = df[[x_col, y_col]].dropna()
-                    fig = px.scatter(chart_df, x=x_col, y=y_col, trendline="ols")
+            elif chart_type == "Box" and x_col and y_col:
+                chart_df = df[[x_col, y_col]].dropna()
+                fig = px.box(chart_df, x=x_col, y=y_col)
 
-                elif chart_type == "Trendline" and x_col and y_col:
-                    chart_df = df[[x_col, y_col]].dropna()
-                    fig = px.scatter(chart_df, x=x_col, y=y_col, trendline="lowess")
+            elif chart_type == "Scatter with Regression" and x_col and y_col:
+                chart_df = df[[x_col, y_col]].dropna()
+                fig = px.scatter(chart_df, x=x_col, y=y_col, trendline="ols")
 
-                elif chart_type == "Correlation Heatmap" and numeric_cols:
-                    chart_df = df[numeric_cols].corr()
-                    fig = px.imshow(chart_df, text_auto=True, aspect="auto", color_continuous_scale='RdBu_r')
+            elif chart_type == "Trendline" and x_col and y_col:
+                chart_df = df[[x_col, y_col]].dropna()
+                fig = px.scatter(chart_df, x=x_col, y=y_col, trendline="lowess")
 
-                if fig:
-                    st.plotly_chart(fig, use_container_width=True)
+            elif chart_type == "Correlation Heatmap" and numeric_cols:
+                chart_df = df[numeric_cols].corr()
+                fig = px.imshow(chart_df, text_auto=True, aspect="auto", color_continuous_scale='RdBu_r')
 
-                    if chart_df is not None and not chart_df.empty:
-                        with st.spinner("Buzz is analyzing the chart..."):
-                            insight = generate_gemini_insight(chart_df, chart_type, x_col, y_col)
-                            insight_part = insight
-                            recommendation_part = ""
-                            if "Recommendations:" in insight:
-                                parts = insight.split("Recommendations:")
-                                insight_part = parts[0].strip()
-                                recommendation_part = parts[1].strip()
-                            st.markdown(f"""
-                                <div style="background-color:#f1f5ff; padding: 20px; border-radius: 10px; color: black;">
-                                    <h4 style="margin-bottom: 10px; color: black;">🤖 <strong>Buzz's Analysis</strong></h4>
-                                    <p style="font-size: 16px; line-height: 1.6; color: black;">
-                                        <strong>Insights:</strong> {insight_part} <br><br>
-                                        <strong>Recommendations:</strong> {recommendation_part}
-                                    </p>
-                                </div>
-                            """, unsafe_allow_html=True)
+            if fig:
+                st.plotly_chart(fig, use_container_width=True)
 
-                elif chart_type not in ["Correlation Heatmap"]:
-                    st.info("Please select appropriate columns to generate the chart.")
+                if chart_df is not None and not chart_df.empty:
+                    with st.spinner("Buzz is analyzing the chart..."):
+                        insight = generate_gemini_insight(chart_df, chart_type, x_col, y_col)
+                        insight_part = insight
+                        recommendation_part = ""
+                        if "Recommendations:" in insight:
+                            parts = insight.split("Recommendations:")
+                            insight_part = parts[0].strip()
+                            recommendation_part = parts[1].strip()
+                        st.markdown(f"""
+                            <div style="background-color:#f1f5ff; padding: 20px; border-radius: 10px; color: black;">
+                                <h4 style="margin-bottom: 10px; color: black;">🤖 <strong>Buzz's Analysis</strong></h4>
+                                <p style="font-size: 16px; line-height: 1.6; color: black;">
+                                    <strong>Insights:</strong> {insight_part} <br><br>
+                                    <strong>Recommendations:</strong> {recommendation_part}
+                                </p>
+                            </div>
+                        """, unsafe_allow_html=True)
 
-            except Exception as e:
-                st.error(f"Error generating chart: {e}")
+            elif chart_type not in ["Correlation Heatmap"]:
+                st.info("Please select appropriate columns to generate the chart.")
+
+        except Exception as e:
+            st.error(f"Error generating chart: {e}")
