@@ -13,12 +13,36 @@ from scipy import stats
 
 #gemini key
 genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-GEMINI_API_KEY = "AIzaSyApXrK75ir-yYpZ-05g4Q-q8bNQDQ6eE_Q"
+GEMINI_API_KEY = "AIzaSyBFyEAHugwBJ-yIVE3bWy7vDdomGeaY-Ss"
 model = genai.GenerativeModel("gemini-2.0-flash")
 
-def query_gemini(prompt):
+def query_gemini_with_context(user_question, df):
     try:
-        # model = genai.GenerativeModel("gemini-2.0-flash")
+        # 1. Build schema string
+        schema_info = "\n".join([f"- {col}: {str(dtype)}" for col, dtype in df.dtypes.items()])
+
+        # 2. Sample data
+        sample_data = df.sample(min(10, len(df))).to_csv(index=False)
+
+        # 3. Construct prompt
+        prompt = f"""
+You are an intelligent data assistant.
+
+Here is the schema of the uploaded dataset:
+{schema_info}
+
+Below is a sample of the data:
+{sample_data}
+
+Rules:
+- Only use the columns and sample data provided.
+- Do not assume or invent any extra columns.
+- If unsure, say "I don’t have enough information."
+
+Now answer this user question:
+"{user_question}"
+"""
+
         response = model.generate_content(prompt)
         return response.text
     except Exception as e:
@@ -511,8 +535,7 @@ if "df" in st.session_state:
                     with st.spinner("Analysing..."):
                         try:
                             sample = df.to_csv(index=False)
-                            prompt = f"""The user asked: '{user_question}'\n\nHere is a sample of the dataset:\n{sample}\n\nPlease provide a helpful and relevant answer based on this data."""
-                            answer = query_gemini(prompt)
+                            answer = query_gemini_with_context(user_question, df)
                             st.success(answer)
                         except Exception as e:
                             st.error(f"Something went wrong with Gemini: {e}")
@@ -522,25 +545,43 @@ if "df" in st.session_state:
 # --- CUSTOM VISUALIZATION SECTION ---
 
 # with right_col:
-#     if "df" in st.session_state:
-#         df = st.session_state.df
-#         st.subheader("Create Your Own Chart")
 def generate_gemini_insight(df_sample, chart_type, x_col=None, y_col=None):
-    prompt = f"""
-You are an expert data analyst. Based on the sample dataset and the chart being created, provide a 2–3 line business insight with numbers, followed by a recommendation.
+    try:
+        # Build schema
+        schema_info = "\n".join([f"- {col}: {str(dtype)}" for col, dtype in df_sample.dtypes.items()])
+        
+        # Sample data
+        sample_csv = df_sample.sample(min(10, len(df_sample))).to_csv(index=False)
+
+        # Prompt
+        prompt = f"""
+You are an expert data analyst.
+
+Here is the schema of the data used to create the chart:
+{schema_info}
+
 Chart Type: {chart_type}
 X-axis: {x_col}
 Y-axis: {y_col if y_col else 'N/A'}
-Data Sample:
-{df_sample.to_csv(index=False)}
+
+Here is a sample of the chart data (not full dataset):
+{sample_csv}
+
+Rules:
+- Only use the data and columns shown above.
+- Focus on identifying patterns, trends, and anomalies.
+- Provide clear, business-style takeaways with numbers.
+- Do NOT make up data or column names.
 
 Start your response with: ' Insights:' and then add ' Recommendations:' on the next line.
 """
-    try:
+
         response = model.generate_content(prompt)
         return response.text
+
     except Exception as e:
         return f"Gemini LLM failed: {e}"
+
 
 
 with right_col:
